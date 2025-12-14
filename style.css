@@ -730,6 +730,7 @@ th.sortable{
   .mainBanner{ height:92px; }  
 }
 @media (max-width: 768px){
+  .thLabel { font-size: 11px; }     
     th.sortable {
     position: relative;
     padding-right: 30px; /* 화살표 자리 확보 */
@@ -747,5 +748,6 @@ th.sortable{
   th.sortable .thArrows{ font-size: 9px; }
   th.sortable .thArrows i{ height: 9px; line-height: 9px; }
 }
+
 
 
