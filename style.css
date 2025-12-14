@@ -612,24 +612,27 @@ table.card tr:hover td{ background:#f3f4f6; }
 
   .mainBanner{ height:92px; }
 }
-/* ✅ 깃에서 안 보일 때 강제 표시(PC 포함) */
+/* ✅ FINAL OVERRIDE: 어디서든 thArrows는 항상 보이게 (겹침/사라짐 방지) */
 th.sortable .thArrows,
 th.sortable .thArrows *{
   display:inline-flex !important;
   visibility:visible !important;
-  opacity:1 !important;
-  color:#111 !important;
-  font-size:12px !important;
+  opacity:.55 !important;
 }
 
 th.sortable .thArrows{
   flex-direction:column !important;
   align-items:center !important;
+  justify-content:center !important;
+  width:14px !important;        /* 폭 고정 */
   line-height:1 !important;
+  font-size:10px !important;
+  transform:none !important;
 }
 
 th.sortable .thArrows i{
   display:block !important;
-  line-height:1 !important;
-  height:auto !important;
+  height:10px !important;
+  line-height:10px !important;
+  font-style:normal !important;
 }
