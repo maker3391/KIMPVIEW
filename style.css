@@ -612,3 +612,24 @@ table.card tr:hover td{ background:#f3f4f6; }
 
   .mainBanner{ height:92px; }
 }
+/* ✅ 깃에서 안 보일 때 강제 표시(PC 포함) */
+th.sortable .thArrows,
+th.sortable .thArrows *{
+  display:inline-flex !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  color:#111 !important;
+  font-size:12px !important;
+}
+
+th.sortable .thArrows{
+  flex-direction:column !important;
+  align-items:center !important;
+  line-height:1 !important;
+}
+
+th.sortable .thArrows i{
+  display:block !important;
+  line-height:1 !important;
+  height:auto !important;
+}
