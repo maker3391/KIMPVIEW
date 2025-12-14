@@ -366,6 +366,33 @@ select:focus, input[type="text"]:focus{ border-color:#9ca3af; }
 }
 
 /* ===== SORT ARROWS ===== */
+th.sortable .thHead{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* 화살표 세로로 딱 붙이기 */
+th.sortable .thArrows{
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 0.85;
+  font-size: 10px;
+  opacity: 0.55;
+  transform: translateY(1px);
+}
+
+th.sortable .thArrows i{
+  font-style: normal;   /* i 태그 기본 기울임 제거 */
+  height: 10px;
+}
+
+/* 선택된 정렬 상태 표시(원하면) */
+th.sortable[data-dir="asc"] .thArrows .up{ opacity: 1; }
+th.sortable[data-dir="desc"] .thArrows .down{ opacity: 1; }
+
 th.sortable{ cursor:pointer; user-select:none; }
 .thLabel{ display:inline-flex; align-items:center; gap:6px; }
 
@@ -694,12 +721,18 @@ th.sortable{
 .table thead th.sort-asc .up{ opacity:1; border-bottom-color:#111827; }
 .table thead th.sort-desc .down{ opacity:1; border-top-color:#111827; }
 
+
 /* ✅ 모바일에서 transform scale() 쓰면 삼각형이 깨질 수 있음 → scale 금지 */
 @media (max-width: 520px){
   .sortIcons{
     transform:none !important;
   }
   .mainBanner{ height:92px; }  
+}
+@media (max-width: 768px){
+  th.sortable .thHead{ gap: 4px; }
+  th.sortable .thArrows{ font-size: 9px; }
+  th.sortable .thArrows i{ height: 9px; line-height: 9px; }
 }
 
 
