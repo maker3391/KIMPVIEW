@@ -38,7 +38,7 @@ hr{ border:0; border-top:1px solid var(--line); margin:14px 0; }
   padding:10px 24px;
   display:flex;
   gap:14px;
-  flex-wrap:wrap;            /* ✅ 기본은 wrap 허용 */
+  flex-wrap:wrap;
   color:#fff;
   font-size:13px;
 }
@@ -74,7 +74,7 @@ hr{ border:0; border-top:1px solid var(--line); margin:14px 0; }
   display:flex;
   align-items:center;
   gap:16px;
-  min-width:0;
+  min-width:0; /* 줄어들 수 있게 */
 }
 .logo{
   margin:0;
@@ -112,13 +112,13 @@ hr{ border:0; border-top:1px solid var(--line); margin:14px 0; }
   overflow:hidden;
   background:#000;
   border:1px solid var(--line);
-  height:220px;
+  height:220px; /* 고정 */
 }
 .mainBanner img{
   display:block;
   width:100%;
   height:100%;
-  object-fit:cover;
+  object-fit:cover; /* 메인 배너는 꽉 차게 */
 }
 
 .banner{
@@ -126,7 +126,7 @@ hr{ border:0; border-top:1px solid var(--line); margin:14px 0; }
   overflow:hidden;
   background:#000;
   border:1px solid var(--line);
-  height:220px;
+  height:220px;                 /* 왼쪽과 동일 높이 */
   display:flex;
   align-items:center;
   justify-content:center;
@@ -135,7 +135,7 @@ hr{ border:0; border-top:1px solid var(--line); margin:14px 0; }
   display:block;
   width:100%;
   height:100%;
-  object-fit:contain;
+  object-fit:contain;           /* 오른쪽 로고 배너는 안 잘리게 */
 }
 
 /* ===== INPUTS ===== */
@@ -225,14 +225,11 @@ select:focus, input[type="text"]:focus{ border-color:#9ca3af; }
   margin:14px 0;
 }
 
-/* ===== TABLE WRAP =====
-   ✅ PC: 그냥 보이게
-   ✅ Mobile: 스크롤로 "잘림 0"
-====================== */
+/* ===== TABLE WRAP (스크롤바 방지) ===== */
 .tableWrap{
   width:100%;
+  overflow:visible;     /* 가로 스크롤바 안 보이게 */
   border-radius:16px;
-  overflow:hidden;
 }
 
 /* ===== MAIN TABLE (엔틱/깔끔) ===== */
@@ -250,7 +247,7 @@ select:focus, input[type="text"]:focus{ border-color:#9ca3af; }
 .table thead th{
   background:var(--antique-head);
   border-bottom:1px solid var(--antique-line);
-  font-size:14px;
+  font-size:14px;          /* ✅ 헤더 글씨 키우는 곳 */
   font-weight:900;
   padding:14px 10px;
   text-align:center;
@@ -276,8 +273,8 @@ select:focus, input[type="text"]:focus{ border-color:#9ca3af; }
 .table tbody tr:nth-child(even) td{ background: rgba(255,255,255,.65); }
 .table tbody tr:hover td{ background:#f3f0ea; }
 
-/* colgroup widths */
-.col-coin{ width:140px; }
+/* colgroup widths (✅ 코인명 칸 줄이기) */
+.col-coin{ width:140px; }  /* 기존 140 -> 120 */
 .col-price{ width:100px; }
 .col-binance{ width:100px; }
 .col-ch24{ width:100px; }
@@ -289,7 +286,7 @@ select:focus, input[type="text"]:focus{ border-color:#9ca3af; }
 .th-left{ text-align:left; }
 .td-left{ text-align:left; }
 
-/* ===== COIN CELL ===== */
+/* ===== COIN CELL (정렬) ===== */
 .coinCell{
   display:flex;
   flex-direction:column;
@@ -340,7 +337,7 @@ select:focus, input[type="text"]:focus{ border-color:#9ca3af; }
 }
 .favBtn:hover{ color:#8a6b3a; }
 
-/* 차트 아이콘 */
+/* 차트 아이콘 (CSS 막대 아이콘) */
 .chartMini{
   width:22px;
   height:18px;
@@ -368,38 +365,29 @@ select:focus, input[type="text"]:focus{ border-color:#9ca3af; }
   border-color:#d8d2c6;
 }
 
-/* ===== SORT ===== */
-th.sortable{ position:relative; cursor:pointer; user-select:none; }
+/* ===== SORT ARROWS ===== */
+th.sortable{ cursor:pointer; user-select:none; }
 .thLabel{ display:inline-flex; align-items:center; gap:6px; }
 
-/* 아이콘 컨테이너 */
 .sortIcons{
   display:inline-flex;
   flex-direction:column;
   gap:2px;
-  margin-left:4px;
+  margin-left:6px;
 }
-
-/* 기존 삼각형 무력화 */
-.sortIcons .arrow{ all: unset; }
-
-/* ▲ ▼ 문자 */
-.sortIcons .up::before,
-.sortIcons .down::before{
-  display:block;
-  font-size:10px;
-  line-height:1;
-  color:#c9c4bb;
-  opacity:.6;
+.sortIcons .arrow{
+  width:0;
+  height:0;
+  border-left:4px solid transparent;
+  border-right:4px solid transparent;
+  opacity:.35;
 }
-.sortIcons .up::before{ content:"▲"; }
-.sortIcons .down::before{ content:"▼"; }
+.sortIcons .up{ border-bottom:6px solid #9ca3af; }
+.sortIcons .down{ border-top:6px solid #9ca3af; }
 
-th.sortable:hover .up::before,
-th.sortable:hover .down::before{ opacity:.85; }
-
-th.sort-asc .up::before{ color:#111827; opacity:1; }
-th.sort-desc .down::before{ color:#111827; opacity:1; }
+th.sortable:hover .arrow{ opacity:.7; }
+th.sort-asc .up{ opacity:1; border-bottom-color:#111827; }
+th.sort-desc .down{ opacity:1; border-top-color:#111827; }
 
 /* ===== SIDE CARDS ===== */
 .side section{
@@ -458,17 +446,29 @@ table.card tr:hover td{ background:#f3f4f6; }
 
 /* =========================================================
    MOBILE / 좁은 화면
+   ✅ side / mainBanner 숨김
+   ✅ 헤더는 로고 옆 메뉴 유지(가로 스크롤)
+   ✅ 테이블은 코인명/현재가/바이낸스/변동24H/김프만 표시
 ========================================================= */
 @media (max-width: 980px){
-
-  /* 상단 metrics는 너무 길면 3개만 보여주기 */
-  .topMetricsInner span:nth-child(n+4){ display:none; }
+  .topMetricsInner span:nth-child(n+4){
+    display:none;
+  }    
+  .col-coin{ width:100px; }
+  .col-price{ width:85px; }
+  .col-binance{ width:85px; }
+  .col-ch24{ width:90px; }
+  .col-kimp{ width:70px; }   /* ✅ 마지막 김프 더 슬림 */   
+  
+  col.col-ch7d,
+  col.col-mcap,
+  col.col-vol{ display:none; }
 
   /* side & 메인배너 제거 */
   .side{ display:none !important; }
   .mainBanner{ display:none !important; }
 
-  /* 헤더 메뉴 가로 스크롤 */
+  /* 헤더: 로고 옆 메뉴 유지 + 가로 스크롤 */
   .topbar{ padding:12px 0 10px; }
   .logo{ font-size:22px; }
   .topnav{
@@ -489,17 +489,9 @@ table.card tr:hover td{ background:#f3f4f6; }
   .controlsBar{ flex-wrap:wrap; gap:10px; }
   #exchangeSelect, #searchInput, #applyBtn{ width:100%; }
 
-  /* ✅ 테이블: 모바일은 스크롤로 처리 (잘림 방지) */
-  .tableWrap{
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
-  }
-  .tableWrap::-webkit-scrollbar{ display:none; }
-
-  .table{
-    min-width: 720px;   /* ✅ 핵심: 최소 폭 보장 → 밀림/짤림 없음 */
-    table-layout:fixed;
-  }
+  /* 테이블: 가로 스크롤바 방지 + 컬럼 숨김 */
+  .tableWrap{ overflow:hidden; }
+  .table{ table-layout:fixed; }
 
   /* 변동(7D), 시가총액, 거래량 숨김 (5~7열) */
   .table th:nth-child(5),
@@ -514,41 +506,162 @@ table.card tr:hover td{ background:#f3f4f6; }
   /* 남은 컬럼 간격 조정 */
   .table thead th{ font-size:13px; padding:12px 8px; }
   .table td{ font-size:13px; padding:12px 8px; }
-}
 
+  /* 코인명 칸 더 슬림 */
+  .col-coin{ width:110px; }
+}
 /* =========================
-   진짜 폰 (520px)
+   모바일 최적화 (진짜 폰 기준)
 ========================= */
 @media (max-width: 520px){
 
-  .wrap{ padding:0 14px 28px; }
-
-  /* ✅ 상단바는 wrap 허용 (가로폭 밀림 방지) */
-  .topMetricsInner{
-    padding:8px 14px;
-    gap:10px 12px;
-    flex-wrap: wrap;              /* ✅ nowrap 제거 */
+  /* 전체 좌우 여백 줄이기 */
+  .wrap{
+    padding: 0 14px 28px;
   }
+
+  /* ===== 상단 고정바: 1줄 유지 + 가로 스크롤(안 보이게) ===== */
+  .topMetricsInner{
+    padding: 8px 14px;
+    gap: 12px;
+    flex-wrap: nowrap;          /* ✅ 2줄로 떨어지는거 방지 */
+    overflow-x: auto;           /* ✅ 넘치면 옆으로만 */
+    -webkit-overflow-scrolling: touch;
+  }
+  .topMetricsInner::-webkit-scrollbar{ display:none; }
+
   .topMetricsInner span{
     white-space: nowrap;
-    font-size: 12px;
+    flex: 0 0 auto;
+    font-size: 12px;            /* ✅ 폰에서 조금 줄여 */
   }
 
-  /* 입력들 살짝 키우기 */
+  /* ===== 로고/메뉴 한 줄 유지 (가로 스크롤 메뉴) ===== */
+  .topbar{ padding: 12px 0 10px; }
+  .logo{ font-size: 22px; }
+
+  .topnav{
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+  .topnav::-webkit-scrollbar{ display:none; }
+  .topnav a{ font-size: 13px; padding: 6px 8px; }
+
+  /* ===== 셀렉트/토글 박스 더 얇게 ===== */
   select, input[type="text"], input[type="button"]{
-    height:46px;
-    border-radius:14px;
-    font-size:14px;
+    height: 46px;
+    border-radius: 14px;
+    font-size: 14px;
   }
 
-  .favTop{ font-size:13px; padding:0 12px; }
+  .favTop{
+    font-size: 13px;
+    padding: 0 12px;
+  }
 
-  /* 정렬 아이콘 작게 */
+  /* ===== 검색영역: 세로 정렬 ===== */
+  .controlsBar{
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  #exchangeSelect, #searchInput, #applyBtn{
+    width: 100%;
+  }
+
+  /* ===== 테이블: "잘림" 없애고, 화면에 맞게 압축 ===== */
+  .tableWrap{
+    overflow: hidden;           /* ✅ 하단 스크롤바 안 보이게 */
+  }
+
+  .table{
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  /* 모바일에서 column 폭을 '비율'로 재설정 (px 고정폭 무시) */
+  .col-coin{ width: 28%; }
+  .col-price{ width: 18%; }
+  .col-binance{ width: 18%; }
+  .col-ch24{ width: 18%; }
+  .col-kimp{ width: 18%; }
+
+  /* th/td 더 촘촘하게 */
+  .table thead th{
+    font-size: 12.5px;
+    padding: 10px 6px;
+  }
+  .table td{
+    font-size: 12.5px;
+    padding: 12px 6px;
+  }
+
+  /* 정렬 아이콘 작게 (너무 자리 먹음) */
   .sortIcons{
+    margin-left: 4px;
     transform: scale(.85);
     transform-origin: left center;
   }
 
-  .coinName{ font-size:14px; }
-  .coinSym{ font-size:11px; }
+  /* 코인명 셀 정리 */
+  .coinName{ font-size: 14px; }
+  .coinSym{ font-size: 11px; }
 }
+/* th 기본 */
+th.sortable{
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* 아이콘 컨테이너 */
+.sortIcons{
+  display:inline-flex;
+  flex-direction:column;
+  gap:2px;
+  margin-left:4px;
+}
+
+/* 기존 삼각형 완전 무력화 */
+.sortIcons .arrow{
+  all: unset;
+}
+
+/* ▲ ▼ 아이콘을 문자 기반으로 */
+.sortIcons .up::before,
+.sortIcons .down::before{
+  display:block;
+  font-size:10px;
+  line-height:1;
+  color:#c9c4bb;
+  opacity:.6;
+}
+
+/* 위 */
+.sortIcons .up::before{
+  content:"▲";
+}
+
+/* 아래 */
+.sortIcons .down::before{
+  content:"▼";
+}
+
+/* hover */
+th.sortable:hover .up::before,
+th.sortable:hover .down::before{
+  opacity:.85;
+}
+
+/* 정렬 상태 */
+th.sort-asc .up::before{
+  color:#111827;
+  opacity:1;
+}
+
+th.sort-desc .down::before{
+  color:#111827;
+  opacity:1;
+}
+
+
