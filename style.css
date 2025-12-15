@@ -328,7 +328,7 @@ col.col-kimp{ width:100px; }
 
 .assetName{
   font-weight:900;
-  font-size:12px;
+  font-size:13px;
   line-height:1.2;
   white-space:nowrap;
   overflow:hidden;
@@ -344,7 +344,10 @@ col.col-kimp{ width:100px; }
 }
 
 .assetSym{
-  font-size:11.5px;
+  display:inline-flex;    
+  align-items:center;     
+  line-height:0;          
+  font-size:13px;
   color:var(--muted);
 }
 
@@ -360,27 +363,28 @@ col.col-kimp{ width:100px; }
   border:none;
   background:transparent;
   cursor:pointer;
-  line-height:0;
-  color:#b2a79a;
+
+  line-height:1;       
+  font-size:16px;        
 }
 .favBtn:hover{ color:#8a6b3a; }
 
 /* 차트 아이콘 */
 .chartMini{
-  width:22px;
-  height:18px;
+  width:24px;
+  height:20px;
   display:inline-flex;
   align-items:center;
   justify-content:center;
   border:1px solid var(--antique-line);
   border-radius:8px;
   background:#fff;
-  line-height:0;
+  line-height:1;
 }
 .chartMini::before{
   content:"";
-  width:12px;
-  height:10px;
+  width:14px;
+  height:12px;
   display:block;
   background:
     linear-gradient(#6b7280,#6b7280) 0 100%/2px 5px no-repeat,
