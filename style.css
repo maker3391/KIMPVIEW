@@ -266,7 +266,7 @@ select:focus, input[type="text"]:focus{ border-color:#9ca3af; }
 
 .table td{
   padding:14px 12px;
-  font-size:16px;
+  font-size:14px;
   vertical-align:middle;
   border-bottom:1px solid var(--antique-line2);
   white-space:nowrap;
@@ -323,7 +323,7 @@ col.col-kimp{ width:100px; }
 
 .assetName{
   font-weight:900;
-  font-size:14px;
+  font-size:12px;
   line-height:1.2;
   white-space:nowrap;
   overflow:hidden;
@@ -602,11 +602,11 @@ table.card tr:hover td{ background:#f3f4f6; }
   th.sortable .thLabel{ gap:6px !important; }
   th.sortable .thArrows{ width:12px !important; }
 
-  .table thead th{ font-size:12.5px; padding:10px 8px; }
-  .table td{ font-size:12.5px; padding:12px 8px; }
+  .table thead th{ font-size:12px; padding:10px 8px; }
+  .table td{ font-size:12px; padding:12px 8px; }
 
   .assetIconImg{ width:24px; height:24px; }
-  .assetName{ font-size:13px; }
+  .assetName{ font-size:12px; }
 }
 
 @media (max-width: 520px){
