@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>KIMPVIEW | 김치프리미엄 김프</title>
 
-  <meta name="description" content="실시간 김치프리미엄, 비트코인·이더리움 코인 암호화폐 가격 비교 사이트 KIMPVIEW">
+  <meta name="description" content="실시간 김치프리미엄, 비트코인·이더리움 가격 비교 사이트 KIMPVIEW">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="index, follow">
 
@@ -50,32 +50,13 @@
           <img src="images/main_banner.png" alt="메인 프로모션 배너">
         </a>
 
-        <div class="chartTopRow">
-          <form class="chartControls">
-            <select id="chartSelect">
-              <option>BTC 바이낸스</option>
-              <option>BTC 바이비트</option>
-              <option>BTC 롱</option>
-              <option>BTC 숏</option>
-              <option>BTC 도미넌스</option>
-            </select>
-          </form>
-
-          <div class="favTop">
-            <span>내 관심 자산만 보기</span>
-            <label class="switch switch--gold">
-              <input type="checkbox" id="favoriteOnly">
-              <span class="slider"></span>
-            </label>
-          </div>
-        </div>
-
         <a href="#" class="chartBox" id="chartLink">
           <img id="chartImg" src="images/btc_chart.png" alt="BTC 차트">
         </a>
 
         <hr>
 
+        <!-- ✅ 검색바 라인: exchange + input + button + (favTop 옮겨서) 같은 줄에 배치 -->
         <div class="controlsBar">
           <select id="exchangeSelect">
             <option value="upbit_krw">업비트 KRW</option>
@@ -85,6 +66,15 @@
 
           <input id="searchInput" type="text" placeholder="코인명">
           <input id="applyBtn" type="button" value="검색">
+
+          <!-- ✅ 관심코인 토글을 검색창 오른쪽으로 이동 (id 유지) -->
+          <div class="favTop favTop--inline">
+            <span>내 관심 자산만 보기</span>
+            <label class="switch switch--gold">
+              <input type="checkbox" id="favoriteOnlyInline">
+              <span class="slider"></span>
+            </label>
+          </div>
         </div>
 
         <div class="tableWrap">
@@ -175,10 +165,8 @@
 
             <tbody id="coinTableBody">
               <tr data-symbol="BTC">
-                <!-- ✅ 코인명: 스샷처럼 아이콘 + 2줄 -->
                 <td class="td-left">
                   <div class="assetCell">
-                    <!-- 이미지 로고(추천). 없으면 임시로 아무 png 넣어도 됨 -->
                     <img class="assetIconImg" src="images/coins/btc.png" alt="BTC">
                     <div class="assetText">
                       <div class="assetName">비트코인</div>
@@ -191,12 +179,13 @@
                   </div>
                 </td>
 
-                <!-- ✅ 가격/변동은 스샷 느낌으로 클래스 붙여둠 -->
                 <td class="td-right priceLink">₩131,864,222</td>
-                <td class="td-right">$89294.92</td>
+
+                <!-- ✅ 색 없는 값(가격/시총/거래대금)은 굵은 검은색 강조 클래스 추가 -->
+                <td class="td-right priceStrong">$89294.92</td>
                 <td class="td-right change plus">+0.73%</td>
-                <td class="td-right">2638조 6억</td>
-                <td class="td-right">1조 5,289억</td>
+                <td class="td-right priceStrong">2638조 6억</td>
+                <td class="td-right priceStrong">1조 5,289억</td>
                 <td class="td-right change minus">-0.35%</td>
               </tr>
             </tbody>
