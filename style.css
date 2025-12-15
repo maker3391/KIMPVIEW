@@ -612,6 +612,7 @@ table.card tr:hover td{ background:#f3f4f6; }
 @media (max-width: 520px){
   .wrap{ padding:0 14px 28px; }
 
+  /* 상단 고정바 */
   .topMetricsInner{
     padding:8px 14px;
     gap:12px;
@@ -626,12 +627,40 @@ table.card tr:hover td{ background:#f3f4f6; }
     font-size:12px;
   }
 
+  /* 메인배너 더 얇게 */
   .mainBanner{ height:92px; }
 
+  /* ✅ 테이블 글씨 더 줄이기 */
+  .table thead th{
+    font-size:11px;
+    padding:8px 6px;
+  }
+  .table td{
+    font-size:11.5px;
+    padding:10px 6px;
+  }
+
+  /* ✅ 코인명/심볼(지금 구조 기준) */
+  .assetName{ font-size:12px; }
+  .assetSym{ font-size:10px; }
+
+  /* ✅ 화살표(지금 구조 기준) */
+  th.sortable .thArrows{
+    transform: scale(.75);
+    transform-origin: left center;
+  }
+
+  /* 모바일 스크롤 유지 */
   .tableWrap{
     overflow-x:auto !important;
     overflow-y:hidden !important;
     -webkit-overflow-scrolling:touch;
   }
   .table{ width:100% !important; table-layout:fixed !important; }
+}
+@media (max-width: 400px){
+  .table thead th,
+  .table td{
+    font-size: 10.5px;
+  }
 }
