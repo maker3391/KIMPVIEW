@@ -194,6 +194,11 @@ select:focus, input[type="text"]:focus{ border-color:#9ca3af; }
   white-space:nowrap;
 }
 
+/* ✅ 검색줄 안에서 오른쪽 끝으로 보내는 옵션 */
+.favTop--inline{
+  margin-left:auto;
+}
+
 /* ===== SWITCH ===== */
 .switch{ position:relative; display:inline-block; width:44px; height:24px; }
 .switch input{ display:none; }
@@ -394,6 +399,21 @@ col.col-kimp{ width:100px; }
   font-weight:900;
 }
 
+/* ✅ 기본 숫자(바이낸스/시총/거래대금 등) 진한 검정 + 굵게 */
+.table td.priceDefault,
+.table td.priceStrong{
+  color:#111827;
+  font-weight:800;
+  letter-spacing:-0.2px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ✅ 필요하면 특정 컬럼을 더 강하게 하고 싶을 때(선택) */
+.table td.priceStrong{
+  color:#000;
+  font-weight:900;
+}
+
 /* 변동 색상용 */
 .change.plus, .kimp.plus{ color:#d60000; font-weight:900; }
 .change.minus, .kimp.minus{ color:#0057ff; font-weight:900; }
@@ -559,8 +579,12 @@ table.card tr:hover td{ background:#f3f4f6; }
   #chartSelect{ width:100%; }
   .favTop{ width:100%; justify-content:space-between; }
 
+  /* ✅ 모바일 검색줄: 토글까지 같이 있을 때 안전하게 줄바꿈 */
   .controlsBar{ flex-wrap:wrap; gap:10px; }
   #exchangeSelect, #searchInput, #applyBtn{ width:100%; }
+
+  /* ✅ 검색줄에 토글이 포함되어 있으면(PC에선 오른쪽, 모바일에선 100%) */
+  .controlsBar .favTop{ width:100%; justify-content:space-between; margin-left:0; }
 
   .tableWrap{
     overflow-x:auto !important;
@@ -664,101 +688,13 @@ table.card tr:hover td{ background:#f3f4f6; }
     font-size: 10.5px;
   }
 }
-/* 1) 데스크탑도 테이블 폭 안정화 (auto가 흔들릴 때 대비) */
-.table{
-  table-layout: fixed;               /* ✅ auto -> fixed 효과로 안정 */
+table.card td{
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.2px;
 }
 
-/* 2) 헤더 라벨 + 화살표 정렬을 "내용 기준"으로 */
-th.sortable .thLabel{
-  width: auto !important;            /* ✅ 기존 width:100% 무력화 */
-  justify-content: center !important;
-  gap: 6px !important;
-}
-
-/* 코인명 헤더는 중앙 유지 */
-th.th-coin .thLabel{
-  justify-content: center !important;
-}
-
-/* 3) 화살표 컨테이너 폭 고정 (김프만 밀리는 현상 방지) */
-th.sortable .thArrows{
-  flex: 0 0 12px !important;         /* ✅ 항상 같은 폭 */
-  width: 12px !important;
-}
-
-/* 4) th/td가 옆 칸 침범하는 거 방지 (모바일 포함 전체 안전장치) */
-.table thead th,
-.table td{
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-}
-
-/* =========================================================
-   MOBILE (980px 이하): 컬럼 숨김 + 폭 재배치 확정
-========================================================= */
-@media (max-width: 980px){
-
-  /* 모바일에서도 table-layout 확정 */
-  .table{ table-layout: fixed !important; }
-
-  /* ✅ colgroup 폭 비율로 확정 (너가 적어둔 값 유지 강화) */
-  col.col-coin{ width:30% !important; }
-  col.col-price{ width:22% !important; }
-  col.col-binance{ width:20% !important; }
-  col.col-ch24{ width:16% !important; }
-  col.col-kimp{ width:12% !important; }
-
-  /* ✅ 김프 헤더/셀 가운데정렬 확실히 */
-  .table thead th:last-child,
-  .table td:last-child{
-    text-align:center !important;
-  }
-
-  /* ✅ 헤더 패딩 더 줄여서 아이콘/텍스트 자리 확보 */
-  .table thead th{ padding: 9px 6px !important; }
-  .table td{ padding: 10px 6px !important; }
-
-  /* ✅ 코인명 셀(아이콘+텍스트) 폭 부족하면 아이콘 더 줄임 */
-  .assetIconImg{ width:22px !important; height:22px !important; }
-}
-
-/* =========================================================
-   REAL PHONE (520px 이하): 글씨/화살표 더 축소
-========================================================= */
-@media (max-width: 520px){
-
-  /* 테이블 폰트 더 줄이기 (요청사항) */
-  .table thead th{ font-size: 9.5px !important; }
-  .table td{ font-size: 9.5px !important; }
-
-  /* 코인명/심볼도 더 줄임 */
-  .assetName{ font-size: 9.5px !important; }
-  .assetSym{ font-size: 8px !important; }
-
-  /* 화살표 더 작게 */
-  th.sortable .thArrows{
-    transform: scale(.65) !important;
-    transform-origin: center center !important;
-  }
-
-  /* 헤더 라벨 간격 더 줄이기 */
-  th.sortable .thLabel{ gap: 4px !important; }
-
-  /* 김프 칸이 좁아서 밀리면, 마지막 컬럼 최소폭 확보 */
-  col.col-kimp{ width: 14% !important; } /* ✅ 12 -> 14로 살짝 키움 */
-  col.col-ch24{ width: 14% !important; } /* ✅ 균형 맞추기 */
-  col.col-price{ width: 21% !important; }
-  col.col-binance{ width: 21% !important; }
-  col.col-coin{ width: 30% !important; }
-}
-
-/* =========================================================
-   SUPER SMALL (400px 이하): 최후 안전장치
-========================================================= */
-@media (max-width: 400px){
-  .table thead th, .table td{ font-size: 9px !important; }
-  .table thead th{ padding: 7px 4px !important; }
-  .table td{ padding: 8px 4px !important; }
+table.card td:nth-child(2),
+table.card td:nth-child(3){
+  color:#0b0b0b;
+  font-weight:800;
 }
