@@ -235,7 +235,7 @@ select:focus, input[type="text"]:focus{ border-color:#9ca3af; }
 /* ===== MAIN TABLE ===== */
 .table{
   width:100%;
-  table-layout:fixed;
+  table-layout:auto;
   border-collapse:separate;
   border-spacing:0;
   background:var(--antique-bg);
@@ -252,7 +252,7 @@ select:focus, input[type="text"]:focus{ border-color:#9ca3af; }
   padding:14px 10px;
   text-align:center;
   white-space:nowrap;
-  overflow:visible; /* 헤더는 잘리지 않게 */
+  overflow:visible;
 }
 
 .table td{
@@ -263,8 +263,8 @@ select:focus, input[type="text"]:focus{ border-color:#9ca3af; }
   border-bottom:1px solid var(--antique-line2);
   border-right:1px solid var(--antique-line2);
   white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  overflow:visible;       /* 숫자 잘림 방지 */
+  text-overflow:clip;     /* 숫자 잘림 방지 */
 }
 
 .table th, .table td{ border-right:1px solid var(--antique-line2); }
@@ -274,18 +274,29 @@ select:focus, input[type="text"]:focus{ border-color:#9ca3af; }
 .table tbody tr:nth-child(even) td{ background: rgba(255,255,255,.65); }
 .table tbody tr:hover td{ background:#f3f0ea; }
 
-/* colgroup widths */
-.col-coin{ width:140px; }
-.col-price{ width:100px; }
-.col-binance{ width:100px; }
-.col-ch24{ width:100px; }
-.col-ch7d{ width:100px; }
-.col-mcap{ width:100px; }
-.col-vol{ width:100px; }
-.col-kimp{ width:100px; }
+/* ===== 7컬럼 colgroup widths (col 태그에 직접 적용) ===== */
+col.col-coin{ width:260px; }
+col.col-price{ width:140px; }
+col.col-binance{ width:130px; }
+col.col-ch24{ width:100px; }
+col.col-mcap{ width:150px; }
+col.col-vol{ width:150px; }
+col.col-kimp{ width:90px; }
 
-.th-left{ text-align:left; }
-.td-left{ text-align:left; }
+/* ===== 정렬 규칙 ===== */
+.table th:not(.th-left),
+.table td:not(.td-left){
+  text-align:right;
+  white-space:nowrap;
+}
+.th-left{ text-align:left !important; }
+.td-left{ text-align:left !important; }
+
+/* 코인명 셀만 ellipsis */
+.table td.td-left{
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
 
 /* ===== COIN CELL ===== */
 .coinCell{
@@ -363,6 +374,10 @@ select:focus, input[type="text"]:focus{ border-color:#9ca3af; }
   border-color:#d8d2c6;
 }
 
+/* ===== 변동/김프 색상용 클래스 (JS 붙일 때 사용) ===== */
+.change.plus, .kimp.plus{ color:#d60000; font-weight:900; }
+.change.minus, .kimp.minus{ color:#0057ff; font-weight:900; }
+
 /* =========================================================
    SORT (최종본) : thArrows 방식 유지
 ========================================================= */
@@ -371,8 +386,8 @@ select:focus, input[type="text"]:focus{ border-color:#9ca3af; }
 th.sortable{
   cursor:pointer;
   user-select:none;
-  position:relative;         /* 보험(가상요소) 위해 필요 */
-  padding-right:28px;        /* 보험 화살표 자리 확보 */
+  position:relative;
+  padding-right:28px;
   overflow:visible;
 }
 
@@ -409,7 +424,6 @@ th.sortable .thArrows i{
   font-style:normal;
 }
 
-/* 선택된 정렬 상태 표시 */
 th.sortable[data-dir="asc"] .thArrows .up{ opacity:1; }
 th.sortable[data-dir="desc"] .thArrows .down{ opacity:1; }
 
@@ -474,16 +488,6 @@ table.card tr:hover td{ background:#f3f4f6; }
 @media (max-width: 980px){
   .topMetricsInner span:nth-child(n+4){ display:none; }
 
-  .col-coin{ width:100px; }
-  .col-price{ width:85px; }
-  .col-binance{ width:85px; }
-  .col-ch24{ width:90px; }
-  .col-kimp{ width:70px; }
-
-  col.col-ch7d,
-  col.col-mcap,
-  col.col-vol{ display:none; }
-
   .side{ display:none !important; }
 
   .mainBanner{
@@ -518,21 +522,18 @@ table.card tr:hover td{ background:#f3f4f6; }
   #exchangeSelect, #searchInput, #applyBtn{ width:100%; }
 
   .tableWrap{ overflow:hidden; }
-  .table{ table-layout:fixed; }
+  .table{ table-layout:auto; }
 
+  /* 7컬럼 기준: 모바일에서 시총/거래대금 숨김 */
   .table th:nth-child(5),
   .table td:nth-child(5),
   .table th:nth-child(6),
-  .table td:nth-child(6),
-  .table th:nth-child(7),
-  .table td:nth-child(7){
+  .table td:nth-child(6){
     display:none;
   }
 
-  .table thead th{ font-size:13px; padding:12px 8px; }
-  .table td{ font-size:13px; padding:12px 8px; }
-
-  .col-coin{ width:110px; }
+  .table thead th{ font-size:15px; padding:12px 10px; }
+  .table td{ font-size:15px; padding:12px 10px; }
 
   /* 모바일에서 thArrows는 숨기고(겹침/잘림 방지), 보험 화살표만 남김 */
   th.sortable .thArrows{ display:none !important; }
@@ -586,12 +587,6 @@ table.card tr:hover td{ background:#f3f4f6; }
   .tableWrap{ overflow:hidden; }
   .table{ width:100%; table-layout:fixed; }
 
-  .col-coin{ width:28%; }
-  .col-price{ width:18%; }
-  .col-binance{ width:18%; }
-  .col-ch24{ width:18%; }
-  .col-kimp{ width:18%; }
-
   .table thead th{
     font-size:12.5px;
     padding:10px 6px;
@@ -608,9 +603,7 @@ table.card tr:hover td{ background:#f3f4f6; }
 }
 
 /* =========================================================
-   ✅ SORT FAILSAFE (보험): 배포/overflow/DOM 꼬여도 무조건 뜸
-   - th 자체에 가상요소로 ▲▼ 렌더 (HTML 의존 0%)
-   - 모바일에서는 thArrows 숨겨서 겹침 방지
+   ✅ SORT FAILSAFE (보험)
 ========================================================= */
 th.sortable::before{
   content:"▲";
@@ -633,8 +626,50 @@ th.sortable::after{
   pointer-events:none;
 }
 
-/* 정렬 상태(나중에 JS로 data-dir 바꾸면 작동) */
 th.sortable[data-dir="asc"]::before{ opacity:1; }
 th.sortable[data-dir="asc"]::after{ opacity:.18; }
 th.sortable[data-dir="desc"]::after{ opacity:1; }
 th.sortable[data-dir="desc"]::before{ opacity:.18; }
+
+/* ===== SORT ARROW FIX (텍스트에 붙는 문제 해결) ===== */
+th.sortable{
+  position:relative !important;
+  padding-right:42px !important;   /* 화살표 자리 */
+}
+
+/* 보험 화살표는 항상 오른쪽 중앙에 고정 */
+th.sortable::before,
+th.sortable::after{
+  position:absolute !important;
+  right:12px !important;
+  left:auto !important;
+  color:#6b6256;
+  font-size:10px;
+  line-height:1;
+  pointer-events:none;
+}
+
+/* ▲ */
+th.sortable::before{
+  content:"▲";
+  top:50% !important;
+  transform:translateY(-9px);
+  opacity:.35;
+}
+
+/* ▼ */
+th.sortable::after{
+  content:"▼";
+  top:50% !important;
+  transform:translateY(2px);
+  opacity:.35;
+}
+
+/* 정렬 상태 강조 */
+th.sortable[data-dir="asc"]::before{ opacity:1; }
+th.sortable[data-dir="asc"]::after{ opacity:.18; }
+th.sortable[data-dir="desc"]::after{ opacity:1; }
+th.sortable[data-dir="desc"]::before{ opacity:.18; }
+
+/* thArrows(HTML 안 아이콘) 쓰면 겹치니까 완전 숨김 */
+th.sortable .thArrows{ display:none !important; }
