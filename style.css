@@ -209,6 +209,7 @@ select:focus, input[type="text"]:focus{ border-color:#9ca3af; }
 
 /* ===== CHART BOX ===== */
 .chartBox{
+  height: 460px;
   display:block;
   border:1px solid var(--line);
   border-radius:16px;
@@ -271,14 +272,24 @@ select:focus, input[type="text"]:focus{ border-color:#9ca3af; }
 
 .table tbody tr:hover td{ background:var(--row-hover); }
 
+
+
+/* ===== MARKET TABLE STABILITY (컬럼 흔들림 방지) ===== */
+.table.marketTable{
+  width: 100%;
+}
+.table.marketTable th,
+.table.marketTable td{
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
 /* colgroup widths (desktop) */
-col.col-coin{ width:300px; }
-col.col-price{ width:140px; }
-col.col-binance{ width:130px; }
-col.col-ch24{ width:120px; }
-col.col-mcap{ width:150px; }
-col.col-vol{ width:150px; }
-col.col-kimp{ width:100px; }
+col.col-coin{ width:200px; }
+col.col-price{ width:180px; }
+col.col-ch24{ width:100px; }
+col.col-vol{ width:130px; }
+col.col-mcap{ width:110px; }   /* 🔽 시총 줄이기 */
+col.col-kimp{ width:140px; }   /* 🔼 김프 늘리기 */
 
 /* align */
 .th-left{ text-align:left !important; }
@@ -337,10 +348,10 @@ col.col-kimp{ width:100px; }
   color:var(--muted);
 }
 
-/* fav btn */
+/* fav btn (SVG) */
 .favBtn{
-  width:18px;
-  height:18px;
+  width:22px;
+  height:22px;
   display:inline-flex;
   align-items:center;
   justify-content:center;
@@ -350,13 +361,14 @@ col.col-kimp{ width:100px; }
   background:transparent;
   cursor:pointer;
   line-height:1;
-  font-size:16px;
+  color:#9ca3af; /* 기본: 회색 */
 }
-.favBtn:hover{ color:#8a6b3a; }
+.favBtn:hover{ color:#6b7280; }
 .favBtn.active{ color:#f59e0b; }
 .favBtn.active:hover{ color:#f59e0b; }
+.favBtn .iconStar{ display:block; }
 
-/* mini chart icon */
+/* mini chart icon (CoinMarketCap 바로가기) */
 .chartMini{
   width:24px;
   height:20px;
@@ -367,25 +379,29 @@ col.col-kimp{ width:100px; }
   border-radius:8px;
   background:#fff;
   line-height:1;
+  cursor:pointer;
+  box-shadow: 0 1px 0 rgba(0,0,0,.04);
+  transition: background .15s ease, border-color .15s ease;
 }
 .chartMini::before{
   content:"";
   width:14px;
-  height:12px;
+  height:14px;
   display:block;
-  background:
-    linear-gradient(#6b7280,#6b7280) 0 100%/2px 5px no-repeat,
-    linear-gradient(#6b7280,#6b7280) 5px 100%/2px 8px no-repeat,
-    linear-gradient(#6b7280,#6b7280) 10px 100%/2px 3px no-repeat;
-  opacity:.9;
+  background:#6b7280;
+
+  /* ✅ 선명한 상승 라인 차트 (SVG mask) */
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 18h16v2H4z'/%3E%3Cpath d='M6 16l4-5 4 3 6-8 2 1-7 10-4-3-4 5z'/%3E%3C/svg%3E") center/contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 18h16v2H4z'/%3E%3Cpath d='M6 16l4-5 4 3 6-8 2 1-7 10-4-3-4 5z'/%3E%3C/svg%3E") center/contain no-repeat;
 }
 .chartMini:hover{
   background:#f1f5f9;
   border-color:#dbe2ea;
 }
+.chartMini:hover::before{ background:#111827; }
 
 /* price emphasis */
-.priceLink{ color:var(--link); font-weight:900; }
+.priceLink{ color:#000; font-weight:900; }
 
 .table td.priceDefault,
 .table td.priceStrong{
@@ -399,6 +415,26 @@ col.col-kimp{ width:100px; }
   font-weight:900;
 }
 
+
+
+/* ===== MARKET CAP / KIMP TUNING ===== */
+.table.marketTable td:nth-child(5){
+  font-size: 11px;
+  opacity: .85;
+}
+.table.marketTable td:nth-child(6){
+  font-weight: 800;
+}
+
+/* kimp sub (국내-바이낸스 차이) */
+.kimpSub{
+  display:block;
+  font-size:12px;
+  opacity:.75;
+  margin-top:2px;
+  line-height:1.2;
+  font-weight:800;
+}
 /* change colors */
 .change.plus, .kimp.plus{ color:#d60000; font-weight:900; }
 .change.minus, .kimp.minus{ color:#0057ff; font-weight:900; }
@@ -586,6 +622,8 @@ table.card.alertTable tr.liq.short td {
 }
 #clearSearchBtn:hover{ background:#f3f4f6; }
 
+
+
 /* =========================================================
    MOBILE
 ========================================================= */
@@ -625,13 +663,13 @@ table.card.alertTable tr.liq.short td {
 
   .table{ width:100% !important; table-layout:fixed !important; }
 
-  /* 시총/거래대금 숨김 */
+  /* 거래대금/시총 숨김 */
+  .table th:nth-child(4),
+  .table td:nth-child(4),
   .table th:nth-child(5),
-  .table td:nth-child(5),
-  .table th:nth-child(6),
-  .table td:nth-child(6){ display:none !important; }
-  .table colgroup col:nth-child(5),
-  .table colgroup col:nth-child(6){ display:none !important; }
+  .table td:nth-child(5){ display:none !important; }
+  .table colgroup col:nth-child(4),
+  .table colgroup col:nth-child(5){ display:none !important; }
 
   .table thead th,
   .table td{
@@ -640,11 +678,10 @@ table.card.alertTable tr.liq.short td {
     white-space:nowrap !important;
   }
 
-  col.col-coin{ width:30% !important; }
-  col.col-price{ width:22% !important; }
-  col.col-binance{ width:20% !important; }
+  col.col-coin{ width:42% !important; }
+  col.col-price{ width:26% !important; }
   col.col-ch24{ width:16% !important; }
-  col.col-kimp{ width:12% !important; }
+  col.col-kimp{ width:16% !important; }
 
   th.sortable .thLabel{ gap:6px !important; }
   th.sortable .thArrows{ width:12px !important; }
@@ -657,6 +694,8 @@ table.card.alertTable tr.liq.short td {
 }
 
 @media (max-width: 520px){
+
+
   .wrap{ padding:0 14px 28px; }
 
   .topMetricsInner{
@@ -704,3 +743,45 @@ table.card.alertTable tr.liq.short td {
   .table thead th,
   .table td{ font-size: 10.5px; }
 }
+@media (max-width: 520px){
+  /* ❌ 숨김: 거래대금, 시총 */
+  .table th:nth-child(4),
+  .table td:nth-child(4),
+  .table colgroup col:nth-child(4),
+
+  .table th:nth-child(5),
+  .table td:nth-child(5),
+  .table colgroup col:nth-child(5){
+    display: none !important;
+  }
+
+  /* ✅ 컬럼 폭 재정의 (남는 4개) */
+  col.col-coin   { width: 42% !important; }
+  col.col-price  { width: 26% !important; }
+  col.col-ch24   { width: 16% !important; }
+  col.col-kimp   { width: 16% !important; }
+
+  /* ❌ 가로 스크롤 완전 제거 */
+  .tableWrap{
+    overflow-x: hidden !important;
+  }
+
+  /* 가독성 보정 */
+  .table thead th{
+    font-size: 11px !important;
+    padding: 8px 6px !important;
+  }
+  .table td{
+    font-size: 11px !important;
+    padding: 10px 6px !important;
+  }
+}
+
+/* ===== PRICE STACK (현재가: 업비트 위 / 바이낸스 환산 아래) ===== */
+.priceStack .priceMain{ font-weight:900; font-size:14px; }
+.priceStack .priceSub{ display:block; font-size:12px; opacity:.65; margin-top:2px; font-weight:800; }
+
+/* ===== PRICE FLASH (현재가 변동 배경) ===== */
+.price-flash-up{ background: rgba(220, 38, 38, 0.12); }
+.price-flash-down{ background: rgba(37, 99, 235, 0.12); }
+.price-flash-up, .price-flash-down{ transition: background-color .25s ease; }
