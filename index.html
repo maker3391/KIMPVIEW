@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="index, follow">
 
-  <link rel="icon"  href="favicon.ico">
+  <link rel="icon" href="favicon.ico">
   <link rel="stylesheet" href="style.css">
 </head>
 
@@ -16,12 +16,12 @@
 
   <div class="topMetrics">
     <div class="topMetricsInner">
-      <span>환율(원): <strong>1,474.9원</strong></span>
-      <span>테더(USDT): <strong>1,495.0원</strong></span>
-      <span>도미넌스: <strong>58.57%</strong></span>
-      <span>코인베이스 프리미엄: <strong>16$ / 0.01%</strong></span>
-      <span>시가총액: <strong>4,509조 8,909억</strong></span>
-      <span>24시간 거래량: <strong>241조 4,478억</strong></span>
+      <span>환율(원): <strong id="fxKRW">-</strong></span>
+      <span>테더(USDT): <strong id="usdtKRW">-</strong></span>
+      <span>도미넌스: <strong id="btcDominance">-</strong></span>
+      <span>코인베이스 프리미엄: <strong id="cbPremium">계산중</strong></span>
+      <span>시가총액: <strong id="totalMcap">-</strong></span>
+      <span>24시간 거래량: <strong id="totalVolume">-</strong></span>
     </div>
   </div>
 
@@ -30,7 +30,6 @@
     <header class="topbar">
       <div class="headerLeft">
         <h1 class="logo">KIMPVIEW</h1>
-
         <nav class="topnav">
           <a href="#">코인</a>
           <a href="#">통계&지표</a>
@@ -42,7 +41,6 @@
     </header>
 
     <div class="layout">
-      
 
       <main class="main">
 
@@ -50,9 +48,11 @@
           <img src="images/main_banner.png" alt="메인 프로모션 배너">
         </a>
 
-        <a href="#" class="chartBox" id="chartLink">
-          <img id="chartImg" src="images/btc_chart.png" alt="BTC 차트">
-        </a>
+        <div class="chartBox" id="chartBox">
+          <div class="tradingview-widget-container" style="height:100%;width:100%;">
+            <div id="tv_btcusdt" style="height:100%;width:100%;"></div>
+          </div>
+        </div>
 
         <hr>
 
@@ -76,93 +76,37 @@
           </div>
         </div>
 
+        <!-- ✅ inline chart host는 table 밖으로 이동 -->
+        <div id="inlineChartHost" style="display:none;">
+          <div class="inlineChartHeader">
+            <span id="inlineChartTitle"></span>
+            <a id="inlineChartLink" target="_blank">TradingView</a>
+          </div>
+          <div id="inlineChartBox"></div>
+        </div>
+
         <div class="tableWrap">
           <table class="table marketTable">
             <colgroup>
               <col class="col-coin">
               <col class="col-price">
-              <col class="col-binance">
               <col class="col-ch24">
-              <col class="col-mcap">
               <col class="col-vol">
+              <col class="col-mcap">
               <col class="col-kimp">
             </colgroup>
 
             <thead>
               <tr>
-                <th class="sortable th-coin" data-sort="name" data-dir="">
-                  <span class="thLabel">
-                    코인명
-                    <span class="thArrows">
-                      <i class="up"></i>
-                      <i class="down"></i>
-                    </span>
-                  </span>
-                </th>
-
-                <th class="sortable" data-sort="priceKRW" data-dir="">
-                  <span class="thLabel">
-                    현재가
-                    <span class="thArrows">
-                      <i class="up"></i>
-                      <i class="down"></i>
-                    </span>
-                  </span>
-                </th>
-
-                <th class="sortable" data-sort="priceUSD" data-dir="">
-                  <span class="thLabel">
-                    바이낸스
-                    <span class="thArrows">
-                      <i class="up"></i>
-                      <i class="down"></i>
-                    </span>
-                  </span>
-                </th>
-
-                <th class="sortable" data-sort="change24h" data-dir="">
-                  <span class="thLabel">
-                    전일대비
-                    <span class="thArrows">
-                      <i class="up"></i>
-                      <i class="down"></i>
-                    </span>
-                  </span>
-                </th>
-
-                <th class="sortable" data-sort="mcapKRW" data-dir="">
-                  <span class="thLabel">
-                    시가총액
-                    <span class="thArrows">
-                      <i class="up"></i>
-                      <i class="down"></i>
-                    </span>
-                  </span>
-                </th>
-
-                <th class="sortable" data-sort="volKRW" data-dir="">
-                  <span class="thLabel">
-                    거래대금
-                    <span class="thArrows">
-                      <i class="up"></i>
-                      <i class="down"></i>
-                    </span>
-                  </span>
-                </th>
-
-                <th class="sortable" data-sort="kimp" data-dir="">
-                  <span class="thLabel">
-                    김프
-                    <span class="thArrows">
-                      <i class="up"></i>
-                      <i class="down"></i>
-                    </span>
-                  </span>
-                </th>
+                <th class="sortable th-coin" data-sort="name"><span class="thLabel">코인명</span></th>
+                <th class="sortable" data-sort="priceKRW"><span class="thLabel">현재가</span></th>
+                <th class="sortable" data-sort="change24h"><span class="thLabel">24H</span></th>
+                <th class="sortable" data-sort="volKRW"><span class="thLabel">거래대금</span></th>
+                <th class="sortable" data-sort="mcapKRW"><span class="thLabel">시가총액</span></th>
+                <th class="sortable" data-sort="kimp"><span class="thLabel">김프</span></th>
               </tr>
             </thead>
 
-            <!-- ✅ JS가 전부 채움 -->
             <tbody id="coinTableBody"></tbody>
           </table>
         </div>
@@ -178,9 +122,9 @@
         <section class="marketStatus">
           <h3>시장 현황</h3>
           <table class="card">
-            <tr><td>롱 비율</td><td id="longRate">68.8%</td></tr>
-            <tr><td>숏 비율</td><td id="shortRate">31.2%</td></tr>
-            <tr><td>공포·탐욕</td><td id="fearGreed">23</td></tr>
+            <tr><td>롱 비율</td><td id="longRate">-</td></tr>
+            <tr><td>숏 비율</td><td id="shortRate">-</td></tr>
+            <tr><td>공포·탐욕</td><td id="fearGreed">-</td></tr>
           </table>
         </section>
 
@@ -190,8 +134,7 @@
             <thead>
               <tr><th>구분</th><th>금액</th><th>체결가</th><th>시간</th></tr>
             </thead>
-            <tbody id="tradeAlertBody">
-            </tbody>
+            <tbody id="tradeAlertBody"></tbody>
           </table>
         </section>
 
@@ -201,8 +144,7 @@
             <thead>
               <tr><th>구분</th><th>금액</th><th>체결가</th><th>시간</th></tr>
             </thead>
-            <tbody id="liquidAlertBody">
-            </tbody>
+            <tbody id="liquidAlertBody"></tbody>
           </table>
         </section>
 
@@ -212,5 +154,7 @@
   </div>
 
   <script src="app.js"></script>
+  <script src="https://s3.tradingview.com/tv.js"></script>
+  <script src="tv-init.js"></script>
 </body>
 </html>
