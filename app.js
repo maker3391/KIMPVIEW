@@ -225,6 +225,7 @@
         }
 
         const hasBinance = binanceMap.has(sym);
+        c.hasBinance = hasBinance;
         const usd = hasBinance ? (Number(binanceMap.get(sym)) || 0) : 0;
 
         c.priceUSD = usd;
@@ -557,7 +558,18 @@
       chartIcon.title = "CoinMarketCap 차트 보기";
       chartIcon.addEventListener("click", (e) => {
         e.stopPropagation();
-        window.open(getCoinMarketCapUrl(c.symbol), "_blank");
+
+        const sym = String(c.symbol || "").toUpperCase().trim();
+        if (!sym) return;
+
+        let url;
+        if (c.hasBinance) {
+          url = `https://kr.tradingview.com/chart/?symbol=${encodeURIComponent(`BINANCE:${sym}USDT`)}`;
+        } else {
+          url = `https://upbit.com/exchange?code=CRIX.UPBIT.KRW-${encodeURIComponent(sym)}`;
+        }
+
+        window.open(url, "_blank", "noopener,noreferrer");
       });
     }
 
