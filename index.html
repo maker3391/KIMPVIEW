@@ -4,22 +4,31 @@
   <meta charset="utf-8">
   <title>KIMPVIEW | 김치프리미엄 김프</title>
 
-  <meta name="description" content="실시간 김치프리미엄, 비트코인·이더리움 가격 비교 사이트 KIMPVIEW">
+  <meta name="description" content="실시간 김프 김치프리미엄, 비트코인·이더리움 가격 비교 사이트 김프뷰 KIMPVIEW">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="index, follow">
 
   <link rel="icon" href="favicon.ico">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 
 <body>
 
+  <!-- ===== TOP METRICS ===== -->
   <div class="topMetrics">
     <div class="topMetricsInner">
-      <span>환율(원): <strong id="fxKRW">-</strong></span>
-      <span>테더(USDT): <strong id="usdtKRW">-</strong></span>
+      <span class="metric">
+        <img src="images/icons/google.png" class="metricIcon" alt="Google">
+        환율: <strong id="fxKRW">-</strong>
+      </span>
+
+      <span class="metric">
+        <img src="images/icons/upbit.png" class="metricIcon" alt="Upbit">
+        테더(USDT): <strong id="usdtKRW">-</strong>
+      </span>
+
       <span>도미넌스: <strong id="btcDominance">-</strong></span>
-      <span>코인베이스 프리미엄: <strong id="cbPremium">계산중</strong></span>
+      <span>코인베이스 프리미엄: <strong id="cbPremium">-</strong></span>
       <span>시가총액: <strong id="totalMcap">-</strong></span>
       <span>24시간 거래량: <strong id="totalVolume">-</strong></span>
     </div>
@@ -27,83 +36,117 @@
 
   <div class="wrap">
 
+    <!-- ===== HEADER ===== -->
     <header class="topbar">
       <div class="headerLeft">
-        <h1 class="logo">KIMPVIEW</h1>
-        <nav class="topnav">
-          <a href="#">코인</a>
-          <a href="#">통계&지표</a>
-          <a href="#">주식</a>
-          <a href="#">뉴스</a>
-          <a href="#">환율계산기</a>
+        <h1 class="logo">
+          <a href="index.html">KIMPVIEW</a>
+        </h1>
+
+        <nav class="topnav" aria-label="상단 메뉴">
+          <a href="index.html" class="active">코인</a>
+          <a href="stats.html">통계&지표</a>
+          <a href="stocks.html">주식</a>
+          <a href="news.html">뉴스</a>
+          <a href="fx.html">환율계산기</a>
         </nav>
       </div>
     </header>
 
     <div class="layout">
 
+      <!-- ===== MAIN ===== -->
       <main class="main">
 
-        <a href="#" class="mainBanner">
+        <a href="#" class="mainBanner" aria-label="메인 배너">
           <img src="images/main_banner.png" alt="메인 프로모션 배너">
         </a>
 
+        <!-- TradingView Chart -->
         <div class="chartBox" id="chartBox">
-          <div class="tradingview-widget-container" style="height:100%;width:100%;">
-            <div id="tv_btcusdt" style="height:100%;width:100%;"></div>
-          </div>
+          <div id="tv_btcusdt" style="height:100%;width:100%;"></div>
         </div>
 
         <hr>
 
+        <!-- ===== CONTROLS ===== -->
         <div class="controlsBar">
-          <select id="exchangeSelect">
+          <select id="exchangeSelect" aria-label="거래소 선택">
             <option value="upbit_krw">업비트 KRW</option>
             <option value="bithumb_krw">빗썸 KRW</option>
-            <option value="coinone_krw">코인원 KRW</option>
           </select>
 
-          <input id="searchInput" type="text" placeholder="코인명">
+          <input id="searchInput" type="text" placeholder="코인명" aria-label="코인명 검색">
           <input id="applyBtn" type="button" value="검색">
-          <button id="clearSearchBtn" type="button" style="display:none;">✕</button>
+          <button id="clearSearchBtn" type="button" style="display:none;" aria-label="검색 초기화">✕</button>
 
           <div class="favTop favTop--inline">
             <span>즐겨찾기 코인만 보기</span>
-            <label class="switch switch--gold">
+            <label class="switch switch--gold" aria-label="즐겨찾기 필터">
               <input type="checkbox" id="favoriteOnlyInline">
               <span class="slider"></span>
             </label>
           </div>
         </div>
 
-        <!-- ✅ inline chart host는 table 밖으로 이동 -->
+        <!-- ✅ inline chart host는 table 밖 (유지) -->
         <div id="inlineChartHost" style="display:none;">
           <div class="inlineChartHeader">
             <span id="inlineChartTitle"></span>
-            <a id="inlineChartLink" target="_blank">TradingView</a>
+            <a id="inlineChartLink" target="_blank" rel="noopener">TradingView</a>
           </div>
           <div id="inlineChartBox"></div>
         </div>
 
+        <!-- ===== TABLE ===== -->
         <div class="tableWrap">
           <table class="table marketTable">
             <colgroup>
               <col class="col-coin">
               <col class="col-price">
               <col class="col-ch24">
-              <col class="col-vol">
-              <col class="col-mcap">
+              <col class="col-vol col-hide-980">
+              <col class="col-mcap col-hide-980">
               <col class="col-kimp">
             </colgroup>
 
             <thead>
               <tr>
-                <th class="sortable th-coin" data-sort="name"><span class="thLabel">코인명</span></th>
-                <th class="sortable" data-sort="priceKRW"><span class="thLabel">현재가</span></th>
-                <th class="sortable" data-sort="change24h"><span class="thLabel">24H</span></th>
-                <th class="sortable" data-sort="volKRW"><span class="thLabel">거래대금</span></th>
-                <th class="sortable" data-sort="mcapKRW"><span class="thLabel">시가총액</span></th>
-                <th class="sortable" data-sort="kimp"><span class="thLabel">김프</span></th>
+                <th class="sortable th-coin" data-sort="name">
+                  <span class="thLabel">코인명
+                    <span class="thArrows"><i class="up"></i><i class="down"></i></span>
+                  </span>
+                </th>
+
+                <th class="sortable th-price" data-sort="priceKRW">
+                  <span class="thLabel">현재가
+                    <span class="thArrows"><i class="up"></i><i class="down"></i></span>
+                  </span>
+                </th>
+
+                <th class="sortable th-ch24" data-sort="change24h">
+                  <span class="thLabel">24H
+                    <span class="thArrows"><i class="up"></i><i class="down"></i></span>
+                  </span>
+                </th>
+
+                <th class="sortable th-vol col-hide-980" data-sort="volKRW">
+                  <span class="thLabel">거래대금
+                    <span class="thArrows"><i class="up"></i><i class="down"></i></span>
+                  </span>
+                </th>
+
+                <th class="sortable th-mcap col-hide-980" data-sort="mcapKRW">
+                  <span class="thLabel">시가총액
+                    <span class="thArrows"><i class="up"></i><i class="down"></i></span>
+                  </span>
+                </th>
+
+                <th class="sortable th-kimp" data-sort="kimp">
+                  <span class="thLabel">김프
+                    <span class="thArrows"><i class="up"></i><i class="down"></i></span>
+                  </span>
+                </th>
               </tr>
             </thead>
 
@@ -113,6 +156,7 @@
 
       </main>
 
+      <!-- ===== SIDE ===== -->
       <aside class="side">
 
         <div class="banner">
@@ -122,38 +166,87 @@
         <section class="marketStatus">
           <h3>시장 현황</h3>
           <table class="card">
-            <tr><td>롱 비율</td><td id="longRate">-</td></tr>
-            <tr><td>숏 비율</td><td id="shortRate">-</td></tr>
-            <tr><td>공포·탐욕</td><td id="fearGreed">-</td></tr>
+            <tr><td>롱 비율 (24H)</td><td id="longRate">-</td></tr>
+            <tr><td>숏 비율 (24H)</td><td id="shortRate">-</td></tr>
+            <tr><td>공포 · 탐욕</td><td id="fearGreed">-</td></tr>
           </table>
         </section>
 
+        <!-- ✅ 알림 공통 구조: data-target 방식으로 통일 -->
         <section>
-          <h3>거래 알림</h3>
-          <table class="card alertTable">
-            <thead>
-              <tr><th>구분</th><th>금액</th><th>체결가</th><th>시간</th></tr>
-            </thead>
-            <tbody id="tradeAlertBody"></tbody>
-          </table>
+          <div class="alertHead">
+            <h3>선물 거래 알림</h3>
+            <button
+              type="button"
+              class="collapseBtn"
+              data-target="trade"
+              aria-label="거래 알림 접기/펼치기"
+              aria-expanded="true"
+            >▾</button>
+          </div>
+
+          <div class="alertBody" id="tradeBody">
+            <table class="card alertTable">
+              <thead>
+                <tr><th>구분</th><th>금액</th><th>체결가</th><th>시간</th></tr>
+              </thead>
+              <tbody id="tradeAlertBody"></tbody>
+            </table>
+          </div>
         </section>
 
         <section>
-          <h3>청산 알림</h3>
-          <table class="card alertTable">
-            <thead>
-              <tr><th>구분</th><th>금액</th><th>체결가</th><th>시간</th></tr>
-            </thead>
-            <tbody id="liquidAlertBody"></tbody>
-          </table>
+          <div class="alertHead">
+            <h3>선물 청산 알림</h3>
+            <button
+              type="button"
+              class="collapseBtn"
+              data-target="liq"
+              aria-label="청산 알림 접기/펼치기"
+              aria-expanded="true"
+            >▾</button>
+          </div>
+
+          <div class="alertBody" id="liqBody">
+            <table class="card alertTable">
+              <thead>
+                <tr><th>구분</th><th>금액</th><th>체결가</th><th>시간</th></tr>
+              </thead>
+              <tbody id="liquidAlertBody"></tbody>
+            </table>
+          </div>
         </section>
 
       </aside>
-
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-left">
+      <span class="footer-title">KIMPVIEW</span>
+      <span class="footer-desc">Korea Premium Monitor</span>
+    </div>
+
+     <div class="footer-center">
+      본 사이트의 정보는 참고용이며, 투자 판단 및 손익에 대한 책임은 이용자 본인에게 있습니다.<br>
+      외부 API 기반 데이터는 지연·오류가 발생할 수 있습니다.
+    </div>
+
+    <div class="footer-right">
+      <span>© 2025 KIMPVIEW</span>
+      <span class="footer-divider">|</span>
+      <a href="#" class="footer-link">Telegram</a>
+      <span class="footer-divider">|</span>
+      <a href="#" class="footer-link">kimpview@gmail.com</a>
+    </div>
+  </div>
+
+  
+</footer>
+
+  <!-- ===== SCRIPTS ===== -->
+  <script src="app.js?v=5"></script>
   <script src="https://s3.tradingview.com/tv.js"></script>
   <script src="tv-init.js"></script>
 </body>
