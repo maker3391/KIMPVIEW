@@ -1,4 +1,6 @@
 (() => {
+  const UPBIT_PROXY = "https://kimpview-proxy.cjstn3391.workers.dev/upbit";
+
   // ===== DOM =====
   const exchangeSelect = document.getElementById("exchangeSelect");
   const searchInput = document.getElementById("searchInput");
@@ -16,8 +18,9 @@
   // ===== STATE =====
   const LS_KEY = "kimpview:favorites";
 
-  // 김프 제외 코인 (Binance UI 기준 미지원)
-  const KIMP_EXCLUDE = new Set([]);
+  // 김프 제외 코인
+  const KIMP_EXCLUDE = new Set([
+  ]);
 
   const state = {
     exchange: exchangeSelect?.value || "upbit_krw",
@@ -42,12 +45,12 @@
     _binance24h: { map: new Map(), ts: 0, ttlMs: 3000 },
   };
 
-  // 이전 현재가 저장(상승/하락 배경용)
+  // 이전 현재가 저장
   const prevPriceMap = new Map(); // symbol -> prev priceKRW
 
   // ===== INIT =====
   bindEvents();
-  bindAlertCollapse();      
+  bindAlertCollapse();
   toggleClearBtn();
 
   loadTopMetrics();
@@ -90,7 +93,7 @@
         ? escapeHtml("$" + Number(r.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
         : "&nbsp;";
 
-      // row class 
+      // row class
       let trClass = "";
       if (kind === "trade") {
         trClass = (r.type === "롱") ? "buy" : (r.type === "숏") ? "sell" : "";
@@ -153,7 +156,6 @@
 
   // ===== COLLAPSE =====
   function bindAlertCollapse() {
-   
     const btns = document.querySelectorAll(".collapseBtn[data-target]");
     if (btns.length > 0) {
       btns.forEach((btn) => {
@@ -199,60 +201,60 @@
     localStorage.setItem(storageKey, collapsed ? "1" : "0");
   }
 
-      // ===== API =====
-      async function loadCoinsAndRender(initial = false) {
-        if (state._isLoading) return;
-        state._isLoading = true;
+  // ===== API =====
+  async function loadCoinsAndRender(initial = false) {
+    if (state._isLoading) return;
+    state._isLoading = true;
 
-        try {
-          const coins = await fetchCoinsFromAPI(state.exchange);
-          const list = Array.isArray(coins) ? coins : [];
+    try {
+      const coins = await fetchCoinsFromAPI(state.exchange);
+      const list = Array.isArray(coins) ? coins : [];
 
-          const binanceMap = await fetchBinancePricesCached();
-          const binanceVolMap = await fetchBinanceVolumesCached();
+      const binanceMap = await fetchBinancePricesCached();
+      const binanceVolMap = await fetchBinanceVolumesCached();
 
-        for (const c of list) {
-          const sym = c.symbol;
+      for (const c of list) {
+        const sym = c.symbol;
 
-          if (sym === "USDT") {
-            c.priceUSD = 1;
-            c.binanceKRW = (state.fxKRW > 0) ? state.fxKRW : 0;
-            c.kimp = null;
-            c.kimpDiffKRW = null;
-            continue;
-          }
-
-          const hasBinance = binanceMap.has(sym);
-          const usd = hasBinance ? (Number(binanceMap.get(sym)) || 0) : 0;
-
-          c.priceUSD = usd;
-          c.binanceKRW = (usd > 0 && state.fxKRW > 0) ? (usd * state.fxKRW) : 0;
-
-          const volUSDT = hasBinance ? (Number(binanceVolMap.get(sym)) || 0) : 0;
-          c.binanceVolKRW = (volUSDT > 0 && state.usdtKRW > 0) ? (volUSDT * state.usdtKRW) : 0;
-
-          if (c.binanceKRW > 0) {
-            const krw = Number(c.priceKRW || 0);
-            const diff = krw - c.binanceKRW;
-            const kimp = ((krw / c.binanceKRW) - 1) * 100;
-
-            if (!Number.isFinite(kimp) || Math.abs(kimp) >= 5) {
-              c.kimp = null;
-              c.kimpDiffKRW = null;
-            } else {
-              c.kimp = kimp;
-              c.kimpDiffKRW = diff;
-            }
-          } else {
-            c.kimp = null;
-            c.kimpDiffKRW = null;
-          }
-
-          if (KIMP_EXCLUDE.has(sym)) {
-            c.kimp = null;
-            c.kimpDiffKRW = null;
-          }
+        if (sym === "USDT") {
+          c.priceUSD = 1;
+          c.binanceKRW = (state.fxKRW > 0) ? state.fxKRW : 0;
+          c.kimp = null;
+          c.kimpDiffKRW = null;
+          continue;
         }
+
+        const hasBinance = binanceMap.has(sym);
+        const usd = hasBinance ? (Number(binanceMap.get(sym)) || 0) : 0;
+
+        c.priceUSD = usd;
+        c.binanceKRW = (usd > 0 && state.fxKRW > 0) ? (usd * state.fxKRW) : 0;
+
+        const volUSDT = hasBinance ? (Number(binanceVolMap.get(sym)) || 0) : 0;
+        c.binanceVolKRW = (volUSDT > 0 && state.usdtKRW > 0) ? (volUSDT * state.usdtKRW) : 0;
+
+        if (c.binanceKRW > 0) {
+          const krw = Number(c.priceKRW || 0);
+          const diff = krw - c.binanceKRW;
+          const kimp = ((krw / c.binanceKRW) - 1) * 100;
+
+          if (!Number.isFinite(kimp) || Math.abs(kimp) >= 5) {
+            c.kimp = null;
+            c.kimpDiffKRW = null;
+          } else {
+            c.kimp = kimp;
+            c.kimpDiffKRW = diff;
+          }
+        } else {
+          c.kimp = null;
+          c.kimpDiffKRW = null;
+        }
+
+        if (KIMP_EXCLUDE.has(sym)) {
+          c.kimp = null;
+          c.kimpDiffKRW = null;
+        }
+      }
 
       state.coins = list;
 
@@ -284,7 +286,7 @@
 
   // -------- UPBIT --------
   async function fromUpbit(signal) {
-    const markets = await fetch("https://api.upbit.com/v1/market/all?isDetails=false", { signal })
+    const markets = await fetch(`${UPBIT_PROXY}/v1/market/all?isDetails=false`, { signal })
       .then(r => r.json());
 
     const krw = markets.filter(m => String(m.market || "").startsWith("KRW-"));
@@ -309,7 +311,7 @@
     const chunks = chunk(list, 80);
     const tickers = [];
     for (const c of chunks) {
-      const t = await fetch(`https://api.upbit.com/v1/ticker?markets=${encodeURIComponent(c.join(","))}`, { signal })
+      const t = await fetch(`${UPBIT_PROXY}/v1/ticker?markets=${encodeURIComponent(c.join(","))}`, { signal })
         .then(r => r.json());
       tickers.push(...t);
     }
@@ -691,33 +693,33 @@
   }
 
   function formatKRWDiff(n) {
-  const v = Number(n);
-  if (!Number.isFinite(v) || v === 0) return "0";
+    const v = Number(n);
+    if (!Number.isFinite(v) || v === 0) return "0";
 
-  const sign = v > 0 ? "+" : "-";
-  const abs = Math.abs(v);
+    const sign = v > 0 ? "+" : "-";
+    const abs = Math.abs(v);
 
-  let s;
+    let s;
 
-  if (abs < 0.01) {
-    s = abs.toFixed(4);          
-  }
-  else if (abs < 1) {
-    s = abs.toFixed(2);          
-  }
-  else if (abs < 100) {
-    s = abs.toFixed(2);          
-  }
-  else {
-    s = Math.floor(abs).toLocaleString("ko-KR"); // 1,234
-  }
+    if (abs < 0.01) {
+      s = abs.toFixed(4);
+    }
+    else if (abs < 1) {
+      s = abs.toFixed(2);
+    }
+    else if (abs < 100) {
+      s = abs.toFixed(2);
+    }
+    else {
+      s = Math.floor(abs).toLocaleString("ko-KR"); // 1,234
+    }
 
-  s = s.replace(/\.0+$/, "").replace(/(\.\d*[1-9])0+$/, "$1");
-  if (s.includes(".")) {
-    const [i, d] = s.split(".");
-    s = Number(i).toLocaleString("ko-KR") + "." + d;
-  }
-  return sign + s;
+    s = s.replace(/\.0+$/, "").replace(/(\.\d*[1-9])0+$/, "$1");
+    if (s.includes(".")) {
+      const [i, d] = s.split(".");
+      s = Number(i).toLocaleString("ko-KR") + "." + d;
+    }
+    return sign + s;
   }
 
   function formatKRW(n) {
@@ -739,12 +741,12 @@
   }
 
   function formatPct(n) {
-  if (n == null || Number.isNaN(Number(n))) return "";
+    if (n == null || Number.isNaN(Number(n))) return "";
 
-  const v = Number(n);
-  const sign = v > 0 ? "+" : "";
+    const v = Number(n);
+    const sign = v > 0 ? "+" : "";
 
-  return sign + v.toFixed(2) + "%";
+    return sign + v.toFixed(2) + "%";
   }
 
   function formatDeltaKRW(n) {
@@ -871,7 +873,7 @@
         } catch { }
       }
 
-      const usdt = await fetch("https://api.upbit.com/v1/ticker?markets=KRW-USDT", { cache: "no-store" })
+      const usdt = await fetch(`${UPBIT_PROXY}/v1/ticker?markets=KRW-USDT`, { cache: "no-store" })
         .then(r => r.json());
       const usdtKRW = Number(usdt?.[0]?.trade_price ?? 0);
 
@@ -952,12 +954,12 @@
           c.kimp = (c.binanceKRW > 0)
             ? ((Number(c.priceKRW || 0) / c.binanceKRW) - 1) * 100
             : null;
-        
-        if (KIMP_EXCLUDE.has(c.symbol)) {
-          c.kimp = null;
-          c.kimpDiffKRW = null;
+
+          if (KIMP_EXCLUDE.has(c.symbol)) {
+            c.kimp = null;
+            c.kimpDiffKRW = null;
+          }
         }
-}
         render();
       }
     } catch (e) {
