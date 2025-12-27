@@ -15,6 +15,10 @@
 
   // ===== STATE =====
   const LS_KEY = "kimpview:favorites";
+
+  // 김프 제외 코인 (Binance UI 기준 미지원)
+  const KIMP_EXCLUDE = new Set([]);
+
   const state = {
     exchange: exchangeSelect?.value || "upbit_krw",
     query: "",
@@ -27,75 +31,232 @@
     _refreshTimer: null,
     _aborter: null,
     _isLoading: false,
+    _topMetricsLoading: false,
 
-    // ✅ 환율(1 USD = ? KRW), USDT(KRW) 캐시
+    // 환율/USDT 캐시
     fxKRW: 0,
     usdtKRW: 0,
 
-    // ✅ 바이낸스 티커 캐시(1초 갱신 시 과호출 방지)
-    _binance: {
-      map: new Map(),
-      ts: 0,
-      ttlMs: 3000, // 3초마다 1번만 갱신 (원하면 1000으로 줄여도 됨)
-    },
+    // Binance ticker 캐시
+    _binance: { map: new Map(), ts: 0, ttlMs: 3000 },
+    _binance24h: { map: new Map(), ts: 0, ttlMs: 3000 },
   };
 
-  // ✅ 이전 현재가 저장(상승/하락 색상용)
-  const prevPriceMap = new Map(); // symbol -> previous priceKRW
+  // 이전 현재가 저장(상승/하락 배경용)
+  const prevPriceMap = new Map(); // symbol -> prev priceKRW
 
   // ===== INIT =====
   bindEvents();
+  bindAlertCollapse();      
   toggleClearBtn();
 
-  loadTopMetrics();        // 환율 먼저 받아두고
+  loadTopMetrics();
+  setInterval(loadTopMetrics, 60_000);
+
   loadCoinsAndRender(true);
+  startAutoRefresh(3000);
 
-  // ✅ 1초 자동갱신
-  startAutoRefresh(1000);
+  // ===== ALERT DOM =====
+  const $longRate = document.getElementById("longRate");
+  const $shortRate = document.getElementById("shortRate");
+  const $fearGreed = document.getElementById("fearGreed");
 
-  // ===== API 로드 =====
-  async function loadCoinsAndRender(initial = false) {
-    if (state._isLoading) return; // 로딩 중이면 스킵
-    state._isLoading = true;
+  const $tradeAlertBody = document.getElementById("tradeAlertBody");
+  const $liquidAlertBody = document.getElementById("liquidAlertBody");
 
-    try {
-      // 1) 업비트(또는 선택 거래소) 코인 목록
-      const coins = await fetchCoinsFromAPI(state.exchange);
-      const list = Array.isArray(coins) ? coins : [];
+  // ===== ALERT STATE =====
+  let sideState = {
+    tradeRows: [],
+    liqRows: [],
+  };
 
-      // 2) 바이낸스(USDT) 가격 맵
-      const binanceMap = await fetchBinancePricesCached();
+  // 빈칸 10줄 고정용 더미 행
+  function makeEmptyRow() {
+    return { sym: "", type: "", label: null, amount: null, price: null, time: null };
+  }
 
-      // 3) 매칭 + 바이낸스 원화 변환 + 김프 계산
-      const usdt = Number(state.usdtKRW || 0);
+  // 공통 렌더 (trade / liq)
+  function renderAlert(kind) {
+    const tbody = (kind === "trade") ? $tradeAlertBody : $liquidAlertBody;
+    if (!tbody) return;
 
-      for (const c of list) {
-        // 바이낸스 USD(=USDT) 가격
-        let usd = 0;
+    const rows = (kind === "trade") ? sideState.tradeRows : sideState.liqRows;
 
-        // ✅ USDT는 "1달러"로 처리 (USDTUSDT 페어 없음)
-        if (c.symbol === "USDT") usd = 1;
-        else usd = binanceMap.get(c.symbol) || 0;
+    tbody.innerHTML = rows.map(r => {
+      const labelText = (r.label == null || r.label === "") ? "&nbsp;" : escapeHtml(String(r.label));
+      const timeText = (r.time == null || r.time === "") ? "&nbsp;" : escapeHtml(String(r.time));
+      const amountText = (r.amount == null) ? "&nbsp;" : escapeHtml(formatKoreanMoneyKRW(r.amount) || "");
+      const priceText = (r.price != null && Number.isFinite(r.price))
+        ? escapeHtml("$" + Number(r.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
+        : "&nbsp;";
 
-        c.priceUSD = usd;
-
-        // ✅ 바이낸스 원화(= USD × 환율)
-        c.binanceKRW = (usd > 0 && state.fxKRW > 0) ? (usd * state.fxKRW) : 0;
-
-        // ✅ 국내가 - 바이낸스환산가(원)
-        c.kimpDiffKRW = (c.binanceKRW > 0) ? (Number(c.priceKRW || 0) - c.binanceKRW) : null;
-
-        // ✅ 김프(%) = 업비트KRW / 바이낸스KRW - 1
-        c.kimp = (c.binanceKRW > 0)
-          ? ((Number(c.priceKRW || 0) / c.binanceKRW) - 1) * 100
-          : null;
+      // row class 
+      let trClass = "";
+      if (kind === "trade") {
+        trClass = (r.type === "롱") ? "buy" : (r.type === "숏") ? "sell" : "";
+      } else {
+        // liq
+        const isLong = String(r.type || r.label || "").includes("롱");
+        const isShort = String(r.type || r.label || "").includes("숏");
+        trClass = `liq ${isLong ? "long" : isShort ? "short" : ""}`.trim();
       }
+
+      const labelCell = (r.label == null || r.label === "")
+        ? "&nbsp;"
+        : `<span class="labelWithEx"><img class="exIcon" src="images/binance.png" alt="Binance">${labelText}</span>`;
+
+      return `
+        <tr class="${trClass}">
+          <td>${labelCell}</td>
+          <td>${amountText}</td>
+          <td>${priceText}</td>
+          <td>${timeText}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function renderTrade() { renderAlert("trade"); }
+  function renderLiq() { renderAlert("liq"); }
+
+  function pushTradeRow({ sym, type, amountKRW, priceUSD }) {
+    sideState.tradeRows.unshift({
+      sym,
+      type,
+      label: `${sym} ${type}`,
+      amount: amountKRW,
+      price: priceUSD,
+      time: nowTime(),
+    });
+    sideState.tradeRows = sideState.tradeRows.slice(0, 10);
+    renderTrade();
+  }
+
+  function pushLiqRow({ sym, liqType, amountKRW, priceUSD }) {
+    sideState.liqRows.unshift({
+      sym,
+      type: liqType,
+      label: `${sym} ${liqType}`,
+      amount: amountKRW,
+      price: priceUSD,
+      time: nowTime(),
+    });
+    sideState.liqRows = sideState.liqRows.slice(0, 10);
+    renderLiq();
+  }
+
+  // 알림 테이블: 초기 빈칸 10줄
+  sideState.tradeRows = Array.from({ length: 10 }, makeEmptyRow);
+  sideState.liqRows = Array.from({ length: 10 }, makeEmptyRow);
+  renderTrade();
+  renderLiq();
+
+  // ===== COLLAPSE =====
+  function bindAlertCollapse() {
+   
+    const btns = document.querySelectorAll(".collapseBtn[data-target]");
+    if (btns.length > 0) {
+      btns.forEach((btn) => {
+        const key = String(btn.dataset.target || "");
+        const bodyId = (key === "trade") ? "tradeBody" : (key === "liq") ? "liqBody" : "";
+        const body = bodyId ? document.getElementById(bodyId) : null;
+        if (!body) return;
+
+        const storageKey = `kimpview:${key}Collapsed`;
+        const saved = localStorage.getItem(storageKey) === "1";
+        setCollapse(btn, body, storageKey, saved);
+
+        btn.addEventListener("click", () => {
+          const next = !body.classList.contains("is-collapsed");
+          setCollapse(btn, body, storageKey, next);
+        });
+      });
+      return;
+    }
+
+    bindCollapseById("tradeToggle", "tradeBody", "kimpview:tradeCollapsed");
+    bindCollapseById("liqToggle", "liqBody", "kimpview:liqCollapsed");
+  }
+
+  function bindCollapseById(toggleId, bodyId, storageKey) {
+    const btn = document.getElementById(toggleId);
+    const body = document.getElementById(bodyId);
+    if (!btn || !body) return;
+
+    const saved = localStorage.getItem(storageKey) === "1";
+    setCollapse(btn, body, storageKey, saved);
+
+    btn.addEventListener("click", () => {
+      const next = !body.classList.contains("is-collapsed");
+      setCollapse(btn, body, storageKey, next);
+    });
+  }
+
+  function setCollapse(btn, body, storageKey, collapsed) {
+    body.classList.toggle("is-collapsed", collapsed);
+    btn.classList.toggle("rot", collapsed);
+    btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    localStorage.setItem(storageKey, collapsed ? "1" : "0");
+  }
+
+      // ===== API =====
+      async function loadCoinsAndRender(initial = false) {
+        if (state._isLoading) return;
+        state._isLoading = true;
+
+        try {
+          const coins = await fetchCoinsFromAPI(state.exchange);
+          const list = Array.isArray(coins) ? coins : [];
+
+          const binanceMap = await fetchBinancePricesCached();
+          const binanceVolMap = await fetchBinanceVolumesCached();
+
+        for (const c of list) {
+          const sym = c.symbol;
+
+          if (sym === "USDT") {
+            c.priceUSD = 1;
+            c.binanceKRW = (state.fxKRW > 0) ? state.fxKRW : 0;
+            c.kimp = null;
+            c.kimpDiffKRW = null;
+            continue;
+          }
+
+          const hasBinance = binanceMap.has(sym);
+          const usd = hasBinance ? (Number(binanceMap.get(sym)) || 0) : 0;
+
+          c.priceUSD = usd;
+          c.binanceKRW = (usd > 0 && state.fxKRW > 0) ? (usd * state.fxKRW) : 0;
+
+          const volUSDT = hasBinance ? (Number(binanceVolMap.get(sym)) || 0) : 0;
+          c.binanceVolKRW = (volUSDT > 0 && state.usdtKRW > 0) ? (volUSDT * state.usdtKRW) : 0;
+
+          if (c.binanceKRW > 0) {
+            const krw = Number(c.priceKRW || 0);
+            const diff = krw - c.binanceKRW;
+            const kimp = ((krw / c.binanceKRW) - 1) * 100;
+
+            if (!Number.isFinite(kimp) || Math.abs(kimp) >= 5) {
+              c.kimp = null;
+              c.kimpDiffKRW = null;
+            } else {
+              c.kimp = kimp;
+              c.kimpDiffKRW = diff;
+            }
+          } else {
+            c.kimp = null;
+            c.kimpDiffKRW = null;
+          }
+
+          if (KIMP_EXCLUDE.has(sym)) {
+            c.kimp = null;
+            c.kimpDiffKRW = null;
+          }
+        }
 
       state.coins = list;
 
       if (initial) {
-        // 최초부터 active 화살표 보이게 하고 싶으면 아래 한 줄 켜기:
-        // state._sortedOnce = true;
       }
 
       render();
@@ -108,36 +269,27 @@
     }
   }
 
-  // ===== 거래소 API 직접 호출(서버/Netlify 없이) =====
   async function fetchCoinsFromAPI(exchange) {
     exchange = (exchange || "upbit_krw").toLowerCase();
 
-    // 이전 요청 취소
     if (state._aborter) state._aborter.abort();
     state._aborter = new AbortController();
     const signal = state._aborter.signal;
 
-    // ✅ 지금은 업비트만 진행 권장
     if (exchange === "upbit_krw") return await fromUpbit(signal);
-
-    // 혹시 옵션 남겨둔 경우를 위한 fallback(안 쓰면 무시)
     if (exchange === "bithumb_krw") return await fromBithumb(signal);
-    if (exchange === "coinone_krw") return await fromCoinone(signal);
 
     return await fromUpbit(signal);
   }
 
-  // -------- UPBIT (KRW markets) --------
+  // -------- UPBIT --------
   async function fromUpbit(signal) {
     const markets = await fetch("https://api.upbit.com/v1/market/all?isDetails=false", { signal })
       .then(r => r.json());
 
     const krw = markets.filter(m => String(m.market || "").startsWith("KRW-"));
+    const MAX = 400;
 
-    // ✅ 1초 갱신이면 너무 많으면 느릴 수 있음 (100~150 추천)
-    const MAX = 120;
-
-    // ✅ 대표 코인은 무조건 포함(순서 문제로 BTC 빠지는 현상 방지)
     const MUST = [
       "KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-SOL", "KRW-DOGE",
       "KRW-ADA", "KRW-BCH", "KRW-LTC", "KRW-TRX", "KRW-USDT"
@@ -147,10 +299,7 @@
     const sorted = [...krw].sort((a, b) => String(a.market).localeCompare(String(b.market)));
 
     const list = [];
-
-    for (const m of MUST) {
-      if (marketSet.has(m)) list.push(m);
-    }
+    for (const m of MUST) if (marketSet.has(m)) list.push(m);
     for (const m of sorted) {
       if (list.length >= MAX) break;
       if (list.includes(m.market)) continue;
@@ -160,10 +309,8 @@
     const chunks = chunk(list, 80);
     const tickers = [];
     for (const c of chunks) {
-      const t = await fetch(
-        `https://api.upbit.com/v1/ticker?markets=${encodeURIComponent(c.join(","))}`,
-        { signal }
-      ).then(r => r.json());
+      const t = await fetch(`https://api.upbit.com/v1/ticker?markets=${encodeURIComponent(c.join(","))}`, { signal })
+        .then(r => r.json());
       tickers.push(...t);
     }
 
@@ -173,24 +320,26 @@
       const symbol = String(t.market).replace("KRW-", "");
       const priceKRW = Number(t.trade_price || 0);
       const change24h = Number(t.signed_change_rate || 0) * 100;
+      const change24hKRW = Number(t.signed_change_price || 0);
       const volKRW = Number(t.acc_trade_price_24h || 0);
 
       return {
         symbol,
         name: nameMap.get(t.market) || symbol,
         priceKRW,
-        priceUSD: 0,      // ✅ 바이낸스로 채움
-        binanceKRW: 0,    // ✅ 바이낸스원화(환율곱)
+        priceUSD: 0,
+        binanceKRW: 0,
         change24h,
-        mcapKRW: 0,       // 시총은 거래소가 안 줌(나중에 CoinGecko/서버)
+        change24hKRW,
+        mcapKRW: 0,
         volKRW,
-        kimp: null,       // ✅ 계산되면 숫자, 아니면 null
-        kimpDiffKRW: null, // ✅ 국내가 - 바이낸스환산가(원)
+        kimp: null,
+        kimpDiffKRW: null,
       };
     });
   }
 
-  // -------- BITHUMB (ALL_KRW) --------
+  // -------- BITHUMB --------
   async function fromBithumb(signal) {
     const data = await fetch("https://api.bithumb.com/public/ticker/ALL_KRW", { signal })
       .then(r => r.json());
@@ -208,35 +357,14 @@
         priceUSD: 0,
         binanceKRW: 0,
         change24h: Number(v?.fluctate_rate_24H || 0),
+        change24hKRW: 0,
         mcapKRW: 0,
         volKRW: Number(v?.acc_trade_value_24H || 0),
         kimp: null,
+        kimpDiffKRW: null,
       });
     }
     return out;
-  }
-
-  // -------- COINONE (ticker_new/KRW) --------
-  async function fromCoinone(signal) {
-    const data = await fetch("https://api.coinone.co.kr/public/v2/ticker_new/KRW", { signal })
-      .then(r => r.json());
-
-    const tickers = Array.isArray(data?.tickers) ? data.tickers : [];
-
-    return tickers
-      .filter(t => t && t.target_currency)
-      .map(t => ({
-        symbol: String(t.target_currency || "").toUpperCase(),
-        name: String(t.target_currency || "").toUpperCase(),
-        priceKRW: Number(t.last || 0),
-        priceUSD: 0,
-        binanceKRW: 0,
-        change24h: 0,
-        mcapKRW: 0,
-        volKRW: Number(t.quote_volume || 0),
-        kimp: null,
-        kimpDiffKRW: null,
-      }));
   }
 
   function chunk(arr, size) {
@@ -253,8 +381,8 @@
     }
 
     const endpoints = [
-      "https://data-api.binance.vision/api/v3/ticker/price", // ✅ 우선
-      "https://api.binance.com/api/v3/ticker/price",         // ✅ 백업
+      "https://data-api.binance.vision/api/v3/ticker/price",
+      "https://api.binance.com/api/v3/ticker/price",
     ];
 
     for (const url of endpoints) {
@@ -267,8 +395,7 @@
         for (const item of data) {
           const sym = String(item?.symbol || "");
           if (!sym.endsWith("USDT")) continue;
-
-          const base = sym.slice(0, -4); // BTCUSDT -> BTC
+          const base = sym.slice(0, -4);
           map.set(base, Number(item.price || 0));
         }
 
@@ -280,15 +407,49 @@
       }
     }
 
-    return state._binance.map; // 전부 실패하면 캐시(없으면 빈 맵)
+    return state._binance.map;
+  }
+
+  async function fetchBinanceVolumesCached() {
+    const now = Date.now();
+    if (state._binance24h.map.size > 0 && (now - state._binance24h.ts) < state._binance24h.ttlMs) {
+      return state._binance24h.map;
+    }
+
+    const endpoints = [
+      "https://data-api.binance.vision/api/v3/ticker/24hr",
+      "https://api.binance.com/api/v3/ticker/24hr",
+    ];
+
+    for (const url of endpoints) {
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) throw new Error(`${url} HTTP ${res.status}`);
+        const data = await res.json();
+
+        const map = new Map();
+        for (const item of data) {
+          const sym = String(item?.symbol || "");
+          if (!sym.endsWith("USDT")) continue;
+          const base = sym.slice(0, -4);
+          map.set(base, Number(item?.quoteVolume || 0));
+        }
+
+        state._binance24h.map = map;
+        state._binance24h.ts = now;
+        return map;
+      } catch (e) {
+        console.warn("[KIMPVIEW] Binance 24h endpoint 실패:", e);
+      }
+    }
+
+    return state._binance24h.map;
   }
 
   // ===== AUTO REFRESH =====
   function startAutoRefresh(ms) {
     stopAutoRefresh();
-    state._refreshTimer = setInterval(() => {
-      loadCoinsAndRender(false);
-    }, ms);
+    state._refreshTimer = setInterval(() => loadCoinsAndRender(false), ms);
   }
 
   function stopAutoRefresh() {
@@ -318,17 +479,15 @@
     }
 
     const frag = document.createDocumentFragment();
-    rows.forEach((c) => frag.appendChild(renderRow(c)));
+    rows.forEach(c => frag.appendChild(renderRow(c)));
     coinTableBody.appendChild(frag);
-
     syncSortUI();
   }
 
-  function getPriceDirection(symbol, currentPrice){
+  function getPriceDirection(symbol, currentPrice) {
     const prev = prevPriceMap.get(symbol);
-    // 업데이트는 항상 해둠(다음 비교용)
     prevPriceMap.set(symbol, currentPrice);
-    if (prev == null) return "";          // 최초 1회는 색 없음
+    if (prev == null) return "";
     if (currentPrice > prev) return "price-flash-up";
     if (currentPrice < prev) return "price-flash-down";
     return "";
@@ -363,34 +522,34 @@
         </div>
       </td>
 
-      <!-- 현재가(업비트 위) + 바이낸스 환산(아래) -->
       <td class="td-right priceStack ${dirClass}">
         <div class="priceMain">${formatKRW(c.priceKRW)}</div>
         <span class="priceSub">${formatKRW(c.binanceKRW)}</span>
       </td>
 
-      <td class="td-right change ${chgClass}">${formatPct(c.change24h)}</td>
-      <td class="td-right priceStrong">${formatKRWCompact(c.volKRW)}</td>
-      <td class="td-right priceStrong">${formatKRWCompact(c.mcapKRW)}</td>
+      <td class="td-right changeStack">
+        <div class="chgMain change ${chgClass}">${formatPct(c.change24h)}</div>
+        <div class="chgSub">${formatDeltaKRW(c.change24hKRW)}</div>
+      </td>
 
-      <!-- 김프 -->
+      <td class="td-right volStack col-hide-980">
+        <div class="volMain">${formatKRWCompact(c.volKRW)}</div>
+        <div class="volSub">${formatKRWCompact(c.binanceVolKRW)}</div>
+      </td>
+
+      <td class="td-right priceStrong col-hide-980">${formatKRWCompact(c.mcapKRW)}</td>
+
       <td class="td-right change ${kimpClass}">
         ${formatPct(c.kimp)}
         ${renderKimpDiff(c.kimpDiffKRW)}
       </td>
     `;
 
-    // ✅ 색상은 잠깐만 강조(원하면 주석 처리 가능)
     const el = tr.querySelector(".priceStack");
-    if (el && dirClass) {
-      setTimeout(() => el.classList.remove("price-flash-up","price-flash-down"), 800);
-    }
+    if (el && dirClass) setTimeout(() => el.classList.remove("price-flash-up", "price-flash-down"), 800);
 
-    tr.querySelector(".favBtn")?.addEventListener("click", () => {
-      toggleFavorite(c.symbol);
-    });
+    tr.querySelector(".favBtn")?.addEventListener("click", () => toggleFavorite(c.symbol));
 
-    // ✅ 차트 아이콘: 툴팁 + 클릭 → CoinMarketCap 새창
     const chartIcon = tr.querySelector(".chartMini");
     if (chartIcon) {
       chartIcon.title = "CoinMarketCap 차트 보기";
@@ -402,7 +561,6 @@
 
     return tr;
   }
-  
 
   // ===== FILTER / SORT =====
   function getFilteredSortedCoins() {
@@ -411,15 +569,13 @@
     const q = state.query.trim().toLowerCase();
     if (q) {
       list = list.filter(
-        (c) =>
+        c =>
           String(c.symbol || "").toLowerCase().includes(q) ||
           String(c.name || "").toLowerCase().includes(q)
       );
     }
 
-    if (state.favOnly) {
-      list = list.filter((c) => state.favorites.has(c.symbol));
-    }
+    if (state.favOnly) list = list.filter(c => state.favorites.has(c.symbol));
 
     list.sort((a, b) => {
       const af = state.favorites.has(a.symbol);
@@ -446,13 +602,9 @@
   }
 
   function syncSortUI() {
-    sortableThs.forEach((th) => {
+    sortableThs.forEach(th => {
       const key = th.dataset.sort;
-      if (key === state.sortKey && state._sortedOnce) {
-        th.dataset.dir = state.sortDir;
-      } else {
-        th.dataset.dir = "";
-      }
+      th.dataset.dir = (key === state.sortKey && state._sortedOnce) ? state.sortDir : "";
     });
   }
 
@@ -489,7 +641,7 @@
       render();
     });
 
-    sortableThs.forEach((th) => {
+    sortableThs.forEach(th => {
       th.style.cursor = "pointer";
       th.addEventListener("click", () => {
         const key = th.dataset.sort;
@@ -497,9 +649,8 @@
 
         state._sortedOnce = true;
 
-        if (state.sortKey === key) {
-          state.sortDir = state.sortDir === "asc" ? "desc" : "asc";
-        } else {
+        if (state.sortKey === key) state.sortDir = (state.sortDir === "asc") ? "desc" : "asc";
+        else {
           state.sortKey = key;
           state.sortDir = "desc";
         }
@@ -527,7 +678,6 @@
   function toggleFavorite(symbol) {
     if (state.favorites.has(symbol)) state.favorites.delete(symbol);
     else state.favorites.add(symbol);
-
     saveFavorites();
     render();
   }
@@ -541,71 +691,105 @@
   }
 
   function formatKRWDiff(n) {
-    const v = Number(n || 0);
-    const sign = v > 0 ? "+" : v < 0 ? "-" : "";
-    const abs = Math.abs(v);
-    return sign + Math.floor(abs).toLocaleString("ko-KR");
+  const v = Number(n);
+  if (!Number.isFinite(v) || v === 0) return "0";
+
+  const sign = v > 0 ? "+" : "-";
+  const abs = Math.abs(v);
+
+  let s;
+
+  if (abs < 0.01) {
+    s = abs.toFixed(4);          
+  }
+  else if (abs < 1) {
+    s = abs.toFixed(2);          
+  }
+  else if (abs < 100) {
+    s = abs.toFixed(2);          
+  }
+  else {
+    s = Math.floor(abs).toLocaleString("ko-KR"); // 1,234
+  }
+
+  s = s.replace(/\.0+$/, "").replace(/(\.\d*[1-9])0+$/, "$1");
+  if (s.includes(".")) {
+    const [i, d] = s.split(".");
+    s = Number(i).toLocaleString("ko-KR") + "." + d;
+  }
+  return sign + s;
   }
 
   function formatKRW(n) {
-  const v = Number(n || 0);
-  if (!v) return "-";
+    const v = Number(n || 0);
+    if (!v) return "";
 
-  // ✅ 100원 미만 코인은 소수점 표시
-  // - 0~1원: 소수 4자리
-  // - 1~10원: 소수 3자리
-  // - 10~100원: 소수 2자리
-  if (v < 100) {
-    let digits = 2;
-    if (v < 1) digits = 4;
-    else if (v < 10) digits = 3;
+    if (v < 100) {
+      let digits = 2;
+      if (v < 1) digits = 4;
+      else if (v < 10) digits = 3;
 
-    return "₩" + v.toLocaleString("ko-KR", {
-      minimumFractionDigits: digits,
-      maximumFractionDigits: digits,
-    });
+      return "₩" + v.toLocaleString("ko-KR", {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+      });
+    }
+
+    return "₩" + Math.floor(v).toLocaleString("ko-KR");
   }
 
-  // ✅ 100원 이상은 정수로
-  return "₩" + Math.floor(v).toLocaleString("ko-KR");
-}
-
   function formatPct(n) {
-    if (n == null || Number.isNaN(Number(n))) return "-";
+  if (n == null || Number.isNaN(Number(n))) return "";
+
+  const v = Number(n);
+  const sign = v > 0 ? "+" : "";
+
+  return sign + v.toFixed(2) + "%";
+  }
+
+  function formatDeltaKRW(n) {
     const v = Number(n);
-    const sign = v > 0 ? "+" : "";
-    return sign + v.toFixed(2) + "%";
+    if (!Number.isFinite(v)) return "-";
+    if (v === 0) return "0";
+
+    const sign = v > 0 ? "+" : "-";
+    const abs = Math.abs(v);
+
+    if (Number.isInteger(abs)) return sign + abs.toLocaleString("ko-KR");
+
+    let s = abs
+      .toFixed(3)
+      .replace(/\.0+$/, "")
+      .replace(/(\.\d*[1-9])0+$/, "$1");
+
+    return sign + s;
   }
 
   function formatKRWCompact(n) {
-  const v = Number(n || 0);
-  if (!v) return "-";
+    const v = Number(n || 0);
+    if (!v) return "";
 
-  const ONE_EOK = 100_000_000;
-  const TEN_M = 10_000_000;
-  const ONE_JO = 1_000_000_000_000;
+    const ONE_EOK = 100_000_000;
+    const TEN_M = 10_000_000;
+    const ONE_JO = 1_000_000_000_000;
 
-  // ✅ 1조 이상
-  if (v >= ONE_JO) {
-    const jo = Math.floor(v / ONE_JO);
-    const eok = Math.floor((v % ONE_JO) / ONE_EOK);
-    return eok > 0
-      ? `${jo.toLocaleString("ko-KR")}조 ${eok.toLocaleString("ko-KR")}억`
-      : `${jo.toLocaleString("ko-KR")}조`;
+    if (v >= ONE_JO) {
+      const jo = Math.floor(v / ONE_JO);
+      const eok = Math.floor((v % ONE_JO) / ONE_EOK);
+      return eok > 0
+        ? `${jo.toLocaleString("ko-KR")}조 ${eok.toLocaleString("ko-KR")}억`
+        : `${jo.toLocaleString("ko-KR")}조`;
+    }
+
+    if (v >= ONE_EOK) {
+      const eok = Math.floor(v / ONE_EOK);
+      return `${eok.toLocaleString("ko-KR")}억`;
+    }
+
+    const tenMillion = Math.floor(v / TEN_M) * TEN_M;
+    if (tenMillion <= 0) return "0";
+    return `${Math.floor(tenMillion / TEN_M).toLocaleString("ko-KR")}천만`;
   }
-
-  // ✅ 1억 이상
-  if (v >= ONE_EOK) {
-    const eok = Math.floor(v / ONE_EOK);
-    return `${eok.toLocaleString("ko-KR")}억`;
-  }
-
-  // ✅ 1억 미만 → 천만 단위
-  const tenMillion = Math.floor(v / TEN_M) * TEN_M;
-  if (tenMillion <= 0) return "0";
-
-  return `${Math.floor(tenMillion / TEN_M).toLocaleString("ko-KR")}천만`;
-}
 
   function escapeHtml(s) {
     return String(s ?? "").replace(/[&<>"']/g, (m) => ({
@@ -617,30 +801,25 @@
     }[m]));
   }
 
-  
-  
-
-// ===== ICONS (SVG) =====
-function getStarSvg(filled){
-  if (filled) {
+  // ===== ICONS =====
+  function getStarSvg(filled) {
+    if (filled) {
+      return `
+        <svg class="iconStar" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <path fill="currentColor"
+            d="M12 17.3l-5.1 3 1.4-5.8-4.5-3.8 5.9-.5L12 4.8l2.3 5.4 5.9.5-4.5 3.8 1.4 5.8z"/>
+        </svg>`;
+    }
     return `
       <svg class="iconStar" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-        <path fill="currentColor"
+        <path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"
           d="M12 17.3l-5.1 3 1.4-5.8-4.5-3.8 5.9-.5L12 4.8l2.3 5.4 5.9.5-4.5 3.8 1.4 5.8z"/>
       </svg>`;
   }
-  return `
-    <svg class="iconStar" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-      <path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"
-        d="M12 17.3l-5.1 3 1.4-5.8-4.5-3.8 5.9-.5L12 4.8l2.3 5.4 5.9.5-4.5 3.8 1.4 5.8z"/>
-    </svg>`;
-}
 
-// ===== COINMARKETCAP LINK =====
-  // ✅ 대표 코인은 slug로 '상세페이지' 바로 이동, 없으면 검색으로 fallback
+  // ===== COINMARKETCAP LINK =====
   function getCoinMarketCapUrl(symbol) {
     const sym = String(symbol || "").toUpperCase();
-
     const SLUG = {
       BTC: "bitcoin",
       ETH: "ethereum",
@@ -656,7 +835,6 @@ function getStarSvg(filled){
 
     const slug = SLUG[sym];
     if (slug) return `https://coinmarketcap.com/ko/currencies/${slug}/`;
-
     return `https://coinmarketcap.com/ko/search/?q=${encodeURIComponent(sym)}`;
   }
 
@@ -667,57 +845,40 @@ function getStarSvg(filled){
 
   // ===== TOP METRICS =====
   async function loadTopMetrics() {
+    if (state._topMetricsLoading) return;
+    state._topMetricsLoading = true;
+
     try {
-      // 1) CoinGecko (시장 전체 지표)
-      const geo = await fetch("https://api.coingecko.com/api/v3/global").then(r => r.json());
+      const geo = await fetch("https://api.coingecko.com/api/v3/global", { cache: "no-store" })
+        .then(r => r.json());
 
-      // 2) 환율 (USD -> KRW)
-// ✅ 여러 소스 시도 + 마지막 정상값 캐시 유지 (구글 화면값과 1:1 맞추려는 목적 X, '자동+안정' 목적)
-let krwRate = Number(state.fxKRW || 0);
+      let krwRate = Number(state.fxKRW || 0);
 
-const fxSources = [
-  {
-    tag: "ER",
-    url: "https://open.er-api.com/v6/latest/USD",
-    pick: (j) => Number(j?.rates?.KRW ?? 0),
-  },
-  // 필요하면 아래 소스를 켜도 됨(환경에 따라 CORS/응답 형식이 다를 수 있어 실패해도 자동으로 다음 소스로 넘어감)
-  {
-    tag: "FF",
-    url: "https://api.frankfurter.app/latest?from=USD&to=KRW",
-    pick: (j) => Number(j?.rates?.KRW ?? 0),
-  },
-];
+      const fxSources = [
+        { url: "https://open.er-api.com/v6/latest/USD", pick: (j) => Number(j?.rates?.KRW ?? 0) },
+        { url: "https://api.frankfurter.app/latest?from=USD&to=KRW", pick: (j) => Number(j?.rates?.KRW ?? 0) },
+      ];
 
-let fxTag = "-";
-for (const s of fxSources) {
-  try {
-    const j = await fetch(s.url, { cache: "no-store" }).then((r) => r.json());
-    const next = s.pick(j);
+      for (const s of fxSources) {
+        try {
+          const j = await fetch(s.url, { cache: "no-store" }).then(r => r.json());
+          const next = s.pick(j);
+          if (next > 1000 && next < 3000) {
+            krwRate = next;
+            state.fxKRW = next;
+            break;
+          }
+        } catch { }
+      }
 
-    // ✅ 이상치 필터 (대충 1,000~3,000원 사이만 허용)
-    if (next > 1000 && next < 3000) {
-      krwRate = next;
-      fxTag = s.tag;
-      state.fxKRW = next;
-      break;
-    }
-  } catch (e) {
-    // 실패하면 다음 소스 시도
-  }
-}
+      const usdt = await fetch("https://api.upbit.com/v1/ticker?markets=KRW-USDT", { cache: "no-store" })
+        .then(r => r.json());
+      const usdtKRW = Number(usdt?.[0]?.trade_price ?? 0);
 
-// 3) USDT (Upbit) - 표시는 하되, 김프 환산 기준은 USDKRW(krwRate)를 사용
-const usdt = await fetch("https://api.upbit.com/v1/ticker?markets=KRW-USDT", { cache: "no-store" }).then(r => r.json());
-const usdtKRW = Number(usdt?.[0]?.trade_price ?? 0);
-
-      // ✅ state에 저장 (바이낸스KRW 변환에 사용)
       state.fxKRW = krwRate;
       state.usdtKRW = usdtKRW;
-      // ✅ 전역으로도 저장(다른 스크립트/기능에서 사용 가능)
       window.__USDT_KRW = usdtKRW;
 
-      // DOM 업데이트
       const $fx = document.getElementById("fxKRW");
       const $usdt = document.getElementById("usdtKRW");
       const $dom = document.getElementById("btcDominance");
@@ -725,25 +886,64 @@ const usdtKRW = Number(usdt?.[0]?.trade_price ?? 0);
       const $vol = document.getElementById("totalVolume");
       const $cb = document.getElementById("cbPremium");
 
-      if ($fx) $fx.textContent = krwRate ? `${krwRate.toLocaleString("ko-KR")}원 (${fxTag})` : "-";
-      if ($usdt) $usdt.textContent = usdtKRW ? (usdtKRW.toLocaleString("ko-KR") + "원") : "-";
+      if ($fx) {
+        $fx.textContent = krwRate ? `${krwRate.toLocaleString("ko-KR")}원` : "-";
+        $fx.title = "환율(USD→KRW) · 표시 기준: Google";
+      }
+
+      if ($usdt) {
+        $usdt.textContent = usdtKRW ? (usdtKRW.toLocaleString("ko-KR") + "원") : "-";
+        $usdt.title = "테더(USDT) · 기준: Upbit(KRW-USDT)";
+      }
 
       const dom = geo?.data?.market_cap_percentage?.btc ?? null;
-      if ($dom) $dom.textContent = (dom == null) ? "-" : (Number(dom).toFixed(2) + "%");
+      if ($dom) {
+        $dom.textContent = (dom == null) ? "-" : (Number(dom).toFixed(2) + "%");
+        $dom.title = "도미넌스 · 기준: TradingView(BTC.D)";
+        $dom.style.cursor = "pointer";
+
+        if (!$dom.dataset.bound) {
+          $dom.dataset.bound = "1";
+          $dom.addEventListener("click", () => {
+            window.open("https://kr.tradingview.com/chart/?symbol=CRYPTOCAP%3ABTC.D", "_blank");
+          });
+        }
+      }
 
       const mcapKrw = geo?.data?.total_market_cap?.krw ?? 0;
       const volKrw = geo?.data?.total_volume?.krw ?? 0;
-      if ($mcap) $mcap.textContent = mcapKrw ? formatKRWCompact(mcapKrw) : "-";
-      if ($vol) $vol.textContent = volKrw ? formatKRWCompact(volKrw) : "-";
+      if ($mcap) {
+        $mcap.textContent = mcapKrw ? formatKRWCompact(mcapKrw) : "-";
+        $mcap.title = "시가총액 · 전세계 총합(CoinGecko Global)";
+      }
+      if ($vol) {
+        $vol.textContent = volKrw ? formatKRWCompact(volKrw) : "-";
+        $vol.title = "24시간 거래량 · 전세계 총합(CoinGecko Global)";
+      }
 
-      // ✅ 테더 프리미엄(USDT 김프) = (업비트 USDT / USDKRW - 1) * 100
-      const usdtPremPct = (usdtKRW && krwRate) ? ((usdtKRW / krwRate) - 1) * 100 : null;
-      if ($cb) $cb.textContent = (usdtPremPct == null) ? "-" : ((usdtPremPct >= 0 ? "+" : "") + usdtPremPct.toFixed(2) + "%");
+      let cbPremPct = null;
+      try {
+        const [binanceMap, cbJson] = await Promise.all([
+          fetchBinancePricesCached(),
+          fetch("https://api.coinbase.com/v2/prices/BTC-USD/spot", { cache: "no-store" }).then(r => r.json()),
+        ]);
 
-      // ✅ 환율이 바뀌면 김프/바이낸스원화도 같이 갱신되게 한 번 더 렌더
-      // (coins는 이미 있을 수 있어서)
+        const binanceBtcUsd = Number(binanceMap.get("BTC") || 0);
+        const coinbaseBtcUsd = Number(cbJson?.data?.amount || 0);
+
+        if (binanceBtcUsd > 0 && coinbaseBtcUsd > 0) {
+          cbPremPct = ((coinbaseBtcUsd - binanceBtcUsd) / binanceBtcUsd) * 100;
+        }
+      } catch { }
+
+      if ($cb) {
+        $cb.textContent = (cbPremPct == null)
+          ? "-"
+          : ((cbPremPct >= 0 ? "+" : "") + cbPremPct.toFixed(2) + "%");
+        $cb.title = "코인베이스 프리미엄 · 기준: TradingView";
+      }
+
       if (state.coins.length > 0) {
-        // 지금 coins에 있는 priceUSD 기준으로 binanceKRW/kimp 재계산
         const fx2 = Number(state.fxKRW || 0);
         for (const c of state.coins) {
           const usd = Number(c.priceUSD || 0);
@@ -752,135 +952,187 @@ const usdtKRW = Number(usdt?.[0]?.trade_price ?? 0);
           c.kimp = (c.binanceKRW > 0)
             ? ((Number(c.priceKRW || 0) / c.binanceKRW) - 1) * 100
             : null;
+        
+        if (KIMP_EXCLUDE.has(c.symbol)) {
+          c.kimp = null;
+          c.kimpDiffKRW = null;
         }
+}
         render();
       }
     } catch (e) {
       console.warn("[KIMPVIEW] TopMetrics API 실패", e);
+    } finally {
+      state._topMetricsLoading = false;
     }
   }
 
-  // ===== SIDE (더미 시장현황/알림) =====
-  const $longRate = document.getElementById("longRate");
-  const $shortRate = document.getElementById("shortRate");
-  const $fearGreed = document.getElementById("fearGreed");
-  const $tradeAlertBody = document.getElementById("tradeAlertBody");
-  const $liquidAlertBody = document.getElementById("liquidAlertBody");
+  // ===== MARKET STATUS =====
+  async function loadMarketStatus() {
+    if (!$longRate || !$shortRate || !$fearGreed) return;
 
-  const coins = ["BTC", "ETH", "XRP", "SOL", "DOGE"];
-  const tradeTypes = ["매수", "매도"];
-  const liqTypes = ["롱 청산", "숏 청산"];
+    try {
+      const url = "https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=1d&limit=1";
+      const arr = await fetch(url, { cache: "no-store" }).then(r => r.json());
 
-  function pad2(n){ return String(n).padStart(2,"0"); }
-  function nowTime(){
+      const d = Array.isArray(arr) ? arr[0] : null;
+      const longAcc = Number(d?.longAccount ?? NaN);
+      const shortAcc = Number(d?.shortAccount ?? NaN);
+
+      if (Number.isFinite(longAcc) && Number.isFinite(shortAcc) && (longAcc + shortAcc) > 0) {
+        $longRate.textContent = (longAcc * 100).toFixed(2) + "%";
+        $shortRate.textContent = (shortAcc * 100).toFixed(2) + "%";
+      } else {
+        $longRate.textContent = "-";
+        $shortRate.textContent = "-";
+      }
+    } catch {
+      $longRate.textContent = "-";
+      $shortRate.textContent = "-";
+    }
+
+    try {
+      const j = await fetch("https://api.alternative.me/fng/?limit=1", { cache: "no-store" }).then(r => r.json());
+      const v = Number(j?.data?.[0]?.value ?? NaN);
+      const clsName = String(j?.data?.[0]?.value_classification ?? "").trim();
+
+      if (Number.isFinite(v)) {
+        $fearGreed.textContent = `${Math.round(v)} (${clsName})`;
+        $fearGreed.classList.remove("fear-low", "fear-mid", "fear-high");
+        if (v < 40) $fearGreed.classList.add("fear-low");
+        else if (v < 60) $fearGreed.classList.add("fear-mid");
+        else $fearGreed.classList.add("fear-high");
+      } else {
+        $fearGreed.textContent = "-";
+      }
+    } catch {
+      $fearGreed.textContent = "-";
+    }
+  }
+
+  loadMarketStatus();
+  setInterval(loadMarketStatus, 60_000);
+
+  // ===== ALERT / WS =====
+  function pad2(n) { return String(n).padStart(2, "0"); }
+  function nowTime() {
     const d = new Date();
     return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
   }
-  function rand(min, max){ return Math.random() * (max - min) + min; }
-  function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
 
-  function formatKoreanMoneyKRW(amount){
-    if (amount >= 1e8) return (amount/1e8).toFixed(2) + "억";
-    if (amount >= 1e4) return (amount/1e4).toFixed(0) + "만";
+  function formatKoreanMoneyKRW(amount) {
+    if (!amount) return "";
+    if (amount >= 1e8) return (amount / 1e8).toFixed(2) + "억";
+    if (amount >= 1e4) return (amount / 1e4).toFixed(0) + "만";
     return Math.round(amount).toLocaleString("ko-KR");
   }
 
-  let sideState = {
-    long: 68.8,
-    fear: 23,
-    tradeRows: [],
-    liqRows: [],
-  };
-
-  function seedRows(){
-    sideState.tradeRows = [ makeTradeRow(), makeTradeRow() ];
-    sideState.liqRows = [ makeLiqRow(), makeLiqRow() ];
+  function toKrwByUsdt(usdLike) {
+    const rate = Number(window.__USDT_KRW || state.usdtKRW || state.fxKRW || 0);
+    if (!rate || !Number.isFinite(rate)) return 0;
+    return usdLike * rate;
   }
 
-  function makeTradeRow(){
-    const sym = coins[Math.floor(Math.random()*coins.length)];
-    const type = tradeTypes[Math.floor(Math.random()*tradeTypes.length)];
-    const price = Math.round(rand(1_000, 150_000_000));
-    const amount = rand(5_000_000, 300_000_000);
-    return { sym, type, label:`${sym} ${type}`, amount, price, time: nowTime() };
+  const ALERT_SYMBOLS = ["BTC","ETH","XRP","SOL","DOGE","BNB","SUI","ADA","BCH","TRX","LTC"];
+
+  const TRADE_MIN_KRW = 80_000_000;
+  const LIQ_MIN_KRW = 100_000;
+  const COOLDOWN_MS = 1500;
+
+  const lastHitTrade = new Map();
+  const lastHitLiq = new Map();
+
+  function passCooldown(map, sym) {
+    const now = Date.now();
+    const prev = map.get(sym) || 0;
+    if (now - prev < COOLDOWN_MS) return false;
+    map.set(sym, now);
+    return true;
   }
 
-  function makeLiqRow(){
-    const sym = coins[Math.floor(Math.random()*coins.length)];
-    const type = liqTypes[Math.floor(Math.random()*liqTypes.length)];
-    const price = Math.round(rand(1_000, 150_000_000));
-    const amount = rand(3_000_000, 200_000_000);
-    return { sym, type, label:`${sym} ${type}`, amount, price, time: nowTime() };
+  let wsFutures = null;
+  let wsRetry = 0;
+
+  function connectFuturesWS() {
+    if (wsFutures) {
+      try { wsFutures.close(); } catch {}
+      wsFutures = null;
+    }
+
+    const streamList = [];
+    for (const s of ALERT_SYMBOLS) {
+      const base = `${s.toLowerCase()}usdt`;
+      streamList.push(`${base}@trade`);
+      streamList.push(`${base}@forceOrder`);
+    }
+
+    wsFutures = new WebSocket(`wss://fstream.binance.com/stream?streams=${streamList.join("/")}`);
+
+    wsFutures.onopen = () => {
+      wsRetry = 0;
+      sideState.tradeRows = Array.from({ length: 10 }, makeEmptyRow);
+      sideState.liqRows = Array.from({ length: 10 }, makeEmptyRow);
+      renderTrade();
+      renderLiq();
+      console.log("[KIMPVIEW] Futures WS connected");
+    };
+
+    wsFutures.onmessage = (e) => {
+      let msg;
+      try { msg = JSON.parse(e.data); } catch { return; }
+      const data = msg?.data;
+      if (!data) return;
+
+      if (data.e === "trade") {
+        const sym = String(data.s || "").replace("USDT", "");
+        const priceUSDT = Number(data.p || 0);
+        const qty = Number(data.q || 0);
+        if (!priceUSDT || !qty) return;
+
+        const type = data.m ? "숏" : "롱";
+        const priceUSD = priceUSDT;
+        const amountKRW = toKrwByUsdt(priceUSDT * qty);
+
+        if (!priceUSD || !amountKRW) return;
+        if (amountKRW < TRADE_MIN_KRW) return;
+        if (!passCooldown(lastHitTrade, sym)) return;
+
+        pushTradeRow({ sym, type, amountKRW, priceUSD });
+      }
+
+      if (data.e === "forceOrder") {
+        const o = data.o || {};
+        const sym = String(o.s || "").replace("USDT", "");
+        const side = String(o.S || ""); // BUY / SELL
+
+        const qty = Number(o.z || o.l || o.q || 0);
+        const priceUSDT = Number(o.ap || o.p || 0);
+        if (!priceUSDT || !qty) return;
+
+        const liqType = (side === "SELL") ? "롱 청산" : "숏 청산";
+
+        const priceUSD = priceUSDT;
+        const amountKRW = toKrwByUsdt(priceUSDT * qty);
+
+        if (!priceUSD || !amountKRW) return;
+        if (amountKRW < LIQ_MIN_KRW) return;
+        if (!passCooldown(lastHitLiq, sym)) return;
+
+        pushLiqRow({ sym, liqType, amountKRW, priceUSD });
+      }
+    };
+
+    wsFutures.onerror = () => {
+      console.warn("[KIMPVIEW] Futures WS error");
+    };
+
+    wsFutures.onclose = () => {
+      const wait = Math.min(10_000, 800 * Math.pow(1.6, wsRetry++));
+      console.warn(`[KIMPVIEW] Futures WS closed. retry in ${Math.round(wait)}ms`);
+      setTimeout(connectFuturesWS, wait);
+    };
   }
 
-  function renderTrade(){
-    if (!$tradeAlertBody) return;
-
-    $tradeAlertBody.innerHTML = sideState.tradeRows.map(r => {
-      const cls = (r.type === "매수") ? "buy" : "sell";
-      return `
-        <tr class="${cls}">
-          <td>${r.label}</td>
-          <td>${formatKoreanMoneyKRW(r.amount)}</td>
-          <td>${r.price.toLocaleString("ko-KR")}</td>
-          <td>${r.time}</td>
-        </tr>
-      `;
-    }).join("");
-  }
-
-  function renderLiq(){
-    if (!$liquidAlertBody) return;
-
-    $liquidAlertBody.innerHTML = sideState.liqRows.map(r => {
-      const isLong = String(r.label).includes("롱");
-      const cls = isLong ? "long" : "short";
-      return `
-        <tr class="liq ${cls}">
-          <td>${r.label}</td>
-          <td>${formatKoreanMoneyKRW(r.amount)}</td>
-          <td>${r.price.toLocaleString("ko-KR")}</td>
-          <td>${r.time}</td>
-        </tr>
-      `;
-    }).join("");
-  }
-
-  function renderMarket(){
-    if (!$longRate || !$shortRate || !$fearGreed) return;
-
-    $longRate.textContent = sideState.long.toFixed(1) + "%";
-    $shortRate.textContent = (100 - sideState.long).toFixed(1) + "%";
-    $fearGreed.textContent = Math.round(sideState.fear);
-  }
-
-  function tickMarket(){
-    sideState.long = clamp(sideState.long + rand(-1.2, 1.2), 40, 80);
-    sideState.fear = clamp(sideState.fear + rand(-4, 4), 0, 100);
-  }
-
-  function tickTables(){
-    sideState.tradeRows.unshift(makeTradeRow());
-    sideState.tradeRows = sideState.tradeRows.slice(0, 10);
-
-    sideState.liqRows.unshift(makeLiqRow());
-    sideState.liqRows = sideState.liqRows.slice(0, 10);
-  }
-
-  seedRows();
-  renderMarket();
-  renderTrade();
-  renderLiq();
-
-  setInterval(() => {
-    tickMarket();
-    renderMarket();
-  }, 2000);
-
-  setInterval(() => {
-    tickTables();
-    renderTrade();
-    renderLiq();
-  }, 4000);
+  connectFuturesWS();
 
 })();
