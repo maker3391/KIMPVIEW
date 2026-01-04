@@ -902,7 +902,7 @@
 
     new TradingView.widget({
       width: "100%",
-      height: INLINE_CHART_HEIGHT,
+      height: 320,
       symbol: `BINANCE:${sym}USDT`,
       interval: "15",
       timezone: "Asia/Seoul",
