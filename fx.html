@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>환율 계산기 | 미드마켓 환율 기준 통화 변환 · KIMPVIEW</title>
+
+  <meta name="description" content="미드마켓 환율 기준으로 USD·KRW·JPY 등 주요 통화를 빠르게 변환하세요. 실시간 환율 업데이트 시간과 함께 간편하게 환전 계산을 제공합니다.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://kimpview.com/fx.html">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="환율 계산기 | KIMPVIEW">
+  <meta property="og:description" content="미드마켓 환율 기준으로 주요 통화를 빠르게 변환하세요. 실시간 업데이트 시간과 함께 간편하게 환전 계산을 제공합니다.">
+  <meta property="og:url" content="https://kimpview.com/fx.html">
+  <meta property="og:image" content="https://kimpview.com/images/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">    
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="환율 계산기 | KIMPVIEW">
+  <meta name="twitter:description" content="미드마켓 환율 기준으로 USD·KRW·JPY 등 주요 통화를 빠르게 변환하세요.">
+  <meta name="twitter:image" content="https://kimpview.com/images/og.png">  
+
+  <link rel="icon" href="favicon.ico">
+  <link rel="stylesheet" href="style.css?v=6">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4958885788848761"
+  crossorigin="anonymous"></script>
+</head>
+
+<body class="subPages">
+
+  <!-- ===== TOP METRICS ===== -->
+  <div class="topMetrics">
+    <div class="topMetricsInner">
+      <span class="metric">
+        <img src="images/icons/google.png" class="metricIcon" alt="Google">
+        환율: <strong id="fxKRW"></strong>
+      </span>
+
+      <span class="metric">
+        <img src="images/icons/upbit.png" class="metricIcon" alt="Upbit">
+        테더(USDT): <strong id="usdtKRW"></strong>
+      </span>
+
+      <span class="metric">도미넌스: <strong id="btcDominance"></strong></span>
+      <span class="metric metricHide980">시가총액: <strong id="totalMcap"></strong></span>
+      <span class="metric metricHide980">24H 현물 거래량: <strong id="spotVolume"></strong></span>
+      <span class="metric metricHide980">24H 선물 거래량: <strong id="derivVolume"></strong></span>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <!-- ===== HEADER ===== -->
+    <header class="topbar">
+      <div class="headerLeft">
+        <div class="logo">
+          <a href="index.html">KIMPVIEW</a>
+        </div>
+
+        <nav class="topnav" aria-label="상단 메뉴">
+          <a href="index.html">코인</a>
+          <a href="stats.html">글로벌 지표</a>
+          <a href="stocks.html">주식</a>
+          <a href="news.html">뉴스</a>
+          <a href="fx.html" class="active">환율계산기</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="layout">
+
+      <!-- ===== MAIN ===== -->
+      <main class="main">
+        <h1 class="visually-hidden">환율 계산기: 미드마켓 환율 기준 통화 변환</h1>  
+        <!-- 메인 배너 -->
+        <a href="#" class="mainBanner" aria-label="메인 배너">
+          <img src="images/indevelopmentmain.png" alt="메인 프로모션 배너">
+        </a>
+
+         <!-- ===== FX CALCULATOR ===== -->
+        <section class="card fxCard">
+          <div class="fxHead">
+            <div class="fxHeadBox">
+              <div class="fxHeadTop">
+                <h2 class="fxTitle">미드마켓 환율</h2>
+                <span class="fxInfo" title="Wise 미드마켓 환율 기준">?</span>
+              </div>
+
+              <div class="fxRateLine" id="fxRateLine">
+                <span class="fxRateMain" id="fxRateMain">-</span>
+                <span class="fxRateSub" id="fxUpdatedAt">-</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="fxPanel">
+
+            <!-- FROM -->
+            <div class="fxField">
+
+              <div class="fxInputWrap">
+                <input
+                  type="text"
+                  class="fxAmount"
+                  id="fxAmount"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  placeholder="0"
+                  value="1000"
+                  aria-label="변환할 금액"
+                >
+
+                <!-- 통화 선택 버튼 -->
+                <button type="button" class="fxCurrencyBtn" id="fxFromBtn" aria-haspopup="dialog" aria-controls="fxFromDrop">
+                  <span class="fxFlag" id="fxFromFlag">🇺🇸</span>
+                  <span class="fxCode" id="fxFromCode">USD</span>
+                  <span class="fxCaret">▾</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- SWAP -->
+            <div class="fxSwapRow">
+              <button type="button" class="fxSwapBtn" id="fxSwapBtn" aria-label="통화 바꾸기">
+                ↕
+              </button>
+            </div>
+
+            <!-- TO -->
+            <div class="fxField">
+
+              <div class="fxInputWrap">
+                <input
+                  type="text"
+                  class="fxAmount fxAmountResult"
+                  id="fxResult"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  placeholder="0"
+                  value=""
+                  aria-label="환전 결과 금액"
+                  readonly
+                >
+
+                <!-- 통화 선택 버튼 -->
+                <button type="button" class="fxCurrencyBtn" id="fxToBtn" aria-haspopup="dialog" aria-controls="fxToDrop">
+                  <span class="fxFlag" id="fxToFlag">🇰🇷</span>
+                  <span class="fxCode" id="fxToCode">KRW</span>
+                  <span class="fxCaret">▾</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Helper box -->
+            <div class="fxHelper" id="fxHelper">
+              <div class="fxHelperTitle">안내</div>
+              <div class="fxHelperText">
+                환율 데이터는 외부 공개 API 기반이며, 지연·오류가 발생할 수 있습니다.
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ===== Currency Dropdown (FROM) ===== -->
+          <div class="fxDrop fxHidden" id="fxFromDrop" role="dialog" aria-label="기준 통화 선택">
+            <div class="fxDropHead">
+              <input
+                type="text"
+                class="fxSearch"
+                id="fxFromSearch"
+                placeholder="통화 검색 (예: USD, 달러, 일본)"
+                autocomplete="off"
+              >
+              <button type="button" class="fxClose" data-fx-close="fxFromDrop" aria-label="닫기">✕</button>
+            </div>
+            <div class="fxDropList" id="fxFromList" role="listbox" aria-label="기준 통화 목록">
+              <!-- JS로 목록 렌더링 -->
+            </div>
+          </div>
+
+          <!-- ===== Currency Dropdown (TO) ===== -->
+          <div class="fxDrop fxHidden" id="fxToDrop" role="dialog" aria-label="대상 통화 선택">
+            <div class="fxDropHead">
+              <input
+                type="text"
+                class="fxSearch"
+                id="fxToSearch"
+                placeholder="통화 검색 (예: KRW, 원, 베트남)"
+                autocomplete="off"
+              >
+              <button type="button" class="fxClose" data-fx-close="fxToDrop" aria-label="닫기">✕</button>
+            </div>
+            <div class="fxDropList" id="fxToList" role="listbox" aria-label="대상 통화 목록">
+              <!-- JS로 목록 렌더링 -->
+            </div>
+          </div>
+
+          <!-- backdrop -->
+          <div class="fxBackdrop fxHidden" id="fxBackdrop" aria-hidden="true"></div>
+        </section>
+
+      </main>
+
+      <!-- ===== SIDE ===== -->
+      <aside class="side">
+        <div class="banner bannerTall">
+          <img src="images/indevelopmentright.png" alt="KIMPVIEW 배너">
+        </div>
+      </aside>
+
+    </div>
+  </div>
+  
+    <footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-left">
+      <span class="footer-title">KIMPVIEW</span>
+      <span class="footer-desc">Korea Premium Monitor</span>
+    </div>
+
+     <div class="footer-center">
+      본 사이트의 정보는 참고용이며, 투자 판단 및 손익에 대한 책임은 이용자 본인에게 있습니다.<br>
+    </div>
+
+      <div class="footer-right">
+        <span>© 2025 KIMPVIEW</span>
+        <span class="footer-divider">|</span>
+
+        <a href="privacy.html" class="footer-link">Privacy</a>
+        <span class="footer-divider">|</span>
+
+        <a href="terms.html" class="footer-link">Terms</a>
+        <span class="footer-divider">|</span>
+
+        <a href="about.html" class="footer-link">About</a>
+        <span class="footer-divider">|</span>
+
+        <a href="https://t.me/KIMPVIEW" target="_blank" class="footer-link">Telegram</a>
+        <span class="footer-divider">|</span>
+
+        <a href="mailto:kimpviewcs@gmail.com" class="footer-link">Contact</a>
+      </div>
+  </div>
+
+  
+</footer>
+  <script src="topmetrics.js?v=1" defer></script>
+  <script src="fx.js" defer></script>
+
+</body>
+</html>
