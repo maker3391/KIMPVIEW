@@ -42,27 +42,27 @@
     usdtKRW: 0,
     btcDom: 0,
 
-    // Inline chart 
+    // Inline chart
     _inlineChartSymbol: null,
     _inlineChartRowEl: null,
     _inlineChartContainerId: null,
-
+    _inlineChartCoin: null,
 
     // Binance ticker 캐
     _binance: { map: new Map(), ts: 0, ttlMs: 3000 },
     _binance24h: { map: new Map(), ts: 0, ttlMs: 3000 },
 
-    // ✅ Binance "TRADING USDT" 
-    _binanceActive: { set: new Set(), ts: 0, ttlMs: 60_000 }, 
+    // ✅ Binance "TRADING USDT"
+    _binanceActive: { set: new Set(), ts: 0, ttlMs: 60_000 },
   };
 
-  const prevPriceMap = new Map(); 
+  const prevPriceMap = new Map();
 
-  // ===== UPBIT markets 
+  // ===== UPBIT markets =====
   const UPBIT_MARKETS_LS = "kimpview:upbitMarketsKRW";
-  const UPBIT_MARKETS_TTL_MS = 6 * 60 * 60 * 1000; 
+  const UPBIT_MARKETS_TTL_MS = 6 * 60 * 60 * 1000;
 
-  let upbitMarketsCache = null; 
+  let upbitMarketsCache = null;
 
   function loadUpbitMarketsFromLS() {
     try {
@@ -225,9 +225,7 @@
     } catch {}
   }
 
-
   // BINANCE: ACTIVE TRADING USDT SYMBOLS
-
   async function fetchBinanceActiveUsdtBasesCached() {
     const now = Date.now();
     if (state._binanceActive.set.size > 0 && (now - state._binanceActive.ts) < state._binanceActive.ttlMs) {
@@ -259,17 +257,37 @@
     }
   }
 
+  // ===== Symbol helpers =====
+  const SYMBOL_ALIAS = new Map([
+    ["BTT", "BTTC"],
+  ]);
+
+  function toBinanceBase(sym) {
+    return SYMBOL_ALIAS.get(sym) || sym;
+  }
+
+  function normalizeBaseSym(sym) {
+    return String(sym || "")
+      .toUpperCase()
+      .trim()
+      .replace(/^KRW-/, "")
+      .replace(/^USDT-/, "")
+      .replace(/-USDT$/, "");
+  }
+
+  function pickTradingViewSymbol(coin) {
+    const base = normalizeBaseSym(coin?.symbol);
+    
+    if (coin?.hasBinance) return `BINANCE:${base}USDT`;
+
+    const ex = String(state.exchange || "").toLowerCase();
+    if (ex.includes("bithumb")) return `BITHUMB:${base}KRW`;
+
+    return `UPBIT:${base}KRW`;
+  }
+
   function applyDerivedFields(list, binanceMap, binanceVolMap) {
     const rate = Number(state.fxKRW || state.usdtKRW || 0);
-
-    const SYMBOL_ALIAS = new Map([
-      ["BTT", "BTTC"], 
-
-    ]);
-
-    function toBinanceBase(sym) {
-      return SYMBOL_ALIAS.get(sym) || sym;
-    }
 
     for (const c of list) {
       const sym = String(c.symbol || "")
@@ -319,7 +337,6 @@
       }
     }
   }
-
 
   async function loadCoinsAndRender(force = false) {
     syncTopMetricsCacheFromDOM();
@@ -737,8 +754,7 @@
     return out;
   }
 
-
-  // ✅ BINANCE (USDT) 
+  // ✅ BINANCE (USDT)
   async function fetchBinancePricesCached(activeSet) {
     const now = Date.now();
     if (state._binance.map.size > 0 && (now - state._binance.ts) < state._binance.ttlMs) {
@@ -831,8 +847,7 @@
   }
 
   // ===== RENDER =====
-  
-  const INLINE_CHART_HEIGHT = 420; 
+  const INLINE_CHART_HEIGHT = 320;
 
   function closeInlineChart() {
     if (state._inlineChartRowEl) {
@@ -840,11 +855,12 @@
     }
     state._inlineChartRowEl = null;
     state._inlineChartContainerId = null;
+    state._inlineChartCoin = null;
     state._inlineChartSymbol = null;
   }
 
   function toggleInlineChart(anchorTr, coin) {
-    const sym = String(coin?.symbol || "").toUpperCase().trim();
+    const sym = normalizeBaseSym(coin?.symbol);
     if (!sym) return;
 
     if (state._inlineChartSymbol === sym) {
@@ -862,7 +878,7 @@
     const td = document.createElement("td");
     td.colSpan = colspan;
 
-    const containerId = "tradingview_inline_chart";
+    const containerId = `tv_inline_${Date.now()}`;
 
     td.innerHTML = `
       <div class="rowChartWrap">
@@ -876,19 +892,12 @@
     state._inlineChartRowEl = chartRow;
     state._inlineChartContainerId = containerId;
     state._inlineChartSymbol = sym;
+    state._inlineChartCoin = coin;
 
-    // close button
-    const btn = chartRow.querySelector(".inlineChartClose");
-    btn?.addEventListener("click", (e) => {
-      e.stopPropagation();
-      closeInlineChart();
-    });
-
-    renderInlineChart(sym);
+    renderInlineChart();
   }
 
-  function renderInlineChart(symbol) {
-    const sym = String(symbol || "").toUpperCase().trim();
+  function renderInlineChart() {
     const containerId = state._inlineChartContainerId;
     if (!containerId) return;
 
@@ -898,12 +907,23 @@
     // reset
     box.innerHTML = "";
 
-    if (typeof TradingView === "undefined") return;
+    if (typeof TradingView === "undefined") {
+      box.innerHTML = `<div style="padding:12px;color:#94a3b8;">TradingView not loaded</div>`;
+      return;
+    }
+
+    const coin = state._inlineChartCoin;
+    if (!coin) {
+      box.innerHTML = `<div style="padding:12px;color:#94a3b8;">No coin selected</div>`;
+      return;
+    }
+
+    const tvSymbol = pickTradingViewSymbol(coin);
 
     new TradingView.widget({
       width: "100%",
-      height: 320,
-      symbol: `BINANCE:${sym}USDT`,
+      height: INLINE_CHART_HEIGHT,
+      symbol: tvSymbol,
       interval: "15",
       timezone: "Asia/Seoul",
       theme: "dark",
@@ -918,6 +938,7 @@
     });
   }
 
+  // ✅ 차트 열린 상태에서도 즐겨찾기 UI가 바로 반영되도록: updateRowsInPlace에 fav 갱신 추가
   function updateRowsInPlace(rows) {
     if (!rows || rows.length === 0) return;
 
@@ -926,18 +947,26 @@
       const tr = coinTableBody.querySelector(`tr[data-symbol="${CSS.escape(sym)}"]`);
       if (!tr) continue;
 
+      // favorites UI
+      const favBtn = tr.querySelector(".favBtn");
+      if (favBtn) {
+        const isFav = state.favorites.has(sym);
+        favBtn.classList.toggle("active", isFav);
+        favBtn.innerHTML = getStarSvg(isFav);
+      }
+
       // price
       const priceMain = tr.querySelector(".priceMain");
       const priceSub = tr.querySelector(".priceSub");
       if (priceMain) priceMain.textContent = formatKRW(c.priceKRW);
       if (priceSub) priceSub.textContent = formatKRW(c.binanceKRW);
 
-      
-      // price flash 
+      // price flash
       const priceStack = tr.querySelector(".priceStack");
       const curPrice = Number(c.priceKRW || 0);
-      const flashCls = getPriceDirection(sym, curPrice); 
+      const flashCls = getPriceDirection(sym, curPrice);
       if (priceStack && flashCls) flashPrice(priceStack, flashCls);
+
       // change
       const chgMain = tr.querySelector(".chgMain");
       const chgSub = tr.querySelector(".chgSub");
@@ -961,7 +990,7 @@
       const mcapSub = tr.querySelector(".mcapSub");
       if (mcapMain) mcapMain.textContent = formatMcapKRW(c.mcapKRW);
 
-      // USD cap uses caps map 
+      // USD cap uses caps map
       if (mcapSub) {
         const usdCap = state._coinCaps instanceof Map ? state._coinCaps.get(sym) : null;
         mcapSub.textContent = formatMcapUSD(usdCap);
@@ -979,7 +1008,7 @@
     }
   }
 
-function render() {
+  function render() {
     const rows = getFilteredSortedCoins();
 
     if (state._inlineChartSymbol) {
@@ -1001,10 +1030,6 @@ function render() {
               : "표시할 데이터가 없습니다."}
         </td>
       `;
-
-    // initial flash on re-render rows
-    const priceEl = tr.querySelector(".priceStack");
-    if (priceEl && dirClass) flashPrice(priceEl, dirClass);
       coinTableBody.appendChild(tr);
       syncSortUI();
       return;
@@ -1025,13 +1050,15 @@ function render() {
     if (currentPrice < prev) return "price-flash-down";
     return "";
   }
-function flashPrice(el, cls) {
-  if (!el) return;
-  el.classList.remove("price-flash-up", "price-flash-down");
-  void el.offsetWidth;               
-  el.classList.add(cls);
-  setTimeout(() => el.classList.remove(cls), 700);
-}
+
+  function flashPrice(el, cls) {
+    if (!el) return;
+    el.classList.remove("price-flash-up", "price-flash-down");
+    void el.offsetWidth;
+    el.classList.add(cls);
+    setTimeout(() => el.classList.remove(cls), 700);
+  }
+
   function renderRow(c) {
     const tr = document.createElement("tr");
     tr.dataset.symbol = c.symbol;
@@ -1099,7 +1126,7 @@ function flashPrice(el, cls) {
     tr.querySelector(".favBtn")?.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      e.stopImmediatePropagation(); // 핵심 consider
+      e.stopImmediatePropagation();
       toggleFavorite(c.symbol);
     });
 
@@ -1110,32 +1137,20 @@ function flashPrice(el, cls) {
         e.stopPropagation();
 
         if (e.ctrlKey || e.metaKey) {
-          const symUpper = sym.trim();
-          if (!symUpper) return;
-          let url;
-
-          if (c.hasBinance) {
-            url = `https://kr.tradingview.com/chart/?symbol=BINANCE:${symUpper}USDT`;
-          } else if (c.exchange === "upbit") {
-            url = `https://upbit.com/exchange?code=CRIX.UPBIT.KRW-${symUpper}`;
-          } else if (c.exchange === "bithumb") {
-            url = `https://www.bithumb.com/trade/order/${symUpper}_KRW`;
-          } else {
-            return;
-          }
-
-          window.open(url, "_blank", "noopener,noreferrer");
+          const tvSymbol = pickTradingViewSymbol(c);
+          const url = `https://kr.tradingview.com/chart/?symbol=${encodeURIComponent(tvSymbol)}`;
+          window.open(url, "_blank", "noopener");
           return;
         }
 
-        if (c.hasBinance) toggleInlineChart(tr, c);
+        toggleInlineChart(tr, c);
       });
     }
 
     tr.addEventListener("click", () => {
-      if (!c.hasBinance) return;
       toggleInlineChart(tr, c);
     });
+
     return tr;
   }
 
@@ -1273,38 +1288,35 @@ function flashPrice(el, cls) {
   }
 
   function toggleFavorite(symbol) {
-
-    if (state._inlineChartSymbol) closeInlineChart();
-
-    const sym = String(symbol || "").toUpperCase();
+    const sym = normalizeBaseSym(symbol);
     if (!sym) return;
 
     if (state.favorites.has(sym)) state.favorites.delete(sym);
     else state.favorites.add(sym);
 
     saveFavorites();
-    render(); 
+    render();
   }
 
   function renderKimpDiff(diff) {
     if (diff == null || Number.isNaN(Number(diff))) return "";
     const v = Number(diff);
-    
+
     if (!Number.isFinite(v) || v === 0) return "";
-    
+
     return `<span class="kimpSub smallkimpsub">${formatKRWDiff(v)}</span>`;
   }
 
   function formatKRWDiff(n) {
     const v = Number(n);
-    if (!Number.isFinite(v) || v === 0) return "0";
+    if (!Number.isFinite(v) || v === 0) return "";
 
     const sign = v > 0 ? "+" : "-";
     const abs = Math.abs(v);
 
     let s;
     if (abs < 1) {
-      s = abs.toFixed(6); 
+      s = abs.toFixed(6);
     } else if (abs < 100) {
       s = abs.toFixed(2);
     } else {
@@ -1317,26 +1329,24 @@ function flashPrice(el, cls) {
       const [i, d] = s.split(".");
       s = Number(i).toLocaleString("ko-KR") + "." + d;
     }
-    
+
     return sign + s;
   }
 
   function formatKRW(n) {
     const v = Number(n || 0);
-    if (!v) return "₩0";
+    if (!v) return "";
 
     let digits = 0;
-    
+
     if (v >= 100) {
       digits = 0;
-    } 
-
-    else if (v < 0.001) {
-      digits = 10; 
+    } else if (v < 0.001) {
+      digits = 10;
     } else if (v < 1) {
-      digits = 6;  
+      digits = 6;
     } else {
-      digits = 2;  
+      digits = 2;
     }
 
     return "₩" + v.toLocaleString("ko-KR", {
@@ -1358,14 +1368,14 @@ function flashPrice(el, cls) {
 
   function formatDeltaKRW(n) {
     const v = Number(n);
-    if (!Number.isFinite(v) || v === 0) return "0";
+    if (!Number.isFinite(v) || v === 0) return "";
 
     const absV = Math.abs(v);
     const sign = v > 0 ? "+" : "-";
 
     let digits = 0;
     if (absV < 0.0001) digits = 10;
-    else if (absV < 1) digits = 7; 
+    else if (absV < 1) digits = 7;
     else if (absV < 100) digits = 2;
     else digits = 0;
 
@@ -1397,7 +1407,7 @@ function flashPrice(el, cls) {
     }
 
     const tenMillion = Math.floor(v / TEN_M) * TEN_M;
-    if (tenMillion <= 0) return "0";
+    if (tenMillion <= 0) return "";
     return `${Math.floor(tenMillion / TEN_M).toLocaleString("ko-KR")}천만`;
   }
 
@@ -1408,8 +1418,8 @@ function flashPrice(el, cls) {
     const abs = Math.abs(v);
 
     if (abs >= 1e12) return `${(v / 1e12).toFixed(2)}조`;
-    if (abs >= 1e8)  return `${Math.floor(v / 1e8).toLocaleString("ko-KR")}억`;
-    if (abs >= 1e4)  return `${Math.floor(v / 1e4).toLocaleString("ko-KR")}만`;
+    if (abs >= 1e8) return `${Math.floor(v / 1e8).toLocaleString("ko-KR")}억`;
+    if (abs >= 1e4) return `${Math.floor(v / 1e4).toLocaleString("ko-KR")}만`;
     return `${Math.floor(v).toLocaleString("ko-KR")}원`;
   }
 
@@ -1418,8 +1428,8 @@ function flashPrice(el, cls) {
     if (!Number.isFinite(v) || v === 0) return "";
 
     if (v >= 1e12) return `$${(v / 1e12).toFixed(2)}T`;
-    if (v >= 1e9)  return `$${(v / 1e9).toFixed(2)}B`;
-    if (v >= 1e6)  return `$${(v / 1e6).toFixed(1)}M`;
+    if (v >= 1e9) return `$${(v / 1e9).toFixed(2)}B`;
+    if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
     return `$${Math.floor(v).toLocaleString("en-US")}`;
   }
 
