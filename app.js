@@ -1095,7 +1095,13 @@ function flashPrice(el, cls) {
         ${renderKimpDiff(c.kimpDiffKRW)}
       </td>
     `;
-    tr.querySelector(".favBtn")?.addEventListener("click", (e) => { e.stopPropagation(); toggleFavorite(c.symbol); });
+
+    tr.querySelector(".favBtn")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation(); // 핵심 consider
+      toggleFavorite(c.symbol);
+    });
 
     const chartIcon = tr.querySelector(".chartMini");
     if (chartIcon) {
@@ -1267,10 +1273,17 @@ function flashPrice(el, cls) {
   }
 
   function toggleFavorite(symbol) {
-    if (state.favorites.has(symbol)) state.favorites.delete(symbol);
-    else state.favorites.add(symbol);
+
+    if (state._inlineChartSymbol) closeInlineChart();
+
+    const sym = String(symbol || "").toUpperCase();
+    if (!sym) return;
+
+    if (state.favorites.has(sym)) state.favorites.delete(sym);
+    else state.favorites.add(sym);
+
     saveFavorites();
-    render();
+    render(); 
   }
 
   function renderKimpDiff(diff) {
