@@ -848,7 +848,7 @@
  @media (max-width: 1440px){
   
   .side{
-    zoom: 0.95;
+    zoom: 0.9;
     padding-top: 50px;   
     gap: 8px;          
   }
@@ -1191,7 +1191,6 @@
   .th-kimp .thLabel{
     font-size:12px;
   }
-  td.priceStack .priceMain { font-size: 12px; }
   
   td.changeStack .chgMain{
     font-size: 12px;
@@ -1254,12 +1253,8 @@
     padding: 6px 0px;
   }
 
-  td.priceStack .priceMain { font-size: 11px; }
-  td.priceStack .priceSub{
-    font-size:9px;
-    line-height:1.1;
-    letter-spacing:-0.25px;
-  }  
+  td.priceStack .priceMain { font-size: 11px !important; }
+  td.priceStack .priceSub  { font-size: 9px; }
 
 
   td.changeStack .chgMain{

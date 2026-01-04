@@ -58,6 +58,35 @@
 
   const prevPriceMap = new Map();
 
+  // ===== VISIBLE ROWS (screen-out update cut) =====
+  // 화면에 보이는 row만 주기 업데이트 대상에 포함 (IntersectionObserver)
+  const visibleSymbols = new Set();
+  state._ioReady = false;
+  const rowObserver = ("IntersectionObserver" in window)
+    ? new IntersectionObserver((entries) => {
+        for (const e of entries) {
+          const sym = e?.target?.dataset?.symbol;
+          if (!sym) continue;
+          if (e.isIntersecting) visibleSymbols.add(sym);
+          else visibleSymbols.delete(sym);
+        }
+        state._ioReady = true;
+      }, { root: null, threshold: 0.01 })
+    : null;
+
+  function observeRow(tr) {
+    if (!rowObserver || !tr) return;
+    rowObserver.observe(tr);
+  }
+
+  function resetRowObserver() {
+    if (!rowObserver) return;
+    rowObserver.disconnect();
+    visibleSymbols.clear();
+    state._ioReady = false;
+  }
+
+
   // ===== UPBIT markets =====
   const UPBIT_MARKETS_LS = "kimpview:upbitMarketsKRW";
   const UPBIT_MARKETS_TTL_MS = 6 * 60 * 60 * 1000;
@@ -944,6 +973,8 @@
 
     for (const c of rows) {
       const sym = String(c.symbol || "").toUpperCase();
+      // 화면 밖 row는 업데이트 컷 (처음 IO가 준비되기 전엔 fail-open)
+      if (state._ioReady && visibleSymbols.size > 0 && !visibleSymbols.has(sym)) continue;
       const tr = coinTableBody.querySelector(`tr[data-symbol="${CSS.escape(sym)}"]`);
       if (!tr) continue;
 
@@ -1017,6 +1048,7 @@
       return;
     }
 
+    resetRowObserver();
     coinTableBody.innerHTML = "";
 
     if (rows.length === 0) {
@@ -1062,6 +1094,7 @@
   function renderRow(c) {
     const tr = document.createElement("tr");
     tr.dataset.symbol = c.symbol;
+    observeRow(tr);
 
     const isFav = state.favorites.has(c.symbol);
     const starSvg = getStarSvg(isFav);
