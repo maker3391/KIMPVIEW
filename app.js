@@ -20,7 +20,7 @@
   // ===== STATE =====
   const LS_KEY = "kimpview:favorites";
 
-  // 김프 제외 코인(필요시 넣기)
+  // 김프 제외 코인
   const KIMP_EXCLUDE = new Set([]);
 
   const state = {
@@ -42,21 +42,27 @@
     usdtKRW: 0,
     btcDom: 0,
 
-    // Binance ticker 캐시
+    // Inline chart 
+    _inlineChartSymbol: null,
+    _inlineChartRowEl: null,
+    _inlineChartContainerId: null,
+
+
+    // Binance ticker 캐
     _binance: { map: new Map(), ts: 0, ttlMs: 3000 },
     _binance24h: { map: new Map(), ts: 0, ttlMs: 3000 },
 
-    // ✅ Binance "TRADING USDT" 심볼 활성 목록 캐시
-    _binanceActive: { set: new Set(), ts: 0, ttlMs: 60_000 }, // 60s
+    // ✅ Binance "TRADING USDT" 
+    _binanceActive: { set: new Set(), ts: 0, ttlMs: 60_000 }, 
   };
 
-  const prevPriceMap = new Map(); // symbol -> prev priceKRW
+  const prevPriceMap = new Map(); 
 
-  // ===== UPBIT markets 캐시 (핵심 안정화) =====
+  // ===== UPBIT markets 
   const UPBIT_MARKETS_LS = "kimpview:upbitMarketsKRW";
-  const UPBIT_MARKETS_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+  const UPBIT_MARKETS_TTL_MS = 6 * 60 * 60 * 1000; 
 
-  let upbitMarketsCache = null; // { ts, marketsJson }
+  let upbitMarketsCache = null; 
 
   function loadUpbitMarketsFromLS() {
     try {
@@ -77,7 +83,7 @@
     } catch {}
   }
 
-  // ===== SAFE FETCH (핵심) =====
+  // ===== SAFE FETCH =====
   function makeTimeoutSignal(ms) {
     if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") {
       return AbortSignal.timeout(ms);
@@ -219,9 +225,9 @@
     } catch {}
   }
 
-  // =========================
-  // ✅ BINANCE: ACTIVE TRADING USDT SYMBOLS
-  // =========================
+
+  // BINANCE: ACTIVE TRADING USDT SYMBOLS
+
   async function fetchBinanceActiveUsdtBasesCached() {
     const now = Date.now();
     if (state._binanceActive.set.size > 0 && (now - state._binanceActive.ts) < state._binanceActive.ttlMs) {
@@ -229,7 +235,6 @@
     }
 
     try {
-      // exchangeInfo는 용량이 커서 TTL을 크게 잡는 게 더 좋음(지금은 60s)
       const data = await safeFetchJson("https://api.binance.com/api/v3/exchangeInfo", {
         timeoutMs: 12000,
         label: "BINANCE exchangeInfo",
@@ -240,7 +245,6 @@
       const symbols = Array.isArray(data?.symbols) ? data.symbols : [];
 
       for (const s of symbols) {
-        // spot USDT, trading only
         if (s?.quoteAsset === "USDT" && s?.status === "TRADING" && typeof s?.baseAsset === "string") {
           set.add(s.baseAsset.toUpperCase());
         }
@@ -251,7 +255,6 @@
       return set;
     } catch (e) {
       console.warn("[KIMPVIEW] fetchBinanceActiveUsdtBasesCached failed:", e?.message || e);
-      // 실패 시 기존 set(있으면) 사용
       return state._binanceActive.set;
     }
   }
@@ -328,7 +331,6 @@
     try {
       if (!force) restoreTableFromCache(state.exchange);
 
-      // ✅ active set 먼저(여기서 TRADING-only로 걸러짐)
       const activeSet = await fetchBinanceActiveUsdtBasesCached();
 
       const [binanceMap, binanceVolMap] = await Promise.all([
@@ -735,9 +737,8 @@
     return out;
   }
 
-  // =========================
-  // ✅ BINANCE (USDT) - TRADING ONLY
-  // =========================
+
+  // ✅ BINANCE (USDT) 
   async function fetchBinancePricesCached(activeSet) {
     const now = Date.now();
     if (state._binance.map.size > 0 && (now - state._binance.ts) < state._binance.ttlMs) {
@@ -762,7 +763,6 @@
 
           const base = sym.slice(0, -4).toUpperCase();
 
-          // ✅ 핵심: TRADING set에 없는 base는 제거
           if (activeSet && activeSet.size > 0 && !activeSet.has(base)) continue;
 
           map.set(base, Number(item.price || 0));
@@ -803,7 +803,6 @@
 
           const base = sym.slice(0, -4).toUpperCase();
 
-          // ✅ 핵심: TRADING set에 없는 base는 제거
           if (activeSet && activeSet.size > 0 && !activeSet.has(base)) continue;
 
           map.set(base, Number(item?.quoteVolume || 0));
@@ -832,8 +831,163 @@
   }
 
   // ===== RENDER =====
-  function render() {
+  
+  const INLINE_CHART_HEIGHT = 420; 
+
+  function closeInlineChart() {
+    if (state._inlineChartRowEl) {
+      state._inlineChartRowEl.remove();
+    }
+    state._inlineChartRowEl = null;
+    state._inlineChartContainerId = null;
+    state._inlineChartSymbol = null;
+  }
+
+  function toggleInlineChart(anchorTr, coin) {
+    const sym = String(coin?.symbol || "").toUpperCase().trim();
+    if (!sym) return;
+
+    if (state._inlineChartSymbol === sym) {
+      closeInlineChart();
+      return;
+    }
+
+    closeInlineChart();
+
+    const colspan = anchorTr?.children?.length || 6;
+
+    const chartRow = document.createElement("tr");
+    chartRow.className = "inlineChartRow";
+
+    const td = document.createElement("td");
+    td.colSpan = colspan;
+
+    const containerId = "tradingview_inline_chart";
+
+    td.innerHTML = `
+      <div class="rowChartWrap">
+        <div id="${containerId}" style="width:100%; height:100%;"></div>
+      </div>
+    `;
+
+    chartRow.appendChild(td);
+    anchorTr.after(chartRow);
+
+    state._inlineChartRowEl = chartRow;
+    state._inlineChartContainerId = containerId;
+    state._inlineChartSymbol = sym;
+
+    // close button
+    const btn = chartRow.querySelector(".inlineChartClose");
+    btn?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeInlineChart();
+    });
+
+    renderInlineChart(sym);
+  }
+
+  function renderInlineChart(symbol) {
+    const sym = String(symbol || "").toUpperCase().trim();
+    const containerId = state._inlineChartContainerId;
+    if (!containerId) return;
+
+    const box = document.getElementById(containerId);
+    if (!box) return;
+
+    // reset
+    box.innerHTML = "";
+
+    if (typeof TradingView === "undefined") return;
+
+    new TradingView.widget({
+      width: "100%",
+      height: INLINE_CHART_HEIGHT,
+      symbol: `BINANCE:${sym}USDT`,
+      interval: "15",
+      timezone: "Asia/Seoul",
+      theme: "dark",
+      style: "1",
+      locale: "kr",
+      enable_publishing: false,
+      allow_symbol_change: true,
+      container_id: containerId,
+      hide_top_toolbar: false,
+      hide_side_toolbar: false,
+      save_image: false,
+    });
+  }
+
+  function updateRowsInPlace(rows) {
+    if (!rows || rows.length === 0) return;
+
+    for (const c of rows) {
+      const sym = String(c.symbol || "").toUpperCase();
+      const tr = coinTableBody.querySelector(`tr[data-symbol="${CSS.escape(sym)}"]`);
+      if (!tr) continue;
+
+      // price
+      const priceMain = tr.querySelector(".priceMain");
+      const priceSub = tr.querySelector(".priceSub");
+      if (priceMain) priceMain.textContent = formatKRW(c.priceKRW);
+      if (priceSub) priceSub.textContent = formatKRW(c.binanceKRW);
+
+      
+      // price flash 
+      const priceStack = tr.querySelector(".priceStack");
+      const curPrice = Number(c.priceKRW || 0);
+      const flashCls = getPriceDirection(sym, curPrice); 
+      if (priceStack && flashCls) flashPrice(priceStack, flashCls);
+      // change
+      const chgMain = tr.querySelector(".chgMain");
+      const chgSub = tr.querySelector(".chgSub");
+      if (chgMain) {
+        const _chg = Number(c.change24h);
+        const chgClass = (Number.isFinite(_chg) && Math.abs(_chg) < 0.005) ? "zero" : (_chg > 0 ? "plus" : "minus");
+        chgMain.classList.remove("plus", "minus", "zero");
+        chgMain.classList.add(chgClass);
+        chgMain.textContent = formatPct(c.change24h);
+      }
+      if (chgSub) chgSub.textContent = formatDeltaKRW(c.change24hKRW);
+
+      // volume
+      const volMain = tr.querySelector(".volMain");
+      const volSub = tr.querySelector(".volSub");
+      if (volMain) volMain.textContent = formatKRWCompact(c.volKRW);
+      if (volSub) volSub.textContent = formatKRWCompact(c.binanceVolKRW);
+
+      // mcap
+      const mcapMain = tr.querySelector(".mcapMain");
+      const mcapSub = tr.querySelector(".mcapSub");
+      if (mcapMain) mcapMain.textContent = formatMcapKRW(c.mcapKRW);
+
+      // USD cap uses caps map 
+      if (mcapSub) {
+        const usdCap = state._coinCaps instanceof Map ? state._coinCaps.get(sym) : null;
+        mcapSub.textContent = formatMcapUSD(usdCap);
+      }
+
+      // kimp
+      const kimpTd = tr.querySelector(".td-kimp");
+      if (kimpTd) {
+        const k = c.kimp;
+        const cls = (k == null || Number(k) >= 0) ? "plus" : "minus";
+        kimpTd.classList.remove("plus", "minus");
+        kimpTd.classList.add(cls);
+        kimpTd.innerHTML = `${escapeHtml(formatPct(k))}${renderKimpDiff(c.kimpDiffKRW)}`;
+      }
+    }
+  }
+
+function render() {
     const rows = getFilteredSortedCoins();
+
+    if (state._inlineChartSymbol) {
+      updateRowsInPlace(rows);
+      syncSortUI();
+      return;
+    }
+
     coinTableBody.innerHTML = "";
 
     if (rows.length === 0) {
@@ -847,6 +1001,10 @@
               : "표시할 데이터가 없습니다."}
         </td>
       `;
+
+    // initial flash on re-render rows
+    const priceEl = tr.querySelector(".priceStack");
+    if (priceEl && dirClass) flashPrice(priceEl, dirClass);
       coinTableBody.appendChild(tr);
       syncSortUI();
       return;
@@ -859,14 +1017,21 @@
   }
 
   function getPriceDirection(symbol, currentPrice) {
-    const prev = prevPriceMap.get(symbol);
-    prevPriceMap.set(symbol, currentPrice);
+    const key = String(symbol || "").toUpperCase();
+    const prev = prevPriceMap.get(key);
+    prevPriceMap.set(key, currentPrice);
     if (prev == null) return "";
     if (currentPrice > prev) return "price-flash-up";
     if (currentPrice < prev) return "price-flash-down";
     return "";
   }
-
+function flashPrice(el, cls) {
+  if (!el) return;
+  el.classList.remove("price-flash-up", "price-flash-down");
+  void el.offsetWidth;               
+  el.classList.add(cls);
+  setTimeout(() => el.classList.remove(cls), 700);
+}
   function renderRow(c) {
     const tr = document.createElement("tr");
     tr.dataset.symbol = c.symbol;
@@ -930,35 +1095,41 @@
         ${renderKimpDiff(c.kimpDiffKRW)}
       </td>
     `;
-
-    const el = tr.querySelector(".priceStack");
-    if (el && dirClass) setTimeout(() => el.classList.remove("price-flash-up", "price-flash-down"), 800);
-
-    tr.querySelector(".favBtn")?.addEventListener("click", () => toggleFavorite(c.symbol));
+    tr.querySelector(".favBtn")?.addEventListener("click", (e) => { e.stopPropagation(); toggleFavorite(c.symbol); });
 
     const chartIcon = tr.querySelector(".chartMini");
     if (chartIcon) {
       chartIcon.title = "차트 보기";
       chartIcon.addEventListener("click", (e) => {
         e.stopPropagation();
-        const symUpper = sym.trim();
-        if (!symUpper) return;
-        let url;
 
-        if (c.hasBinance) {
-          url = `https://kr.tradingview.com/chart/?symbol=BINANCE:${symUpper}USDT`;
-        } else if (c.exchange === "upbit") {
-          url = `https://upbit.com/exchange?code=CRIX.UPBIT.KRW-${symUpper}`;
-        } else if (c.exchange === "bithumb") {
-          url = `https://www.bithumb.com/trade/order/${symUpper}_KRW`;
-        } else {
+        if (e.ctrlKey || e.metaKey) {
+          const symUpper = sym.trim();
+          if (!symUpper) return;
+          let url;
+
+          if (c.hasBinance) {
+            url = `https://kr.tradingview.com/chart/?symbol=BINANCE:${symUpper}USDT`;
+          } else if (c.exchange === "upbit") {
+            url = `https://upbit.com/exchange?code=CRIX.UPBIT.KRW-${symUpper}`;
+          } else if (c.exchange === "bithumb") {
+            url = `https://www.bithumb.com/trade/order/${symUpper}_KRW`;
+          } else {
+            return;
+          }
+
+          window.open(url, "_blank", "noopener,noreferrer");
           return;
         }
 
-        window.open(url, "_blank", "noopener,noreferrer");
+        if (c.hasBinance) toggleInlineChart(tr, c);
       });
     }
 
+    tr.addEventListener("click", () => {
+      if (!c.hasBinance) return;
+      toggleInlineChart(tr, c);
+    });
     return tr;
   }
 
@@ -1025,12 +1196,14 @@
   // ===== EVENTS =====
   function bindEvents() {
     exchangeSelect?.addEventListener("change", () => {
+      closeInlineChart();
       state.exchange = exchangeSelect.value;
       loadCoinsAndRender(false);
     });
 
     searchInput?.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
+        closeInlineChart();
         state.query = searchInput.value;
         toggleClearBtn();
         render();
@@ -1038,12 +1211,14 @@
     });
 
     applyBtn?.addEventListener("click", () => {
+      closeInlineChart();
       state.query = searchInput?.value || "";
       toggleClearBtn();
       render();
     });
 
     clearSearchBtn?.addEventListener("click", () => {
+      closeInlineChart();
       state.query = "";
       if (searchInput) searchInput.value = "";
       toggleClearBtn();
@@ -1051,6 +1226,7 @@
     });
 
     favoriteOnlyInline?.addEventListener("change", () => {
+      closeInlineChart();
       state.favOnly = favoriteOnlyInline.checked;
       render();
     });
@@ -1058,6 +1234,7 @@
     sortableThs.forEach(th => {
       th.style.cursor = "pointer";
       th.addEventListener("click", () => {
+        closeInlineChart();
         const key = th.dataset.sort;
         if (!key) return;
 
@@ -1264,7 +1441,7 @@
     clearSearchBtn.style.display = state.query.trim() !== "" ? "inline-block" : "none";
   }
 
-  // ===== TOP METRICS (UNIFIED) =====
+  // ===== TOP METRICS =====
   function parseNumberFromText(text) {
     const s = String(text ?? "").replace(/[^\d.]/g, "");
     if (!s) return 0;

@@ -341,31 +341,29 @@
     setTimeout(() => ensureTvReadyThen(cb, retry + 1), 100);
   }
 
-// --- Performance: defer heavy TradingView mounts until after first paint/idle ---
-function deferMount(cb) {
-  if ("requestIdleCallback" in window) {
-    requestIdleCallback(cb, { timeout: 1200 });
-  } else {
-    setTimeout(cb, 0);
+  function deferMount(cb) {
+    if ("requestIdleCallback" in window) {
+      requestIdleCallback(cb, { timeout: 1200 });
+    } else {
+      setTimeout(cb, 0);
+    }
   }
-}
 
-function mountTopChartDeferred() {
-  const doMount = () => ensureTvReadyThen(() => {
-    mountTvInto("tradingview_main_chart", "FOREXCOM:NAS100");
-  });
-
-  // Ensure UI first paint, then mount chart in idle time
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      if ("requestIdleCallback" in window) {
-        requestIdleCallback(doMount, { timeout: 1500 });
-      } else {
-        setTimeout(doMount, 350);
-      }
+  function mountTopChartDeferred() {
+    const doMount = () => ensureTvReadyThen(() => {
+      mountTvInto("tradingview_main_chart", "FOREXCOM:NAS100");
     });
-  });
-}
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if ("requestIdleCallback" in window) {
+          requestIdleCallback(doMount, { timeout: 1500 });
+        } else {
+          setTimeout(doMount, 350);
+        }
+      });
+    });
+  }
 
 
   function toTvSymbol(symbol) {
@@ -826,7 +824,6 @@ function mountTopChartDeferred() {
       if (cached.updatedAtText) setUpdatedAt(cached.updatedAtText);
     }
 
-    // Defer first network refresh so cached/UI render wins the race
     if ("requestIdleCallback" in window) requestIdleCallback(() => refresh(true), { timeout: 1500 });
     else setTimeout(() => refresh(true), 200);
     setInterval(() => refresh(false), 60000);

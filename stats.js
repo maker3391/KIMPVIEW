@@ -10,13 +10,10 @@
 
   const $ = (id) => document.getElementById(id);
 
-  // =========================
-  // CACHE (SWR)
-  // =========================
   const LS_KEY = "KIMPVIEW_STATS_LS_V1";
   const MACRO_KEY = "KIMPVIEW_STATS_MACRO_V1";
-  const LS_TTL = 30 * 1000;      // 30s
-  const MACRO_TTL = 60 * 1000;   // 60s
+  const LS_TTL = 30 * 1000;      
+  const MACRO_TTL = 60 * 1000;   
 
   function readCache(key, ttlMs) {
     try {
@@ -37,9 +34,6 @@
     } catch {}
   }
 
-  // =========================
-  // UI helpers
-  // =========================
   function setText(id, text) {
     const el = $(id);
     if (el) el.textContent = text;
@@ -94,9 +88,6 @@
     el.textContent = `${Math.abs(delta).toFixed(deltaDigits)} (${sign}${Math.abs(pct).toFixed(pctDigits)}%)`;
   }
 
-  // =========================
-  // Render from cached payloads
-  // =========================
   function renderLSFromPayload(p) {
     if (!p) return;
 
@@ -129,7 +120,7 @@
     };
 
     const rows = p.rows || {};
-    // values
+
     for (const k of Object.keys(rows)) {
       const r = rows[k];
       if (!r) continue;
@@ -144,7 +135,6 @@
       }
     }
 
-    // tags
     if (p.tags) {
       if (p.tags.nasdaq) setTag("nasdaqTag", p.tags.nasdaq.text, p.tags.nasdaq.cls);
       if (p.tags.spx) setTag("spxTag", p.tags.spx.text, p.tags.spx.cls);
@@ -153,9 +143,6 @@
     }
   }
 
-  // =========================
-  // Fetch & Update
-  // =========================
   async function updateLongShortOnce() {
     try {
       const fetchLS = async (symbol) => {
@@ -185,7 +172,6 @@
       setText("lsSource", `Binance Global Ratio (${CFG.PERIOD})`);
       setText("lsAsOf", tsToKstString(Date.now()));
 
-      // cache snapshot
       writeCache(LS_KEY, {
         btc: btc ? { longPct: btc.longAccount * 100, shortPct: btc.shortAccount * 100 } : null,
         eth: eth ? { longPct: eth.longAccount * 100, shortPct: eth.shortAccount * 100 } : null,

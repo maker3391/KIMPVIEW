@@ -282,14 +282,13 @@
   }
 
   .rowChartWrap{
-    height: 300px;
+    height: 420px;      
+    min-height: 420px;
     border: 1px solid #e5e7eb;
     border-radius: 14px;
     overflow: hidden;
   }
-  @media (max-width: 520px){
-    .rowChartWrap{ height: 260px; }
-  }  
+
   /* ===== CONTROLS BAR ===== */
   .controlsBar{
     display:flex;
@@ -508,7 +507,7 @@
     font-weight:500;
   }
 
-  /* kimp sub (국내-바이낸스 차이) */
+  /* kimp sub */
   .kimpSub{
     display:block;
     font-size:12px;
@@ -526,7 +525,7 @@
     color: inherit;
     font-weight: inherit;
   }
-  /* ===== SORT ARROWS (2개 유지) ===== */
+  /* ===== SORT ARROWS ===== */
   th.sortable::before,
   th.sortable::after{ content:none !important; display:none !important; }
 
@@ -652,7 +651,7 @@
     font-weight:500;
   }
 
-  /* ===== ALERT ROW COLOR (FULL CELL) ===== */
+  /* ===== ALERT ROW COLOR ===== */
   table.card.alertTable tr.buy td {
     background: #dc2626 !important;
     color: #ffffff !important;
@@ -698,11 +697,11 @@
   }
   #clearSearchBtn:hover{ background:#f3f4f6; }
 
-  /* ===== PRICE STACK (현재가: 업비트 위 / 바이낸스 환산 아래) ===== */
+  /* ===== PRICE STACK ===== */
   .priceStack .priceMain{ font-weight:500; font-size:14px; }
   .priceStack .priceSub{ display:block; font-size:12px; opacity:.65; margin-top:2px; font-weight:500; }
 
-  /* ===== PRICE FLASH (현재가 변동 배경) ===== */
+  /* ===== PRICE FLASH ===== */
   .price-flash-up{ background: rgba(220, 38, 38, 0.12); }
   .price-flash-down{ background: rgba(37, 99, 235, 0.12); }
   .price-flash-up, .price-flash-down{ transition: background-color .25s ease; }
@@ -714,7 +713,7 @@
 
   #fearGreed{ white-space:nowrap; }
 
-  /* ===== 24H STACK (퍼센트 위 / 절대값 아래) ===== */
+  /* ===== 24H STACK  ===== */
   .changeStack .chgMain{
     font-weight:500;
     font-size:14px;
@@ -730,7 +729,7 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* ===== VOL STACK (업비트 거래대금 위 / 바이낸스 환산 아래) ===== */
+  /* ===== VOL STACK ===== */
   .volStack .volMain{
     font-weight:500;
     font-size:14px;
@@ -778,8 +777,7 @@
   }  
 
   /* =========================================================
-    COLLAPSE TOGGLE (거래/청산 알림 접기/펼치기)
-    - index.html은 alertHead/alertBody 구조이므로 여기 기준으로 통일
+    COLLAPSE TOGGLE 
   ========================================================= */
   .alertHead{
     display:flex;
@@ -790,7 +788,7 @@
   }
   .alertHead h3{ margin:0; }
 
-  /* 접기 버튼 (단일 정의: 중복 제거) */
+  /* 접기 버튼 */
   .collapseBtn{
     width:36px;
     height:36px;
@@ -843,7 +841,7 @@
   .subUSD {
     margin-top: 0 !important;
   }
-  
+    
   /* =========================================================
       MOBILE
   ========================================================= */
@@ -1330,7 +1328,7 @@
     align-self:flex-start;
   }
   body.subPages{
-    background: var(--bg);   /* #f7f8fa */
+    background: var(--bg);   
   }  
   
   
@@ -2155,7 +2153,7 @@
   .mono { font-variant-numeric: tabular-nums; }
 
   /* =========================
-    CHANGE ARROW (최종 추가)
+    CHANGE ARROW 
     ========================= */
 
   .statsChange.pos::before,
@@ -2443,7 +2441,7 @@
   ========================================================= */
 
   /* =========================
-    TOP BAR (TABS ONLY)
+    TOP BAR 
   ========================= */
   .newsTopBar{
     display:flex;
@@ -2488,7 +2486,7 @@
     LIST WRAP
   ========================= */
   .newsListWrap{
-    position: relative; /* 기준점 */
+    position: relative; 
   }
 
   #newsLoading{
@@ -2546,7 +2544,6 @@
     outline:none;
   }
 
-  /* ✅ 썸네일 + 본문 가로 정렬 */
   .newsMainRow{
     display:flex;
     align-items:flex-start;
@@ -2567,14 +2564,13 @@
     border:1px solid #e5e7eb;
   }
 
-.newsThumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  /* 사진의 위쪽을 우선적으로 보여주게 설정 (인물/로고 위주) */
-  object-position: top; 
-  display: block;
-}
+  .newsThumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top; 
+    display: block;
+  }
 
   /* =========================
     CONTENT
@@ -2607,7 +2603,6 @@
     white-space:nowrap;
   }
 
-  /* ✅ 기본 2줄만 보이기 */
   .newsSummary{
     margin-top:6px;
     font-size:13px;
@@ -2619,22 +2614,21 @@
     transition: max-height .2s ease;
   }
 
-  /* ✅ 펼치면 같은 칸이 커지면서 더 보이게 (7줄) */
   .newsCard.open .newsSummary{
      margin-top:6px;
     max-height: calc(1.45em * 7);
   }
 
   /* =========================
-    READ MORE (LINK BUTTON)
+    READ MORE
   ========================= */
   .newsFooter{
     margin-top:10px;
-    display:none; /* ✅ 기본 숨김 */
+    display:none; 
   }
 
   .newsCard.open .newsFooter{
-    display:block; /* ✅ 펼칠 때만 등장 */
+    display:block; 
   }
 
   .newsReadMore{
