@@ -412,10 +412,19 @@
     }
   }
 
+  function getVisibleColCount(tr) {
+    const tds = Array.from(tr.children);
+    const visible = tds.filter(td => {
+      const cs = getComputedStyle(td);
+      return cs.display !== "none" && cs.visibility !== "collapse";
+    });
+    return Math.max(1, visible.length);
+  }
+
   function insertRowChart(afterTr, tvSymbol) {
     removeRowChart();
 
-    const colCount = afterTr.children.length;
+    const colCount = getVisibleColCount(afterTr); // ✅ 모바일에서 3으로 잡힘
     const chartTr = document.createElement("tr");
     chartTr.className = "chartRow";
 
@@ -431,14 +440,12 @@
     afterTr.insertAdjacentElement("afterend", chartTr);
     openedChart = { symbol: tvSymbol, tr: chartTr };
 
-    // show placeholder quickly (better UX) then mount chart when browser is idle
     const host = document.getElementById(hostId);
     if (host) host.innerHTML = `<div style="padding:14px;color:#9ca3af;">Loading chart...</div>`;
 
     deferMount(() => {
       ensureTvReadyThen(() => mountTvInto(hostId, tvSymbol));
     });
-
   }
 
   const domRef = new Map();
