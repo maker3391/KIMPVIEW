@@ -31,7 +31,6 @@
 
 <body class="subPages">
 
-  <!-- ===== TOP METRICS ===== -->
   <div class="topMetrics">
     <div class="topMetricsInner">
       <span class="metric">
@@ -53,7 +52,6 @@
 
   <div class="wrap">
 
-    <!-- ===== HEADER ===== -->
     <header class="topbar">
       <div class="headerLeft">
         <div class="logo">
@@ -72,15 +70,12 @@
 
     <div class="layout">
 
-      <!-- ===== MAIN ===== -->
       <main class="main">
         <h1 class="visually-hidden">환율 계산기: 미드마켓 환율 기준 통화 변환</h1>  
-        <!-- 메인 배너 -->
         <a href="#" class="mainBanner" aria-label="메인 배너">
           <img src="images/main_banner.png" alt="메인 프로모션 배너">
         </a>
 
-         <!-- ===== FX CALCULATOR ===== -->
         <section class="card fxCard">
           <div class="fxHead">
             <div class="fxHeadBox">
@@ -102,7 +97,6 @@
 
           <div class="fxPanel">
 
-            <!-- FROM -->
             <div class="fxField">
 
               <div class="fxInputWrap">
@@ -117,7 +111,6 @@
                   aria-label="변환할 금액"
                 >
 
-                <!-- 통화 선택 버튼 -->
                 <button type="button" class="fxCurrencyBtn" id="fxFromBtn" aria-haspopup="dialog" aria-controls="fxFromDrop">
                   <span class="fxFlag" id="fxFromFlag">🇺🇸</span>
                   <span class="fxCode" id="fxFromCode">USD</span>
@@ -126,14 +119,12 @@
               </div>
             </div>
 
-            <!-- SWAP -->
             <div class="fxSwapRow">
               <button type="button" class="fxSwapBtn" id="fxSwapBtn" aria-label="통화 바꾸기">
                 ↕
               </button>
             </div>
 
-            <!-- TO -->
             <div class="fxField">
 
               <div class="fxInputWrap">
@@ -149,7 +140,7 @@
                   readonly
                 >
 
-                <!-- 통화 선택 버튼 -->
+
                 <button type="button" class="fxCurrencyBtn" id="fxToBtn" aria-haspopup="dialog" aria-controls="fxToDrop">
                   <span class="fxFlag" id="fxToFlag">🇰🇷</span>
                   <span class="fxCode" id="fxToCode">KRW</span>
@@ -158,7 +149,6 @@
               </div>
             </div>
 
-            <!-- Helper box -->
             <div class="fxHelper" id="fxHelper">
               <div class="fxHelperTitle">안내</div>
               <div class="fxHelperText">
@@ -186,7 +176,6 @@
 
           </div>
 
-          <!-- ===== Currency Dropdown (FROM) ===== -->
           <div class="fxDrop fxHidden" id="fxFromDrop" role="dialog" aria-label="기준 통화 선택">
             <div class="fxDropHead">
               <input
@@ -199,11 +188,9 @@
               <button type="button" class="fxClose" data-fx-close="fxFromDrop" aria-label="닫기">✕</button>
             </div>
             <div class="fxDropList" id="fxFromList" role="listbox" aria-label="기준 통화 목록">
-              <!-- JS로 목록 렌더링 -->
             </div>
           </div>
 
-          <!-- ===== Currency Dropdown (TO) ===== -->
           <div class="fxDrop fxHidden" id="fxToDrop" role="dialog" aria-label="대상 통화 선택">
             <div class="fxDropHead">
               <input
@@ -216,17 +203,14 @@
               <button type="button" class="fxClose" data-fx-close="fxToDrop" aria-label="닫기">✕</button>
             </div>
             <div class="fxDropList" id="fxToList" role="listbox" aria-label="대상 통화 목록">
-              <!-- JS로 목록 렌더링 -->
             </div>
           </div>
 
-          <!-- backdrop -->
           <div class="fxBackdrop fxHidden" id="fxBackdrop" aria-hidden="true"></div>
         </section>
 
       </main>
 
-      <!-- ===== SIDE ===== -->
       <aside class="side">
         <div class="banner bannerTall">
           <img src="images/indevelopmentright.png" alt="KIMPVIEW 배너">
@@ -235,6 +219,14 @@
 
     </div>
   </div>
+
+  <section class="visually-hidden">
+    <h2>환율 계산기 안내</h2>
+    <p>
+      본 페이지는 환율을 기반으로 금액을 변환하거나 대략적인 환산 값을 계산할 수 있도록 돕는 계산기입니다.
+      표기된 환율 및 계산 결과는 참고용이며, 실제 거래 적용 시에는 해당 기관의 고시 환율을 확인해야 합니다.
+    </p>
+  </section>
   
     <footer class="footer">
   <div class="footer-inner">
@@ -262,8 +254,15 @@
 
         <a href="https://t.me/KIMPVIEW" target="_blank" class="footer-link">Telegram</a>
         <span class="footer-divider">|</span>
+        <a
+          href="https://mail.google.com/mail/?view=cm&to=kimpviewcs@gmail.com"
+          target="_blank"
+          rel="noopener"
+          class="footer-link"
+        >
+          Contact
+        </a>
 
-        <a href="mailto:kimpviewcs@gmail.com" class="footer-link">Contact</a>
       </div>
   </div>
 

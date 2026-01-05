@@ -424,7 +424,7 @@
   function insertRowChart(afterTr, tvSymbol) {
     removeRowChart();
 
-    const colCount = getVisibleColCount(afterTr); // ✅ 모바일에서 3으로 잡힘
+    const colCount = getVisibleColCount(afterTr); 
     const chartTr = document.createElement("tr");
     chartTr.className = "chartRow";
 
