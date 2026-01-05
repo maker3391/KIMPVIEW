@@ -1534,20 +1534,28 @@
     letter-spacing: -0.2px;
   }
 
-  .fxInfo {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 999px;
-    border: 1px solid #e5e7eb;
-    background: #fff;
-    color: #6b7280;
-    font-size: 12px;
-    cursor: default;
+  .fx-info-box { font-size: 13px; color: #666; line-height: 1.6; }
+  .fx-info-box h3 { 
+    font-size: 15px; 
+    color: #333; margin-bottom: 
+    8px; border-left: 3px solid #2ecc71; 
+    padding-left: 10px; }
+  .fx-info-box ul { list-style: none; 
+    padding-left: 0; 
+    margin-bottom: 15px; 
   }
-
+  .fx-info-box li { margin-bottom: 5px; }
+  .fx-info-box .formula { 
+    background: #f8f9fa; 
+    padding: 5px 10px; border-radius: 4px; 
+    font-family: monospace; 
+    color: #e67e22; 
+  }
+  .fx-info-box .highlight { 
+    color: #2ecc71; 
+    font-weight: bold; 
+  }
+  
   .fxRateLine {
     display: flex;
     justify-content: center;

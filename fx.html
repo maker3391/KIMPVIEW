@@ -158,7 +158,33 @@
             <div class="fxHelper" id="fxHelper">
               <div class="fxHelperTitle">안내</div>
               <div class="fxHelperText">
-                환율 데이터는 외부 공개 API 기반이며, 지연·오류가 발생할 수 있습니다.
+                <style>
+                  .fx-info-box { font-size: 13px; color: #666; line-height: 1.6; }
+                  .fx-info-box h3 { font-size: 15px; color: #333; margin-bottom: 8px; border-left: 3px solid #2ecc71; padding-left: 10px; }
+                  .fx-info-box ul { list-style: none; padding-left: 0; margin-bottom: 15px; }
+                  .fx-info-box li { margin-bottom: 5px; }
+                  .fx-info-box .formula { background: #f8f9fa; padding: 5px 10px; border-radius: 4px; font-family: monospace; color: #e67e22; }
+                  .fx-info-box .highlight { color: #2ecc71; font-weight: bold; }
+                </style>
+
+                <div class="fx-info-box">
+                  <h3>💡 미드마켓 환율(Mid-market Rate) 가이드</h3>
+                  <p>미드마켓 환율은 전 세계 금융 시장에서 통화가 거래되는 <span class="highlight">실제 시장 가격</span>을 의미합니다. 
+                  <br>금융 기관들이 외화를 사고팔 때 제시하는 매수 호가(Bid)와 매도 호가(Ask)의 정중앙 지점을 계산한 수치입니다.</p>
+                  
+                  <ul>
+                    <li><strong>계산 방법:</strong> <span class="formula">(매수 호가 + 매도 호가) ÷ 2</span></li>
+                    <li><strong>특징:</strong> 은행의 운영 수익이나 환전 수수료가 포함되지 않은 순수한 통화 가치입니다.</li>
+                  </ul>
+
+                  <h3>✅ 왜 미드마켓 환율을 확인해야 하나요?</h3>
+                  <ul>
+                    <li><strong>공정한 기준:</strong> 일반 은행 환율에 포함된 숨겨진 수수료(Spread)를 파악할 수 있는 투명한 벤치마크가 됩니다.</li>
+                    <li><strong>정확한 가치 측정:</strong> 글로벌 투자자와 비즈니스에서 자산의 실제 가치를 평가할 때 표준으로 사용됩니다.</li>
+                  </ul>
+
+                  <p><small>* 본 계산기는 실시간 미드마켓 데이터를 기반으로 하며, 실제 환전 시 적용되는 환율과는 차이가 있을 수 있습니다.</small></p>
+                </div>
               </div>
             </div>
 
