@@ -1034,7 +1034,7 @@
     MOBILE (520px 이하)
   ========================================================= */
   @media (max-width: 520px){
-    .logo{ font-size:18px; }
+    .logo{ font-size:20px; }
     .logoImg{
       height:34px;
     }    
@@ -1155,7 +1155,7 @@
     .logoImg{
       height:27px;
     }
-    .topnav a { font-size: 11px; }
+    .topnav a { font-size: 13px; }
     .table thead th,
     .table td{ font-size:11px; }
     
@@ -1200,10 +1200,10 @@
     opacity: .65;   
   }
   
-  .logo { font-size: 15px; }
+  .logo { font-size: 20px; }
 
   .topnav a {
-    font-size: 12px;
+    font-size: 13px;
     padding: 6px 0px;
   }
 
