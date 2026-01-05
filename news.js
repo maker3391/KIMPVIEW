@@ -72,7 +72,7 @@
                 ${esc(item.summary)}
               </div>
               <div class="newsFooter" style="display:none; margin-top:10px;">
-                <a class="newsReadMore" href="${esc(item.url)}" target="_blank" style="font-size:12px; color:#000; text-decoration:none; border:1px solid #ddd; padding:4px 8px; border-radius:8px; background:#fff;">기사 전문 보기</a>
+                <a class="newsReadMore" href="${esc(item.url)}" target="_blank" style="font-size:12px; color:#000; text-decoration:none; border:1px solid #ddd; padding:4px 8px; border-radius:8px; background:#fff;">기사 원문 보기</a>
               </div>
             </div>
           </div>
