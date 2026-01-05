@@ -942,7 +942,7 @@
     }
     .topnav::-webkit-scrollbar{ display:none; }
     .topnav a{
-      font-size:15px;
+      font-size:13px;
       padding:6px 4px;
     }
 
