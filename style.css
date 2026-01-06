@@ -1549,7 +1549,7 @@
   .fx-info-box .formula { 
     background: #f8f9fa; 
     padding: 5px 10px; border-radius: 4px; 
-    font-family: monospace; 
+    font-weight: bold; 
     color: #e67e22; 
   }
   .fx-info-box .highlight { 
