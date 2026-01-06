@@ -326,13 +326,33 @@
       console.error("Macro failed", e);
     }
   }
+  function hidePastCalendarItems() {
+    const now = Date.now();
 
+    document.querySelectorAll(".calendarItem[data-datetime]").forEach(item => {
+      const dt = item.getAttribute("data-datetime");
+      if (!dt) return;
+
+      const t = new Date(dt).getTime();
+      if (!Number.isFinite(t)) return;
+
+      if (t < now) {
+        item.style.display = "none";
+      } else {
+        item.style.display = ""; 
+      }
+    });
+  }
   function boot() {
     const cachedLS = readCache(LS_KEY, LS_TTL);
     if (cachedLS) renderLSFromPayload(cachedLS);
 
     const cachedMacro = readCache(MACRO_KEY, MACRO_TTL);
     if (cachedMacro) renderMacroFromPayload(cachedMacro);
+
+
+    hidePastCalendarItems();
+    setInterval(hidePastCalendarItems, 60 * 1000); 
 
     updateLongShortOnce();
     updateMacroOnce();
