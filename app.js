@@ -340,10 +340,11 @@
 
       let usdCap = 0;
       if (state._coinCaps instanceof Map) {
-        usdCap = Number(state._coinCaps.get(base)) || 0;
+
+        usdCap = Number(state._coinCaps.get(sym)) || Number(state._coinCaps.get(base)) || 0;
       }
       c.mcapKRW = (usdCap > 0 && rate > 0) ? (usdCap * rate) : 0;
-
+      
       if (c.binanceKRW > 0) {
         const krw = Number(c.priceKRW || 0);
         const kimp = ((krw / c.binanceKRW) - 1) * 100;
