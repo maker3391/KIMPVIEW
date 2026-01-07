@@ -42,11 +42,9 @@
     usdtKRW: 0,
     btcDom: 0,
 
-    // Inline chart
-    _inlineChartSymbol: null,
-    _inlineChartRowEl: null,
-    _inlineChartContainerId: null,
-    _inlineChartCoin: null,
+    // Inline chart (multi)
+    _inlineCharts: [],     // [{ sym, rowEl, containerId, coin }]
+    _inlineMaxCharts: 3,   // <= 여기 숫자만 바꾸면 2/3/4 제한 가능
 
     // Binance ticker 캐
     _binance: { map: new Map(), ts: 0, ttlMs: 3000 },
@@ -85,7 +83,6 @@
     visibleSymbols.clear();
     state._ioReady = false;
   }
-
 
   // ===== UPBIT markets =====
   const UPBIT_MARKETS_LS = "kimpview:upbitMarketsKRW";
@@ -306,7 +303,7 @@
 
   function pickTradingViewSymbol(coin) {
     const base = normalizeBaseSym(coin?.symbol);
-    
+
     if (coin?.hasBinance) return `BINANCE:${base}USDT`;
 
     const ex = String(state.exchange || "").toLowerCase();
@@ -338,13 +335,13 @@
       const volUSDT = hasBinance ? (Number(binanceVolMap.get(base)) || 0) : 0;
       c.binanceVolKRW = (volUSDT > 0 && rate > 0) ? (volUSDT * rate) : 0;
 
+      // MarketCap: sym(BTT) -> base(BTTC) fallback
       let usdCap = 0;
       if (state._coinCaps instanceof Map) {
-
         usdCap = Number(state._coinCaps.get(sym)) || Number(state._coinCaps.get(base)) || 0;
       }
       c.mcapKRW = (usdCap > 0 && rate > 0) ? (usdCap * rate) : 0;
-      
+
       if (c.binanceKRW > 0) {
         const krw = Number(c.priceKRW || 0);
         const kimp = ((krw / c.binanceKRW) - 1) * 100;
@@ -876,65 +873,21 @@
     state._refreshTimer = null;
   }
 
-  // ===== RENDER =====
   const INLINE_CHART_HEIGHT = 320;
 
   function closeInlineChart() {
-    if (state._inlineChartRowEl) {
-      state._inlineChartRowEl.remove();
+    if (Array.isArray(state._inlineCharts) && state._inlineCharts.length > 0) {
+      for (const it of state._inlineCharts) {
+        try { it?.rowEl?.remove(); } catch {}
+      }
     }
-    state._inlineChartRowEl = null;
-    state._inlineChartContainerId = null;
-    state._inlineChartCoin = null;
-    state._inlineChartSymbol = null;
+    state._inlineCharts = [];
   }
 
-  function toggleInlineChart(anchorTr, coin) {
-    const sym = normalizeBaseSym(coin?.symbol);
-    if (!sym) return;
-
-    if (state._inlineChartSymbol === sym) {
-      closeInlineChart();
-      return;
-    }
-
-    closeInlineChart();
-
-    const colspan = anchorTr?.children?.length || 6;
-
-    const chartRow = document.createElement("tr");
-    chartRow.className = "inlineChartRow";
-
-    const td = document.createElement("td");
-    td.colSpan = colspan;
-
-    const containerId = `tv_inline_${Date.now()}`;
-
-    td.innerHTML = `
-      <div class="rowChartWrap">
-        <div id="${containerId}" style="width:100%; height:100%;"></div>
-      </div>
-    `;
-
-    chartRow.appendChild(td);
-    anchorTr.after(chartRow);
-
-    state._inlineChartRowEl = chartRow;
-    state._inlineChartContainerId = containerId;
-    state._inlineChartSymbol = sym;
-    state._inlineChartCoin = coin;
-
-    renderInlineChart();
-  }
-
-  function renderInlineChart() {
-    const containerId = state._inlineChartContainerId;
-    if (!containerId) return;
-
+  function renderInlineChartFor(containerId, coin) {
     const box = document.getElementById(containerId);
     if (!box) return;
 
-    // reset
     box.innerHTML = "";
 
     if (typeof TradingView === "undefined") {
@@ -942,7 +895,6 @@
       return;
     }
 
-    const coin = state._inlineChartCoin;
     if (!coin) {
       box.innerHTML = `<div style="padding:12px;color:#94a3b8;">No coin selected</div>`;
       return;
@@ -968,18 +920,63 @@
     });
   }
 
-  // ✅ 차트 열린 상태에서도 즐겨찾기 UI가 바로 반영되도록: updateRowsInPlace에 fav 갱신 추가
+  // ✅ multi-inline: max 3 open, toggle per coin, FIFO remove
+  function toggleInlineChart(anchorTr, coin) {
+    const sym = normalizeBaseSym(coin?.symbol);
+    if (!sym) return;
+
+    if (!Array.isArray(state._inlineCharts)) state._inlineCharts = [];
+
+    // if already open -> close that one only
+    const idx = state._inlineCharts.findIndex(it => it.sym === sym);
+    if (idx >= 0) {
+      const it = state._inlineCharts[idx];
+      try { it?.rowEl?.remove(); } catch {}
+      state._inlineCharts.splice(idx, 1);
+      return;
+    }
+    const INLINE_CHART_HEIGHT = (window.matchMedia("(max-width: 640px)").matches ? 260 : 320);
+
+    // enforce max
+    const maxN = 2;
+    while (state._inlineCharts.length >= maxN) {
+      const old = state._inlineCharts.shift();
+      try { old?.rowEl?.remove(); } catch {}
+    }
+
+    const colspan = anchorTr?.children?.length || 6;
+
+    const chartRow = document.createElement("tr");
+    chartRow.className = "inlineChartRow";
+
+    const td = document.createElement("td");
+    td.colSpan = colspan;
+
+    const containerId = `tv_inline_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+
+    td.innerHTML = `
+      <div class="rowChartWrap">
+        <div id="${containerId}" style="width:100%; height:100%;"></div>
+      </div>
+    `;
+
+    chartRow.appendChild(td);
+    anchorTr.after(chartRow);
+
+    state._inlineCharts.push({ sym, rowEl: chartRow, containerId, coin });
+
+    renderInlineChartFor(containerId, coin);
+  }
+
   function updateRowsInPlace(rows) {
     if (!rows || rows.length === 0) return;
 
     for (const c of rows) {
       const sym = String(c.symbol || "").toUpperCase();
-      // 화면 밖 row는 업데이트 컷 (처음 IO가 준비되기 전엔 fail-open)
       if (state._ioReady && visibleSymbols.size > 0 && !visibleSymbols.has(sym)) continue;
       const tr = coinTableBody.querySelector(`tr[data-symbol="${CSS.escape(sym)}"]`);
       if (!tr) continue;
 
-      // favorites UI
       const favBtn = tr.querySelector(".favBtn");
       if (favBtn) {
         const isFav = state.favorites.has(sym);
@@ -987,19 +984,16 @@
         favBtn.innerHTML = getStarSvg(isFav);
       }
 
-      // price
       const priceMain = tr.querySelector(".priceMain");
       const priceSub = tr.querySelector(".priceSub");
       if (priceMain) priceMain.textContent = formatKRW(c.priceKRW);
       if (priceSub) priceSub.textContent = formatKRW(c.binanceKRW);
 
-      // price flash
       const priceStack = tr.querySelector(".priceStack");
       const curPrice = Number(c.priceKRW || 0);
       const flashCls = getPriceDirection(sym, curPrice);
       if (priceStack && flashCls) flashPrice(priceStack, flashCls);
 
-      // change
       const chgMain = tr.querySelector(".chgMain");
       const chgSub = tr.querySelector(".chgSub");
       if (chgMain) {
@@ -1011,24 +1005,20 @@
       }
       if (chgSub) chgSub.textContent = formatDeltaKRW(c.change24hKRW);
 
-      // volume
       const volMain = tr.querySelector(".volMain");
       const volSub = tr.querySelector(".volSub");
       if (volMain) volMain.textContent = formatKRWCompact(c.volKRW);
       if (volSub) volSub.textContent = formatKRWCompact(c.binanceVolKRW);
 
-      // mcap
       const mcapMain = tr.querySelector(".mcapMain");
       const mcapSub = tr.querySelector(".mcapSub");
       if (mcapMain) mcapMain.textContent = formatMcapKRW(c.mcapKRW);
 
-      // USD cap uses caps map
       if (mcapSub) {
         const usdCap = state._coinCaps instanceof Map ? state._coinCaps.get(sym) : null;
         mcapSub.textContent = formatMcapUSD(usdCap);
       }
 
-      // kimp
       const kimpTd = tr.querySelector(".td-kimp");
       if (kimpTd) {
         const k = c.kimp;
@@ -1043,7 +1033,9 @@
   function render() {
     const rows = getFilteredSortedCoins();
 
-    if (state._inlineChartSymbol) {
+    // ✅ if any inline charts open: do not rebuild table (keep DOM rows + charts)
+    const hasOpenCharts = Array.isArray(state._inlineCharts) && state._inlineCharts.length > 0;
+    if (hasOpenCharts) {
       updateRowsInPlace(rows);
       syncSortUI();
       return;

@@ -40,7 +40,7 @@
   };
 
   const CACHE_KEY = "KIMPVIEW_STOCKS_ROWS_V1";
-  const CACHE_TTL = 3 * 60 * 1000; // 3 min
+  const CACHE_TTL = 3 * 60 * 1000; 
 
   function readCache() {
     try {
@@ -111,16 +111,16 @@
   }
 
   function fmtMcapKRW_Short(usdVal) {
-  const usd = Number(usdVal);
-  const fx = getExchangeRate();
-  if (!Number.isFinite(usd) || !Number.isFinite(fx) || fx <= 0) return "";
+    const usd = Number(usdVal);
+    const fx = getExchangeRate();
+    if (!Number.isFinite(usd) || !Number.isFinite(fx) || fx <= 0) return "";
 
-  const krw = usd * fx;
-  const abs = Math.abs(krw);
+    const krw = usd * fx;
+    const abs = Math.abs(krw);
 
-  if (abs >= 1e12) return `${(krw / 1e12).toFixed(2)}조`;
-  if (abs >= 1e8)  return `${Math.floor(krw / 1e8).toLocaleString("ko-KR")}억`;
-  return `${Math.floor(krw).toLocaleString("ko-KR")}원`;
+    if (abs >= 1e12) return `${(krw / 1e12).toFixed(2)}조`;
+    if (abs >= 1e8)  return `${Math.floor(krw / 1e8).toLocaleString("ko-KR")}억`;
+    return `${Math.floor(krw).toLocaleString("ko-KR")}원`;
   }
 
   function fmtUSD(v) {
@@ -284,9 +284,7 @@
   function getViewRows() {
     let view = state.rows.slice();
 
-    if (state.favOnly) {
-      view = view.filter(r => favs.has(r.symbol));
-    }
+    if (state.favOnly) view = view.filter(r => favs.has(r.symbol));
 
     if (state.query) {
       const q = state.query.toUpperCase();
@@ -342,11 +340,8 @@
   }
 
   function deferMount(cb) {
-    if ("requestIdleCallback" in window) {
-      requestIdleCallback(cb, { timeout: 1200 });
-    } else {
-      setTimeout(cb, 0);
-    }
+    if ("requestIdleCallback" in window) requestIdleCallback(cb, { timeout: 1200 });
+    else setTimeout(cb, 0);
   }
 
   function mountTopChartDeferred() {
@@ -356,15 +351,11 @@
 
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        if ("requestIdleCallback" in window) {
-          requestIdleCallback(doMount, { timeout: 1500 });
-        } else {
-          setTimeout(doMount, 350);
-        }
+        if ("requestIdleCallback" in window) requestIdleCallback(doMount, { timeout: 1500 });
+        else setTimeout(doMount, 350);
       });
     });
   }
-
 
   function toTvSymbol(symbol) {
     return `${TV_EXCHANGE_MAP[symbol] || "NASDAQ"}:${symbol}`;
@@ -403,13 +394,25 @@
     return true;
   }
 
-  let openedChart = { symbol: null, tr: null };
+  // ===== Inline Row Chart (Max 2) =====
+  const MAX_ROW_CHARTS = 2;
+  let openedCharts = []; 
 
-  function removeRowChart() {
-    if (openedChart.tr) {
-      openedChart.tr.remove();
-      openedChart = { symbol: null, tr: null };
+  function removeRowChartBySymbol(tvSymbol) {
+    const idx = openedCharts.findIndex(x => x.symbol === tvSymbol);
+    if (idx >= 0) {
+      openedCharts[idx].tr?.remove();
+      openedCharts.splice(idx, 1);
     }
+  }
+
+  function removeAllRowCharts() {
+    for (const x of openedCharts) x.tr?.remove();
+    openedCharts = [];
+  }
+
+  function isRowChartOpen(tvSymbol) {
+    return openedCharts.some(x => x.symbol === tvSymbol);
   }
 
   function getVisibleColCount(tr) {
@@ -422,13 +425,21 @@
   }
 
   function insertRowChart(afterTr, tvSymbol) {
-    removeRowChart();
+    if (isRowChartOpen(tvSymbol)) {
+      removeRowChartBySymbol(tvSymbol);
+      return;
+    }
+
+    if (openedCharts.length >= MAX_ROW_CHARTS) {
+      const oldest = openedCharts.shift();
+      oldest?.tr?.remove();
+    }
 
     const colCount = getVisibleColCount(afterTr); 
     const chartTr = document.createElement("tr");
     chartTr.className = "chartRow";
 
-    const hostId = `rowChart_${Date.now()}`;
+    const hostId = `rowChart_${Date.now()}_${Math.random().toString(16).slice(2)}`;
     chartTr.innerHTML = `
       <td colspan="${colCount}">
         <div class="rowChartWrap">
@@ -438,16 +449,15 @@
     `;
 
     afterTr.insertAdjacentElement("afterend", chartTr);
-    openedChart = { symbol: tvSymbol, tr: chartTr };
+    openedCharts.push({ symbol: tvSymbol, tr: chartTr });
 
     const host = document.getElementById(hostId);
     if (host) host.innerHTML = `<div style="padding:14px;color:#9ca3af;">Loading chart...</div>`;
 
-    deferMount(() => {
-      ensureTvReadyThen(() => mountTvInto(hostId, tvSymbol));
-    });
+    deferMount(() => ensureTvReadyThen(() => mountTvInto(hostId, tvSymbol)));
   }
 
+  // ===== DOM refs cache =====
   const domRef = new Map();
   function cacheRefs(symbol, refs) { domRef.set(symbol, refs); }
 
@@ -662,16 +672,13 @@
     chartMini.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-
       const tv = toTvSymbol(r.symbol);
-      if (openedChart.symbol === tv) removeRowChart();
-      else insertRowChart(tr, tv);
+      insertRowChart(tr, tv);
     });
 
     tr.addEventListener("click", () => {
       const tv = toTvSymbol(r.symbol);
-      if (openedChart.symbol === tv) removeRowChart();
-      else insertRowChart(tr, tv);
+      insertRowChart(tr, tv);
     });
 
     return tr;
@@ -696,6 +703,7 @@
     if (!rows.length) {
       el.tbody.innerHTML = "";
       domRef.clear();
+      removeAllRowCharts();
 
       const tr = document.createElement("tr");
       const msg = state.favOnly
@@ -716,7 +724,7 @@
     }
 
     if (fullRender) {
-      removeRowChart();
+      removeAllRowCharts();
       domRef.clear();
       el.tbody.innerHTML = "";
       const frag = document.createDocumentFragment();
@@ -788,7 +796,7 @@
 
     if (forceFullRender || !state.rows.length) {
       domRef.clear();
-      removeRowChart();
+      removeAllRowCharts();
       if (el.tbody) el.tbody.innerHTML = "";
       setStatus("");
       setUpdatedAt("");
