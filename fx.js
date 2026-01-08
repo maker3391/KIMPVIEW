@@ -1,14 +1,7 @@
-/* =========================
-   KIMPVIEW FX (Wise-style)
-   - Currency search dropdown
-   - Open ER API rates (USD base)
-========================= */
-
-
 (() => {
   "use strict";
 
-  // ---------- DOM ----------
+
   const $ = (sel) => document.querySelector(sel);
 
   const elAmount = $("#fxAmount");
@@ -35,7 +28,6 @@
   const elFromCode = $("#fxFromCode");
   const elToCode = $("#fxToCode");
 
-  // Guard: if not on fx page
   if (!elAmount || !elResult || !elFromBtn || !elToBtn) return;
 
   // ---------- Currency list ----------
@@ -92,15 +84,15 @@ function renderFlag(emoji, altText = "") {
 
   // ---------- State ----------
   const state = {
-    from: "USD",
-    to: "KRW",
-    rates: null,       // USD base rates
-    updatedAt: null,   // string from api
-    openDrop: null,    // "from" | "to" | null
+    from: "KRW",
+    to: "USD",
+    rates: null,       
+    updatedAt: null,  
+    openDrop: null,   
     inflight: null
   };
 
-  // ---------- Rates fetch (with cache) ----------
+  // ---------- Rates fetch ----------
   const CACHE_KEY = "KIMPVIEW_FX_RATES_USD_V1";
   const TTL = 10 * 60 * 1000; // 10 min
 
@@ -298,7 +290,6 @@ function renderFlag(emoji, altText = "") {
     elBackdrop.classList.add("fxHidden");
   }
 
-  // ✅ A안: 국가코드(KR/US/JP) 표시 제거, 국기만 출력
   function renderList(which, keyword) {
     const listEl = (which === "from") ? elFromList : elToList;
     const selected = (which === "from") ? state.from : state.to;
