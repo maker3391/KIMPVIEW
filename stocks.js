@@ -3,20 +3,46 @@
   const MARKET = "us"; 
 
   const DEFAULT_SYMBOLS_US = [
-    "NVDA","AAPL","GOOGL","MSFT","AMZN","META","TSLA","AVGO","LLY","PLTR",
-    "COST","NFLX","ADBE","AMD","PEP","LIN","TMUS","INTU","TXN","AMAT"
+    "NVDA","GOOG","AAPL","MSFT","AMZN",
+    "META","AVGO","TSLA","BRK-B","LLY",
+    "WMT","JPM","V","ORCL","XOM",
+    "MA","JNJ","PLTR","BAC","COST"
   ];
 
   const STOCK_NAME_KR = {
-    NVDA:"엔비디아",AAPL:"애플",MSFT:"마이크로소프트",GOOGL:"알파벳",AMZN:"아마존",
-    META:"메타",TSLA:"테슬라",AVGO:"브로드컴",LLY:"일라이 릴리",PLTR:"팔란티어",
-    COST:"코스트코",NFLX:"넷플릭스",ADBE:"어도비",AMD:"AMD",PEP:"펩시코",
-    LIN:"린데",TMUS:"T-모바일",INTU:"인튜이트",TXN:"텍사스 인스트루먼트",AMAT:"어플라이드 머티어리얼즈"
+    NVDA:"엔비디아",
+    GOOG:"알파벳(구글)",
+    AAPL:"애플",
+    MSFT:"마이크로소프트",
+    AMZN:"아마존",
+    META:"메타",
+    AVGO:"브로드컴",
+    TSLA:"테슬라",
+    "BRK-B":"버크셔 해서웨이",
+    LLY:"일라이 릴리",
+    WMT:"월마트",
+    JPM:"JP모건",
+    V:"비자",
+    ORCL:"오라클",
+    XOM:"엑슨모빌",
+    MA:"마스터카드",
+    JNJ:"존슨앤드존슨",
+    PLTR:"팔란티어",
+    BAC:"뱅크오브아메리카",
+    COST:"코스트코"
   };
 
   const TV_EXCHANGE_MAP = {
-    "BRK-B":"NYSE","JPM":"NYSE","V":"NYSE","MA":"NYSE","UNH":"NYSE",
-    "XOM":"NYSE","LLY":"NYSE","COST":"NASDAQ","WMT":"NYSE","PG":"NYSE"
+    "BRK-B":"NYSE",
+    "WMT":"NYSE",
+    "JPM":"NYSE",
+    "V":"NYSE",
+    "ORCL":"NYSE",
+    "XOM":"NYSE",
+    "MA":"NYSE",
+    "JNJ":"NYSE",
+    "BAC":"NYSE",
+    "COST":"NASDAQ",
   };
 
   const $ = (id) => document.getElementById(id);
@@ -179,6 +205,8 @@
     const s = String(symbol || "").toUpperCase().trim();
     if (s === "AMZN") return ["images/custom/amzn.png", getStockIconUrl("AMZN")];
     if (s === "PLTR") return ["images/custom/pltr.png", getStockIconUrl("PLTR")];
+    if (s === "V") return ["images/custom/visa.png", getStockIconUrl("V")];
+    
     return [getStockIconUrl(s)];
   }
 
