@@ -43,10 +43,10 @@
     btcDom: 0,
 
     // Inline chart (multi)
-    _inlineCharts: [],     // [{ sym, rowEl, containerId, coin }]
-    _inlineMaxCharts: 3,   // <= 여기 숫자만 바꾸면 2/3/4 제한 가능
+    _inlineCharts: [],     
+    _inlineMaxCharts: 3,  
 
-    // Binance ticker 캐
+    // Binance ticker
     _binance: { map: new Map(), ts: 0, ttlMs: 3000 },
     _binance24h: { map: new Map(), ts: 0, ttlMs: 3000 },
 
@@ -56,8 +56,6 @@
 
   const prevPriceMap = new Map();
 
-  // ===== VISIBLE ROWS (screen-out update cut) =====
-  // 화면에 보이는 row만 주기 업데이트 대상에 포함 (IntersectionObserver)
   const visibleSymbols = new Set();
   state._ioReady = false;
   const rowObserver = ("IntersectionObserver" in window)
@@ -908,7 +906,7 @@
       symbol: tvSymbol,
       interval: "15",
       timezone: "Asia/Seoul",
-      theme: "dark",
+      theme: "light",
       style: "1",
       locale: "kr",
       enable_publishing: false,
@@ -920,14 +918,12 @@
     });
   }
 
-  // ✅ multi-inline: max 3 open, toggle per coin, FIFO remove
   function toggleInlineChart(anchorTr, coin) {
     const sym = normalizeBaseSym(coin?.symbol);
     if (!sym) return;
 
     if (!Array.isArray(state._inlineCharts)) state._inlineCharts = [];
 
-    // if already open -> close that one only
     const idx = state._inlineCharts.findIndex(it => it.sym === sym);
     if (idx >= 0) {
       const it = state._inlineCharts[idx];
@@ -937,7 +933,6 @@
     }
     const INLINE_CHART_HEIGHT = (window.matchMedia("(max-width: 640px)").matches ? 260 : 320);
 
-    // enforce max
     const maxN = 2;
     while (state._inlineCharts.length >= maxN) {
       const old = state._inlineCharts.shift();
@@ -1033,7 +1028,6 @@
   function render() {
     const rows = getFilteredSortedCoins();
 
-    // ✅ if any inline charts open: do not rebuild table (keep DOM rows + charts)
     const hasOpenCharts = Array.isArray(state._inlineCharts) && state._inlineCharts.length > 0;
     if (hasOpenCharts) {
       updateRowsInPlace(rows);
@@ -1698,7 +1692,7 @@
         symbol: "BINANCE:BTCUSDT",
         timezone: "Asia/Seoul",
         interval: "15",
-        theme: "dark",
+        theme: "light",
         style: "1",
         locale: "kr",
         toolbar_bg: "#f1f3f6",

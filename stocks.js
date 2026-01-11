@@ -408,7 +408,7 @@
       symbol: tvSymbol,
       interval: "15",
       timezone: "Asia/Seoul",
-      theme: "dark",
+      theme: "light",
       style: "1",
       locale: "kr",
       enable_publishing: false,
