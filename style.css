@@ -175,7 +175,7 @@
     overflow:hidden;
     background:#ffffff;
     border:1px solid var(--line);
-    height:220px;
+    height:200px;
     margin-bottom: 12px;
   }
   .mainBanner img{
@@ -190,7 +190,7 @@
     overflow:hidden;
     background:#ffffff;
     border:1px solid var(--line);
-    height:220px;
+    height:200px;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -1353,6 +1353,7 @@
   /* 메뉴 사이드 배너 */
   body.subPages .side .banner{
     height:800px;
+    width:300px;
     display:flex;
     align-items:flex-start;
     justify-content:flex-start;
