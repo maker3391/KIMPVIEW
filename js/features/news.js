@@ -1,4 +1,7 @@
 (() => {
+  /* -------------------------------------------------------------------------- */
+  /* 1. Configuration & Constants                                               */
+  /* -------------------------------------------------------------------------- */
   const PROXY_BASE = "https://news.cjstn3391.workers.dev";
   const $ = (id) => document.getElementById(id);
 
@@ -30,6 +33,9 @@
   const POLL_MS = 10_000;
   const NEWS_POLL_MS = 60_000;
 
+  /* -------------------------------------------------------------------------- */
+  /* 2. Global State                                                            */
+  /* -------------------------------------------------------------------------- */
   let pollTimer = null;
   let newsPollTimer = null;
 
@@ -42,6 +48,9 @@
     loading: false,
   };
 
+  /* -------------------------------------------------------------------------- */
+  /* 3. Utility Functions (Format & Sanitize)                                   */
+  /* -------------------------------------------------------------------------- */
   function show(el) { if (el) el.style.display = ""; }
   function hide(el) { if (el) el.style.display = "none"; }
 
@@ -53,8 +62,7 @@
   function parseDateAny(v) {
     if (!v) return null;
     const d = new Date(v);
-    if (!Number.isFinite(d.getTime())) return null;
-    return d;
+    return Number.isFinite(d.getTime()) ? d : null;
   }
 
   function toTimeText(publishedAt) {
@@ -88,6 +96,9 @@
       .replace(/&amp;/g, "&");
   }
 
+  /* -------------------------------------------------------------------------- */
+  /* 4. Data Normalization                                                      */
+  /* -------------------------------------------------------------------------- */
   function isCoinnessShape(x) {
     return x && (
       typeof x.content === "string" ||
@@ -121,7 +132,6 @@
           badge: x.isImportant ? "중요" : (x.categoryName || ""),
         };
       }
-
       if (isNaverShape(x)) {
         return {
           title: cleanText(x.title),
@@ -133,7 +143,6 @@
           badge: "속보",
         };
       }
-
       return {
         title: cleanText(x.title),
         url: x.url || x.link || "",
@@ -156,9 +165,11 @@
     };
   }
 
+  /* -------------------------------------------------------------------------- */
+  /* 5. Rendering Logic                                                         */
+  /* -------------------------------------------------------------------------- */
   function renderItem(item) {
     const timeText = esc(toTimeText(item.publishedAt));
-
     const badgeHtml = item.badge
       ? `<span style="display:inline-flex; align-items:center; height:20px; padding:0 8px; border-radius:999px; font-size:12px; background:#eef2ff; color:#3730a3; margin-right:8px; white-space:nowrap;">${esc(item.badge)}</span>`
       : "";
@@ -166,15 +177,9 @@
     const isBreaking = state.tab === "breaking";
     const thumbHtml = isBreaking
       ? ""
-      : `
-        <div class="newsThumb">
-          <img
-            src="${esc(item.image)}"
-            alt="news"
-            onerror="this.onerror=null; this.src='../images/default.jpg';"
-          >
-        </div>
-      `;
+      : `<div class="newsThumb">
+          <img src="${esc(item.image)}" alt="news" onerror="this.onerror=null; this.src='../images/default.jpg';">
+        </div>`;
 
     return `
       <li class="newsItem">
@@ -183,26 +188,57 @@
             ${thumbHtml}
             <div class="newsBody">
               <div class="newsTitleRow">
-                <div class="newsTitle">
-                  ${badgeHtml}${esc(item.title)}
-                </div>
+                <div class="newsTitle">${badgeHtml}${esc(item.title)}</div>
                 <div class="newsTime">${timeText}</div>
               </div>
-
-              <div class="newsSummary">
-                ${esc(item.summary)}
-              </div>
-
+              <div class="newsSummary">${esc(item.summary)}</div>
               <div class="newsFooter" style="display:none; margin-top:10px;">
                 <a class="newsReadMore" href="${esc(item.url)}" target="_blank" rel="noopener">기사 원문 보기</a>
               </div>
             </div>
           </div>
         </div>
-      </li>
-    `;
+      </li>`;
   }
 
+  function renderFromState() {
+    if (!newsList) return;
+    newsList.innerHTML = "";
+    state.rendered = 0;
+
+    if (state.all.length === 0) {
+      show(newsEmpty);
+      newsEmpty.textContent = state.tab === "breaking" ? "최근 속보가 없습니다." : "뉴스가 없습니다.";
+      if (moreBtn) moreBtn.style.display = "none";
+      return;
+    }
+
+    hide(newsEmpty);
+    appendNext(state.first);
+  }
+
+  function appendNext(count) {
+    const next = state.all.slice(state.rendered, state.rendered + count);
+    if (next.length) {
+      newsList?.insertAdjacentHTML("beforeend", next.map(renderItem).join(""));
+      state.rendered += next.length;
+    }
+    updateMoreBtn();
+  }
+
+  function updateMoreBtn() {
+    if (!moreBtn) return;
+    const hasMore = state.rendered < state.all.length;
+    moreBtn.style.display = hasMore ? "" : "none";
+    if (hasMore) {
+      moreBtn.disabled = false;
+      moreBtn.textContent = "더보기";
+    }
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /* 6. Data Management (Sort, Dedupe, Cache)                                   */
+  /* -------------------------------------------------------------------------- */
   function sortByPublishedDesc(list) {
     return list.slice().sort((a, b) => {
       const ta = parseDateAny(a.publishedAt)?.getTime() ?? 0;
@@ -237,61 +273,11 @@
   }
 
   function loadBreakingCursor() {
-    try {
-      return (localStorage.getItem(LS_KEYS.breakingCursor) || "").trim();
-    } catch {
-      return "";
-    }
+    try { return (localStorage.getItem(LS_KEYS.breakingCursor) || "").trim(); } catch { return ""; }
   }
 
   function saveBreakingCursor(iso) {
-    try {
-      if (!iso) return;
-      localStorage.setItem(LS_KEYS.breakingCursor, iso);
-    } catch {}
-  }
-
-  function renderFromState() {
-    if (!newsList) return;
-
-    newsList.innerHTML = "";
-    state.rendered = 0;
-
-    if (state.all.length === 0) {
-      show(newsEmpty);
-      newsEmpty.textContent = state.tab === "breaking" ? "최근 속보가 없습니다." : "뉴스가 없습니다.";
-      if (moreBtn) moreBtn.style.display = "none";
-      return;
-    }
-
-    hide(newsEmpty);
-    appendNext(state.first);
-  }
-
-  function updateMoreBtn() {
-    if (!moreBtn) return;
-    const hasMore = state.rendered < state.all.length; 
-    if (hasMore) {
-      moreBtn.style.display = "";
-      moreBtn.disabled = false;
-      moreBtn.textContent = "더보기";
-    } else {
-      moreBtn.style.display = "none"; 
-    }
-  }
-
-  function appendNext(count) {
-    const next = state.all.slice(state.rendered, state.rendered + count);
-    console.log("Next items:", next);
-    console.log("Rendered count:", state.rendered);
-    console.log("Total items length:", state.all.length);
-
-    if (next.length) {
-      newsList?.insertAdjacentHTML("beforeend", next.map(renderItem).join(""));
-      state.rendered += next.length;  
-    }
-
-    updateMoreBtn();
+    try { if (iso) localStorage.setItem(LS_KEYS.breakingCursor, iso); } catch {}
   }
 
   function loadCache(tab) {
@@ -299,24 +285,21 @@
       const raw = localStorage.getItem(LS_KEYS[tab]);
       if (!raw) return null;
       const obj = JSON.parse(raw);
-      if (!obj || !Array.isArray(obj.items)) return null;
-      return obj;
-    } catch {
-      return null;
-    }
+      return (obj && Array.isArray(obj.items)) ? obj : null;
+    } catch { return null; }
   }
 
   function saveCache(tab, items) {
-    try {
-      localStorage.setItem(LS_KEYS[tab], JSON.stringify({ ts: Date.now(), items }));
-    } catch {}
+    try { localStorage.setItem(LS_KEYS[tab], JSON.stringify({ ts: Date.now(), items })); } catch {}
   }
 
+  /* -------------------------------------------------------------------------- */
+  /* 7. API Interaction (Fetch & Polling)                                       */
+  /* -------------------------------------------------------------------------- */
   async function fetchLatest(tab, opts = {}) {
     if (tab === "breaking") {
       const limit = 40;
       const updatedAt = (opts.updatedAt || "").trim();
-
       const url = updatedAt
         ? `${ENDPOINTS.breaking}?limit=${limit}&updatedAt=${encodeURIComponent(updatedAt)}`
         : `${ENDPOINTS.breaking}?limit=${limit}`;
@@ -334,41 +317,11 @@
     return sortByPublishedDesc(raw.map((x) => normalizeItem(x, "news")));
   }
 
-  function stopBreakingPoll() {
-    if (pollTimer) {
-      clearInterval(pollTimer);
-      pollTimer = null;
-    }
-  }
-
-  function stopNewsPoll() {
-    if (newsPollTimer) {
-      clearInterval(newsPollTimer);
-      newsPollTimer = null;
-    }
-  }
-
-  function isNearTop() {
-    const el = document.scrollingElement || document.documentElement;
-    return (el.scrollTop || 0) < 60;
-  }
-
-  function prependIncomingToDom(items) {
-    if (!newsList || !items?.length) return;
-    newsList.insertAdjacentHTML("afterbegin", items.map(renderItem).join(""));
-    state.rendered += items.length;
-    updateMoreBtn();
-  }
-
   function startBreakingPoll() {
     stopBreakingPoll();
-
     pollTimer = setInterval(async () => {
-      if (state.loading) return;
-      if (state.tab !== "breaking") return;
-
+      if (state.loading || state.tab !== "breaking") return;
       const cursor = getLatestCursorFromState() || loadBreakingCursor();
-
       try {
         const incomingRaw = await fetchLatest("breaking", { updatedAt: cursor });
         if (!incomingRaw.length) return;
@@ -381,26 +334,19 @@
         if (!onlyNew.length) return;
 
         state.all = dedupeKeepOrder(sortByPublishedDesc([...onlyNew, ...state.all]));
-
         const newCursor = getLatestCursorFromState();
         if (newCursor) saveBreakingCursor(newCursor);
-
         saveCache("breaking", state.all);
 
-        if (isNearTop()) {
-          prependIncomingToDom(onlyNew);
-        }
+        if (isNearTop()) prependIncomingToDom(onlyNew);
       } catch {}
     }, POLL_MS);
   }
 
   function startNewsPoll() {
     stopNewsPoll();
-
     newsPollTimer = setInterval(async () => {
-      if (state.loading) return;
-      if (state.tab !== "news") return;
-
+      if (state.loading || state.tab !== "news") return;
       try {
         const incomingRaw = await fetchLatest("news");
         if (!incomingRaw.length) return;
@@ -414,12 +360,24 @@
 
         state.all = dedupeKeepOrder(sortByPublishedDesc([...onlyNew, ...state.all]));
         saveCache("news", state.all);
-
-        if (isNearTop()) {
-          prependIncomingToDom(onlyNew);
-        }
+        if (isNearTop()) prependIncomingToDom(onlyNew);
       } catch {}
     }, NEWS_POLL_MS);
+  }
+
+  function stopBreakingPoll() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+  function stopNewsPoll() { if (newsPollTimer) { clearInterval(newsPollTimer); newsPollTimer = null; } }
+
+  function isNearTop() {
+    const el = document.scrollingElement || document.documentElement;
+    return (el.scrollTop || 0) < 60;
+  }
+
+  function prependIncomingToDom(items) {
+    if (!newsList || !items?.length) return;
+    newsList.insertAdjacentHTML("afterbegin", items.map(renderItem).join(""));
+    state.rendered += items.length;
+    updateMoreBtn();
   }
 
   async function loadAll(tab, opts = {}) {
@@ -436,13 +394,8 @@
     if (newsSource) newsSource.style.display = "none";
     hide(newsEmpty);
 
-    if (tab === "breaking") {
-      startBreakingPoll();
-      stopNewsPoll();
-    } else {
-      stopBreakingPoll();
-      startNewsPoll();
-    }
+    if (tab === "breaking") { startBreakingPoll(); stopNewsPoll(); }
+    else { stopBreakingPoll(); startNewsPoll(); }
 
     if (tabBreaking && tabNews) {
       const isBreaking = tab === "breaking";
@@ -455,21 +408,13 @@
     if (newsList) newsList.innerHTML = "";
 
     const ignoreCache = !!opts.ignoreCache;
-
     if (!ignoreCache) {
       const cached = loadCache(tab);
       const freshEnough = cached && (Date.now() - (cached.ts || 0) < TTL_MS[tab]);
-
       if (cached?.items?.length) {
         state.all = sortByPublishedDesc(cached.items);
         renderFromState();
         if (freshEnough) hide(newsLoading);
-        else {
-          if (newsLoading) {
-            newsLoading.textContent = "최신 소식을 불러오고 있습니다.";
-            show(newsLoading);
-          }
-        }
       } else {
         show(newsLoading);
       }
@@ -484,7 +429,6 @@
       state.all = dedupeKeepOrder(items);
       renderFromState();
       saveCache(tab, state.all);
-
       if (tab === "breaking") {
         const cursor = getLatestCursorFromState();
         if (cursor) saveBreakingCursor(cursor);
@@ -498,12 +442,14 @@
     } finally {
       hide(newsLoading);
       state.loading = false;
-
       if (newsSource) newsSource.style.display = "";
       updateMoreBtn();
     }
   }
 
+  /* -------------------------------------------------------------------------- */
+  /* 8. Event Listeners                                                         */
+  /* -------------------------------------------------------------------------- */
   newsList?.addEventListener("click", (e) => {
     if (e.target.closest(".newsReadMore")) return;
     const card = e.target.closest(".newsCard");
@@ -530,10 +476,10 @@
   });
 
   moreBtn?.addEventListener("click", () => appendNext(state.step));
-
   tabBreaking?.addEventListener("click", () => loadAll("breaking", { ignoreCache: true }));
   tabNews?.addEventListener("click", () => loadAll("news", { ignoreCache: true }));
 
+  // Initial Load
   loadAll("breaking", { ignoreCache: true });
 
   document.addEventListener("visibilitychange", () => {
