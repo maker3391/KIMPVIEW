@@ -2688,7 +2688,7 @@
 
   #lossRecoveryCalc .fxPanel,
   #lossRecoveryCalc .fxHelper {
-      max-width: 600px !important;
+      max-width: 550px !important;
       margin-left: auto !important;
       margin-right: auto !important;
       width: 100%;
@@ -2698,7 +2698,17 @@
       background: linear-gradient(180deg, #ffffff 0%, #f3f7ff 100%);
       border-color: #dbe6ff;
   }    
+  #lossRecoveryCalc #lossPercent{
+    font-size: 15px;
+    text-align: right;
+  }
 
+  #lossRecoveryCalc .fxAmountResult{
+    font-size: 15px;
+    text-align: right;
+  }
+
+  
   /* =========================
     STATS PAGE
     ========================= */
