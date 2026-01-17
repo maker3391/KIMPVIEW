@@ -85,13 +85,14 @@
   .main{ flex:1; min-width:0; }
   .side{
     position: sticky;
-    top : 80px;
+    top : 100px;
     align-self: flex-start;
     width:360px;
     flex:0 0 360px;
     display:flex;
     flex-direction:column;
     gap:14px;
+    zoom: 0.95;
   }
 
   /* ===== HEADER ===== */
@@ -903,7 +904,7 @@
   @media (max-width: 1150px){
   .side{
     zoom: 0.9;
-    padding-top: 25px;   
+    padding-top: 0px;   
     gap: 8px;          
   }    
     .layout{

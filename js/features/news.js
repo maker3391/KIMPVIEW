@@ -270,22 +270,25 @@
 
   function updateMoreBtn() {
     if (!moreBtn) return;
-    const hasMore = state.rendered < state.all.length;
+    const hasMore = state.rendered < state.all.length; 
     if (hasMore) {
       moreBtn.style.display = "";
       moreBtn.disabled = false;
       moreBtn.textContent = "더보기";
     } else {
-      moreBtn.style.display = "none";
+      moreBtn.style.display = "none"; 
     }
   }
 
   function appendNext(count) {
     const next = state.all.slice(state.rendered, state.rendered + count);
+    console.log("Next items:", next);
+    console.log("Rendered count:", state.rendered);
+    console.log("Total items length:", state.all.length);
 
     if (next.length) {
       newsList?.insertAdjacentHTML("beforeend", next.map(renderItem).join(""));
-      state.rendered += next.length;
+      state.rendered += next.length;  
     }
 
     updateMoreBtn();
