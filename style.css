@@ -391,7 +391,7 @@
   }
   .table td.td-right,
   .table th.td-right {
-    text-align: center !important;
+    text-align: right !important;
   }
   .table th, .table td{ border-right:1px solid var(--antique-line2); }
   .table th:last-child, .table td:last-child{ border-right:none; }
@@ -415,19 +415,18 @@
   .table td{
     border-bottom: 1px solid var(--antique-line2);
   }
-  /* colgroup widths (desktop) */
   col.col-coin{ width:200px; }
-  col.col-price{ width:180px; }
+  col.col-price{ width:100px; }
   col.col-ch24{ width:100px; }
-  col.col-vol{ width:130px; }
-  col.col-mcap{ width:110px; }
-  col.col-kimp{ width:140px; }
+  col.col-vol{ width:100px; }
+  col.col-mcap{ width:100px; }
+  col.col-kimp{ width:100px; }
 
   /* align */
   .th-left{ text-align:left !important; }
   .td-left{ text-align:left !important; }
   .td-right{ text-align:right !important; }
-  .table th:not(.th-left){ text-align:center; }
+  .table th:not(.th-left){ text-align:right; }
 
   /* ===== COIN CELL ===== */
   .assetCell{
@@ -478,7 +477,6 @@
     color:var(--muted);
   }
 
-  /* fav btn (SVG) */
   .favBtn{
     width:22px;
     height:22px;
@@ -500,7 +498,6 @@
   .favBtn.active:hover{ color:#f59e0b; }
   .favBtn .iconStar{ display:block; }
   
-  /* mini chart icon */
   .chartMini{
     width:24px;
     height:20px;
@@ -589,8 +586,8 @@
 
   th.sortable .thLabel{
     display:inline-flex;
-    align-items:center;
-    justify-content:center;
+    align-items:right;
+    justify-content:right;
     gap:10px;
     width:100%;
     line-height:1;
@@ -598,8 +595,8 @@
   th.sortable .thArrows{
     display:inline-flex;
     flex-direction:column;
-    align-items:center;
-    justify-content:center;
+    align-items:right;
+    justify-content:right;
     gap:3px;
     width:14px;
     line-height:1;
@@ -672,7 +669,7 @@
     background:#f7f8fa;
     color:#111;
     font-weight:500;
-    text-align:center;
+    text-align:right;
   }
   table.card td:last-child{
     text-align:right;
@@ -1047,20 +1044,7 @@
       table-layout:auto !important;
     }
 
-    .col-hide-980{ display:none !important; }
-    col.col-hide-980{ display:none !important; }
 
-    .table thead th,
-    .table td{
-      overflow:hidden !important;
-      text-overflow:ellipsis !important;
-      white-space:nowrap !important;
-    }
-
-    col.col-coin{  width:42% !important; }
-    col.col-price{ width:26% !important; }
-    col.col-ch24{  width:16% !important; }
-    col.col-kimp{  width:16% !important; }
 
     th.sortable .thLabel{ gap:6px !important; }
     th.sortable .thArrows{ width:12px !important; }
@@ -1123,8 +1107,18 @@
       table-layout:fixed !important;
     }
 
-    col.col-coin{  width:38% !important; }
-    col.col-price{ width:30% !important; }
+    .col-hide-980{ display:none !important; }
+    col.col-hide-980{ display:none !important; }
+
+    .table thead th,
+    .table td{
+      overflow:hidden !important;
+      text-overflow:ellipsis !important;
+      white-space:nowrap !important;
+    }
+
+    col.col-coin{  width:42% !important; }
+    col.col-price{ width:26% !important; }
     col.col-ch24{  width:16% !important; }
     col.col-kimp{  width:16% !important; }
 
@@ -1197,9 +1191,7 @@
 
     td.priceStack .priceMain { font-size:12px; }
     td.changeStack .chgMain { font-size:12px; }
-      .chartMini{
-      display: none !important;
-    }    
+
   }
   @media (max-width: 390px){
   .logo{
@@ -1513,6 +1505,7 @@
     .volStack .volMain,
     .mcapStack .mcapMain,
     .kimpMain{
+      font-size: 12px;
       line-height: 1.05;
     }
   }

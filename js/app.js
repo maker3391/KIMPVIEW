@@ -1142,6 +1142,11 @@
         <div class="chgSub">${formatDeltaKRW(c.change24hKRW)}</div>
       </td>
 
+      <td class="td-right td-kimp change ${kimpClass}">
+        ${formatPct(c.kimp)}
+        ${renderKimpDiff(c.kimpDiffKRW)}
+      </td>
+
       <td class="td-right volStack col-hide-980">
         <div class="volMain">${formatKRWCompact(c.volKRW)}</div>
         <div class="volSub">${formatKRWCompact(c.binanceVolKRW)}</div>
@@ -1151,12 +1156,8 @@
         <div class="mcapMain">${formatMcapKRW(c.mcapKRW)}</div>
         <div class="mcapSub">${formatMcapUSD(state._coinCaps.get(c.symbol))}</div>
       </td>
-
-      <td class="td-right td-kimp change ${kimpClass}">
-        ${formatPct(c.kimp)}
-        ${renderKimpDiff(c.kimpDiffKRW)}
-      </td>
     `;
+
 
     tr.querySelector(".favBtn")?.addEventListener("click", (e) => {
       e.preventDefault();
