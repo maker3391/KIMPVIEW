@@ -14,7 +14,6 @@ KIMPVIEW는 **김치프리미엄(김프)**과 주요 암호화폐 가격 정보�
 
 ---
 
-
 ## ✨ 주요 기능
 
 - Upbit / Bithumb 기준 원화 가격 테이블 제공
@@ -53,6 +52,9 @@ KIMPVIEW는 **김치프리미엄(김프)**과 주요 암호화폐 가격 정보�
 - Upbit Open API
 - Bithumb Open API
 - Binance Public API
+- **Yahoo Finance API** (주식 시장 정보 제공)
+- **Naver API** (뉴스 및 경제 지표 제공)
+- **CoinNess API** (암호화폐 뉴스 및 알림 제공)
 
 ### Infra
 - Cloudflare Workers (API Proxy / CORS / API Key 보호)
@@ -130,3 +132,5 @@ KIMPVIEW는 **김치프리미엄(김프)**과 주요 암호화폐 가격 정보�
 ## 🔗 링크
 
 - GitHub Repository: https://github.com/maker3391/KIMPVIEW
+
+---

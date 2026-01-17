@@ -51,7 +51,13 @@
       showSection(hashId, { updateHash: false, scroll: false });
       return;
     }
-    showSection("fxCalc", { updateHash: true, scroll: false });
+
+    hideAll();
+    const firstSection = sectionById.get("fxCalc");
+    if(firstSection) {
+        firstSection.classList.remove("fxHidden");
+        setActiveButton("fxCalc");
+    }
   }
 
   window.addEventListener("hashchange", initFromHash);
