@@ -38,7 +38,7 @@ async function handleCoinnessBreaking(request, env, ctx) {
 
   try {
     let updatedAt = clampCoinnessUpdatedAt(
-      clientUpdatedAt || new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
+      clientUpdatedAt || new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString()
     );
 
     let items = await fetchCoinnessByUpdatedAt(API_KEY, limit, updatedAt);

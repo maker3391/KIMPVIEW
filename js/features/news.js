@@ -43,7 +43,7 @@
     tab: "breaking",
     all: [],
     rendered: 0,
-    first: 15,
+    first: 10,
     step: 5,
     loading: false,
   };
@@ -237,16 +237,8 @@
   }
 
   /* -------------------------------------------------------------------------- */
-  /* 6. Data Management (Sort, Dedupe, Cache)                                   */
+  /* 6. Data Management (Dedupe, Cache)                                         */
   /* -------------------------------------------------------------------------- */
-  function sortByPublishedDesc(list) {
-    return list.slice().sort((a, b) => {
-      const ta = parseDateAny(a.publishedAt)?.getTime() ?? 0;
-      const tb = parseDateAny(b.publishedAt)?.getTime() ?? 0;
-      return tb - ta;
-    });
-  }
-
   function itemKey(it) {
     const u = (it?.url || "").trim();
     const t = (it?.title || "").trim();
@@ -267,8 +259,8 @@
   }
 
   function getLatestCursorFromState() {
-    const first = state.all?.[0];
-    const d = parseDateAny(first?.updatedAt || first?.publishedAt);
+    const last = state.all?.[state.all.length - 1];
+    const d = parseDateAny(last?.updatedAt || last?.publishedAt);
     return d ? d.toISOString() : "";
   }
 
@@ -307,38 +299,71 @@
       const res = await fetch(url, { cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const raw = await res.json();
-      return sortByPublishedDesc(raw.map((x) => normalizeItem(x, "breaking")));
+
+      return raw.map((x) => normalizeItem(x, "breaking")).sort((a, b) => {
+        const ta = parseDateAny(a.publishedAt)?.getTime() ?? 0;
+        const tb = parseDateAny(b.publishedAt)?.getTime() ?? 0;
+        return tb - ta;
+      });
     }
 
     const res = await fetch(ENDPOINTS.news, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     const raw = Array.isArray(json) ? json : (json.items || []);
-    return sortByPublishedDesc(raw.map((x) => normalizeItem(x, "news")));
+    return raw.map((x) => normalizeItem(x, "news")).sort((a, b) => {
+      const ta = parseDateAny(a.publishedAt)?.getTime() ?? 0;
+      const tb = parseDateAny(b.publishedAt)?.getTime() ?? 0;
+      return tb - ta;
+    });
+  }
+
+  function stopBreakingPoll() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+  function stopNewsPoll() { if (newsPollTimer) { clearInterval(newsPollTimer); newsPollTimer = null; } }
+
+  function isNearBottom() {
+    const el = document.scrollingElement || document.documentElement;
+    const scrollTop = el.scrollTop || 0;
+    const viewH = window.innerHeight || document.documentElement.clientHeight || 0;
+    const docH = el.scrollHeight || 0;
+    return (scrollTop + viewH) > (docH - 120);
+  }
+
+  function appendIncomingToDom(items) {
+    if (!newsList || !items?.length) return;
+    newsList.insertAdjacentHTML("beforeend", items.map(renderItem).join(""));
+    state.rendered += items.length;
+    updateMoreBtn();
   }
 
   function startBreakingPoll() {
     stopBreakingPoll();
     pollTimer = setInterval(async () => {
       if (state.loading || state.tab !== "breaking") return;
+
       const cursor = getLatestCursorFromState() || loadBreakingCursor();
+
       try {
         const incomingRaw = await fetchLatest("breaking", { updatedAt: cursor });
         if (!incomingRaw.length) return;
 
         const existed = new Set(state.all.map(itemKey));
+
         const onlyNew = incomingRaw.filter((it) => {
           const k = itemKey(it);
           return k && !existed.has(k);
         });
         if (!onlyNew.length) return;
 
-        state.all = dedupeKeepOrder(sortByPublishedDesc([...onlyNew, ...state.all]));
+        state.all = dedupeKeepOrder([...state.all, ...onlyNew]);
+
         const newCursor = getLatestCursorFromState();
         if (newCursor) saveBreakingCursor(newCursor);
+
         saveCache("breaking", state.all);
 
-        if (isNearTop()) prependIncomingToDom(onlyNew);
+        if (isNearBottom()) appendIncomingToDom(onlyNew);
+        else updateMoreBtn(); 
       } catch {}
     }, POLL_MS);
   }
@@ -347,6 +372,7 @@
     stopNewsPoll();
     newsPollTimer = setInterval(async () => {
       if (state.loading || state.tab !== "news") return;
+
       try {
         const incomingRaw = await fetchLatest("news");
         if (!incomingRaw.length) return;
@@ -358,28 +384,18 @@
         });
         if (!onlyNew.length) return;
 
-        state.all = dedupeKeepOrder(sortByPublishedDesc([...onlyNew, ...state.all]));
+        state.all = dedupeKeepOrder([...state.all, ...onlyNew]);
         saveCache("news", state.all);
-        if (isNearTop()) prependIncomingToDom(onlyNew);
+
+        if (isNearBottom()) appendIncomingToDom(onlyNew);
+        else updateMoreBtn();
       } catch {}
     }, NEWS_POLL_MS);
   }
 
-  function stopBreakingPoll() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
-  function stopNewsPoll() { if (newsPollTimer) { clearInterval(newsPollTimer); newsPollTimer = null; } }
-
-  function isNearTop() {
-    const el = document.scrollingElement || document.documentElement;
-    return (el.scrollTop || 0) < 60;
-  }
-
-  function prependIncomingToDom(items) {
-    if (!newsList || !items?.length) return;
-    newsList.insertAdjacentHTML("afterbegin", items.map(renderItem).join(""));
-    state.rendered += items.length;
-    updateMoreBtn();
-  }
-
+  /* -------------------------------------------------------------------------- */
+  /* 8. Main Loader                                                             */
+  /* -------------------------------------------------------------------------- */
   async function loadAll(tab, opts = {}) {
     if (state.loading) return;
     state.loading = true;
@@ -408,11 +424,16 @@
     if (newsList) newsList.innerHTML = "";
 
     const ignoreCache = !!opts.ignoreCache;
+
     if (!ignoreCache) {
       const cached = loadCache(tab);
       const freshEnough = cached && (Date.now() - (cached.ts || 0) < TTL_MS[tab]);
       if (cached?.items?.length) {
-        state.all = sortByPublishedDesc(cached.items);
+        state.all = cached.items.slice().sort((a, b) => {
+          const ta = parseDateAny(a.publishedAt)?.getTime() ?? 0;
+          const tb = parseDateAny(b.publishedAt)?.getTime() ?? 0;
+          return tb - ta;
+        });
         renderFromState();
         if (freshEnough) hide(newsLoading);
       } else {
@@ -426,9 +447,11 @@
 
     try {
       const items = await fetchLatest(tab);
+
       state.all = dedupeKeepOrder(items);
       renderFromState();
       saveCache(tab, state.all);
+
       if (tab === "breaking") {
         const cursor = getLatestCursorFromState();
         if (cursor) saveBreakingCursor(cursor);
@@ -448,7 +471,7 @@
   }
 
   /* -------------------------------------------------------------------------- */
-  /* 8. Event Listeners                                                         */
+  /* 9. Event Listeners                                                         */
   /* -------------------------------------------------------------------------- */
   newsList?.addEventListener("click", (e) => {
     if (e.target.closest(".newsReadMore")) return;
@@ -479,7 +502,6 @@
   tabBreaking?.addEventListener("click", () => loadAll("breaking", { ignoreCache: true }));
   tabNews?.addEventListener("click", () => loadAll("news", { ignoreCache: true }));
 
-  // Initial Load
   loadAll("breaking", { ignoreCache: true });
 
   document.addEventListener("visibilitychange", () => {
