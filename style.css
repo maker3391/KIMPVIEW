@@ -2151,7 +2151,12 @@
   }
 
   #avgCostCalc .fxPanel{
-    max-width:100%;
+    max-width:650px;
+  }
+
+  #avgCostCalc .fxHelper{
+    max-width: 650px;
+    margin: 14px auto 0;
   }
 
   #avgCostCalc .fxField{
@@ -2683,7 +2688,7 @@
 
   #lossRecoveryCalc .fxPanel,
   #lossRecoveryCalc .fxHelper {
-      max-width: 568px !important;
+      max-width: 600px !important;
       margin-left: auto !important;
       margin-right: auto !important;
       width: 100%;
