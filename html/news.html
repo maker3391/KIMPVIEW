@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>뉴스 | KIMPVIEW</title>
+  <meta name="description" content="비트코인·이더리움·알트코인 주요 헤드라인과 업데이트 시간을 확인하세요.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://kimpview.com/news.html">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="뉴스 | KIMPVIEW">
+  <meta property="og:description" content="주요 헤드라인과 업데이트 시간을 확인하세요.">
+  <meta property="og:url" content="https://kimpview.com/news.html">
+  <meta property="og:image" content="https://kimpview.com/images/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="뉴스 | KIMPVIEW">
+  <meta name="twitter:description" content="주요 헤드라인과 업데이트 시간을 확인하세요.">
+  <meta name="twitter:image" content="https://kimpview.com/images/og.png">
+
+  <link rel="icon" href="/favicon.ico?v=3" sizes="any">
+  <link rel="icon" type="image/x-icon" href="/favicon-48.ico?v=3" sizes="48x48">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=3" sizes="180x180">
+  <link rel="stylesheet" href="../style.css?v=6">
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4958885788848761" crossorigin="anonymous"></script>
+</head>
+
+<body class="subPages">
+
+  <div class="topMetrics">
+    <div class="topMetricsInner">
+      <span class="metric">
+        <img src="../images/icons/google.png" class="metricIcon" alt="Google">
+        환율: <strong id="fxKRW"></strong>
+      </span>
+
+      <span class="metric">
+        <img src="../images/icons/upbit.png" class="metricIcon" alt="Upbit">
+        테더(USDT): <strong id="usdtKRW"></strong>
+      </span>
+
+      <span class="metric">도미넌스: <strong id="btcDominance"></strong></span>
+      <span class="metric metricHide980">시가총액: <strong id="totalMcap"></strong></span>
+      <span class="metric metricHide980">24H 현물 거래량: <strong id="spotVolume"></strong></span>
+      <span class="metric metricHide980">24H 선물 거래량: <strong id="derivVolume"></strong></span>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <header class="topbar">
+      <div class="headerLeft">
+        <div class="logo"><a href="../index.html">KIMPVIEW</a></div>
+
+        <nav class="topnav" aria-label="상단 메뉴">
+          <a href="../index.html">코인</a>
+          <a href="stats.html">글로벌 지표</a>
+          <a href="stocks.html">주식</a>
+          <a href="news.html" class="active">뉴스</a>
+          <a href="fx.html">종합 계산기</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="layout">
+
+      <main class="main">
+        <h1 class="visually-hidden">뉴스</h1>
+
+        <a href="#" class="mainBanner" aria-label="메인 배너">
+          <img src="../images/main_banner.png" alt="메인 프로모션 배너">
+        </a>
+
+        <section class="card">
+
+        <div class="newsTopBar">
+          <div class="newsTabs" role="tablist" aria-label="뉴스 탭">
+
+            <button
+              id="tabBreaking"
+              class="newsTab active"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              data-tab="breaking"
+            >
+              속보
+            </button>
+
+            <button
+              id="tabNews"
+              class="newsTab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              data-tab="news"
+            >
+              뉴스
+            </button>
+
+          </div>
+        </div>
+
+          <div class="newsIntro">
+            <div class="newsIntroBox">
+              <p class="newsIntroText">
+                  오늘의 코인 소식을 빠르게 정리해 드립니다.<br>
+                  원문은 출처 링크를 통해 확인하실 수 있습니다.
+              </p>
+            </div>
+          </div>
+
+          <div class="newsListWrap">
+            <ul id="newsList" class="newsList" aria-live="polite"></ul>
+
+            <div id="newsEmpty" class="newsState" style="display:none;"></div>
+            <div id="newsLoading" class="newsState" role="status">최신 소식을 불러오고 있습니다.</div>
+
+            <div class="newsActionRow">
+              <button id="newsMoreBtn" class="newsMoreBtn" type="button">더보기</button>
+              <span id="newsSource" class="newsSourceInline">출처: CoinNess</span>
+            </div>
+          </div>
+
+        </section>
+
+      </main>
+
+      <aside class="side">
+        <div class="banner bannerTall">
+          <img src="../images/indevelopmentright.png" alt="KIMPVIEW 배너">
+        </div>
+      </aside>
+
+    </div>
+  </div>
+
+  <section class="visually-hidden">
+    <h2>암호화폐 뉴스 안내</h2>
+    <p>
+      본 페이지는 암호화폐 관련 주요 헤드라인을 모아 빠르게 확인할 수 있도록 구성되었습니다.
+      기사 원문은 출처 링크를 통해 확인할 수 있으며, 정보의 정확성은 각 매체의 원문을 기준으로 합니다.
+      제공되는 정보는 참고용입니다.
+    </p>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-left">
+        <span class="footer-title">KIMPVIEW</span>
+        <span class="footer-desc">Korea Premium Monitor</span>
+      </div>
+
+      <div class="footer-center">
+        본 사이트의 정보는 참고용이며, 투자 판단 및 손익에 대한 책임은 이용자 본인에게 있습니다.<br>
+      </div>
+
+      <div class="footer-right">
+        <span>© 2025 KIMPVIEW</span>
+        <span class="footer-divider">|</span>
+
+        <a href="privacy.html" class="footer-link">Privacy</a>
+        <span class="footer-divider">|</span>
+
+        <a href="terms.html" class="footer-link">Terms</a>
+        <span class="footer-divider">|</span>
+
+        <a href="about.html" class="footer-link">About</a>
+        <span class="footer-divider">|</span>
+        
+        <a href="guide.html" class="footer-link">Guide</a>
+        <span class="footer-divider">|</span>
+
+        <a href="https://t.me/KIMPVIEW" target="_blank" class="footer-link">Telegram</a>
+        <span class="footer-divider">|</span>
+        <a
+          href="https://mail.google.com/mail/?view=cm&to=kimpviewcs@gmail.com"
+          target="_blank"
+          rel="noopener"
+          class="footer-link"
+        >
+          Contact
+        </a>
+
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/features/topmetrics.js?v=1" defer></script>
+  <script src="../js/features/news.js?v=7" defer></script>
+
+</body>
+</html>

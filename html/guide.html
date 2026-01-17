@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>김프 보는법 | 김치프리미엄 계산 방법 완전정리 · KIMPVIEW</title>
+  <meta name="description" content="김프(김치프리미엄) 보는법을 초보자도 이해할 수 있게 단계별로 정리했습니다. 김프 계산 공식, 업비트·빗썸·바이낸스 비교 방법, 주의사항과 활용 팁까지 제공합니다.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://kimpview.com/guide.html">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="김프 보는법 | KIMPVIEW 가이드">
+  <meta property="og:description" content="김치프리미엄(김프) 계산 공식부터 실제 확인 방법, 해석/주의사항까지 한 번에 정리한 초보자 가이드.">
+  <meta property="og:url" content="https://kimpview.com/guide.html">
+  <meta property="og:image" content="https://kimpview.com/images/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="김프 보는법 | KIMPVIEW 가이드">
+  <meta name="twitter:description" content="김치프리미엄(김프) 계산·비교·해석 방법을 초보자도 이해할 수 있게 정리했습니다.">
+  <meta name="twitter:image" content="https://kimpview.com/images/og.png">
+
+  <link rel="icon" href="/favicon.ico?v=3" sizes="any">
+  <link rel="icon" type="image/x-icon" href="/favicon-48.ico?v=3" sizes="48x48">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=3" sizes="180x180">
+  <link rel="stylesheet" href="../style.css?v=6">
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4958885788848761"
+    crossorigin="anonymous"></script>
+
+  <style>
+    body {
+      background: #ffffff;
+      color: #1f2937;
+    }
+    .policyWrap {
+      max-width: 920px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    .policyBody {
+      font-size: 14px;
+      line-height: 1.85;
+      color: #1f2937;
+    }
+    .policyBody h1,
+    .policyBody h2 {
+      color: #111827;
+      margin-top: 28px;
+    }
+    .policyBody h3 {
+      color: #111827;
+      margin-top: 18px;
+    }
+    .policyBody li {
+      color: #374151;
+      margin-bottom: 8px;
+    }
+    .policyMeta {
+      color: #6b7280;
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+    .guideNote {
+      margin: 14px 0;
+      padding: 14px 16px;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: #f9fafb;
+      color: #374151;
+    }
+    .guideStep {
+      margin: 14px 0;
+      padding: 14px 16px;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 14px;
+      background: #ffffff;
+      color: #374151;
+    }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 13px;
+      background: rgba(0,0,0,0.04);
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+    .guideCta {
+      margin-top: 18px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .guideBtn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.12);
+      background: #111827;
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .guideBtn.secondary {
+      background: #ffffff;
+      color: #111827;
+    }
+  </style>
+</head>
+
+<body class="subPages">
+
+  <div class="topMetrics">
+    <div class="topMetricsInner">
+      <span class="metric">
+        <img src="../images/icons/google.png" class="metricIcon" alt="Google">
+        환율: <strong id="fxKRW"></strong>
+      </span>
+      <span class="metric">
+        <img src="../images/icons/upbit.png" class="metricIcon" alt="Upbit">
+        테더(USDT): <strong id="usdtKRW"></strong>
+      </span>
+      <span class="metric">도미넌스: <strong id="btcDominance"></strong></span>
+      <span class="metric metricHide980">시가총액: <strong id="totalMcap"></strong></span>
+      <span class="metric metricHide980">24H 현물 거래량: <strong id="spotVolume"></strong></span>
+      <span class="metric metricHide980">24H 선물 거래량: <strong id="derivVolume"></strong></span>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <header class="topbar">
+      <div class="headerLeft">
+        <div class="logo">
+          <a href="../index.html">KIMPVIEW</a>
+        </div>
+
+        <nav class="topnav" aria-label="상단 메뉴">
+          <a href="../index.html">코인</a>
+          <a href="stats.html">글로벌 지표</a>
+          <a href="stocks.html">주식</a>
+          <a href="news.html">뉴스</a>
+          <a href="fx.html">종합 계산기</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="layout">
+
+      <main class="main">
+        <h1 class="visually-hidden">김프 보는법 가이드</h1>
+
+        <section class="card policyCard">
+          <h2 class="policyTitle">김프 보는법 (김치프리미엄) 가이드</h2>
+          <div class="policyMeta">
+            업데이트: 2026-01-04 · 참고: 본 문서는 정보 제공 목적이며 투자 권유가 아닙니다.
+          </div>
+
+          <div class="policyBody">
+
+            <p>
+              “김프(김치프리미엄)”는 한국 거래소(업비트/빗썸/코인원 등)와 해외 거래소(바이낸스 등) 사이에
+              같은 코인의 가격이 다르게 형성되는 현상을 말합니다.
+              이 페이지는 <strong>김프를 계산하고 해석하는 방법</strong>을 초보자도 이해할 수 있도록 단계별로 정리한 가이드입니다.
+            </p>
+
+            <div class="guideNote">
+              <strong>핵심 한 줄</strong><br>
+              김프(%)는 “국내 원화 가격”과 “해외 달러 가격 × 환율(원/달러)”을 비교해서 계산합니다.
+            </div>
+
+            <h2>1) 김프 계산 공식</h2>
+            <p>
+              김프는 아래 공식으로 계산할 수 있습니다.
+            </p>
+            <p>
+              <span class="mono">Kimchi Premium(%) = (KRW - (USD × FX)) / (USD × FX) × 100</span>
+            </p>
+            <ul>
+              <li><span class="mono">KRW</span>: 국내 거래소 원화 가격 (예: 업비트 BTC/KRW)</li>
+              <li><span class="mono">USD</span>: 해외 거래소 달러 가격 (예: 바이낸스 BTC/USDT ≒ USD)</li>
+              <li><span class="mono">FX</span>: 원/달러 환율 (또는 USDT/KRW 환산값)</li>
+            </ul>
+
+            <h2>2) 김프를 “보는 순서” (실전 체크리스트)</h2>
+
+            <div class="guideStep">
+              <h3>Step A. 국내 가격 확인</h3>
+              <p>
+                업비트/빗썸 등에서 원하는 코인의 <strong>KRW 가격</strong>을 확인합니다.
+                (예: BTC가 70,000,000 KRW)
+              </p>
+            </div>
+
+            <div class="guideStep">
+              <h3>Step B. 해외 가격 확인</h3>
+              <p>
+                바이낸스 등에서 같은 코인의 <strong>USDT(달러) 가격</strong>을 확인합니다.
+                (예: BTC가 50,000 USDT)
+              </p>
+            </div>
+
+            <div class="guideStep">
+              <h3>Step C. 환율 적용</h3>
+              <p>
+                해외 가격을 원화로 환산합니다.
+                (예: 환율이 1,350 KRW/USD면 50,000 × 1,350 = 67,500,000 KRW)
+              </p>
+            </div>
+
+            <div class="guideStep">
+              <h3>Step D. 김프 계산/해석</h3>
+              <p>
+                국내가 70,000,000이고 해외 환산이 67,500,000이면
+                국내가 더 비싸므로 김프는 <strong>양수(+)</strong>가 됩니다.
+              </p>
+              <ul>
+                <li><strong>김프(+) 양수</strong>: 한국 가격이 해외보다 비쌈</li>
+                <li><strong>김프(-) 음수</strong>: 한국 가격이 해외보다 쌈</li>
+              </ul>
+            </div>
+
+            <h2>3) 김프가 높을 때/낮을 때 의미</h2>
+            <ul>
+              <li><strong>김프가 높다</strong>: 국내 수요가 강하거나(매수 우위), 환율/테더 프리미엄 영향이 있을 수 있습니다.</li>
+              <li><strong>김프가 낮다</strong>: 국내 수요가 약하거나(매도 우위), 해외가 강한 흐름일 수 있습니다.</li>
+            </ul>
+
+            <div class="guideNote">
+              <strong>주의</strong><br>
+              김프는 “시장 과열/침체”를 판단하는 보조 지표일 뿐,
+              단독으로 매매 결정을 내리면 위험합니다. (수수료/슬리피지/송금 시간/규정 등 변수 큼)
+            </div>
+
+            <h2>4) 김프 체크할 때 자주 틀리는 포인트</h2>
+            <ul>
+              <li><strong>같은 거래쌍인지 확인</strong>: KRW vs USDT(USD) 비교가 맞는지</li>
+              <li><strong>환율/테더 가격 반영</strong>: 원/달러 환율과 USDT/KRW가 다를 수 있음</li>
+              <li><strong>코인별 유동성 차이</strong>: 알트는 호가 얇아서 순간 김프가 튈 수 있음</li>
+              <li><strong>거래소 간 기준가격 차이</strong>: 인덱스/마크프라이스/현물 가격 혼동 주의</li>
+            </ul>
+
+            <h2>5) KIMPVIEW에서 김프를 빠르게 확인하는 방법</h2>
+            <p>
+              KIMPVIEW는 국내 거래소와 글로벌 거래소 가격을 비교하여 김프를 계산하고,
+              환율/테더/글로벌 지표까지 한 화면에서 확인할 수 있도록 구성되어 있습니다.
+            </p>
+
+            <div class="guideCta">
+              <a class="guideBtn" href="index.html">실시간 김프 보러가기</a>
+              <a class="guideBtn secondary" href="fx.html">환율 계산기</a>
+              <a class="guideBtn secondary" href="stats.html">글로벌 지표</a>
+            </div>
+
+            <h2>6) 자주 묻는 질문(FAQ)</h2>
+            <h3>Q1. 김프는 몇 %면 “높은 편”인가요?</h3>
+            <p>
+              시장 상황에 따라 다르지만, 단기적으로 급격히 튀는 구간은 변동성이 큰 신호일 수 있습니다.
+              “상대 비교”로 보고, 최근 평균 대비 얼마나 벌어졌는지 함께 보는 것이 좋습니다.
+            </p>
+
+            <h3>Q2. 김프는 왜 생기나요?</h3>
+            <p>
+              환율, 국내/해외 수급 차이, 자본 이동 제약, 거래소별 유동성 차이, 시장 심리 등이 복합적으로 작용합니다.
+            </p>
+
+            <h3>Q3. 김프만 보고 매매해도 되나요?</h3>
+            <p>
+              권장하지 않습니다. 수수료, 입출금 지연, 급변동, 규정/리스크 등으로 기대한 결과가 달라질 수 있습니다.
+            </p>
+
+          </div>
+        </section>
+      </main>
+
+      <aside class="side">
+        <div class="banner bannerTall">
+          <img src="../images/indevelopmentright.png" alt="KIMPVIEW 배너">
+        </div>
+      </aside>
+
+    </div>
+  </div>
+
+  <section class="visually-hidden">
+    <h2>김프 보는법 · 김치프리미엄 계산 가이드</h2>
+    <p>
+      김프(김치프리미엄)는 국내 거래소 원화 가격과 해외 거래소 달러 가격에 환율을 적용해 비교한 값입니다.
+      KIMPVIEW 가이드는 김프 계산 공식과 해석 방법, 주의사항을 단계별로 설명합니다.
+    </p>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-left">
+        <span class="footer-title">KIMPVIEW</span>
+        <span class="footer-desc">Korea Premium Monitor</span>
+      </div>
+
+      <div class="footer-center">
+        본 사이트의 정보는 참고용이며, 투자 판단 및 손익에 대한 책임은 이용자 본인에게 있습니다.
+      </div>
+
+      <div class="footer-right">
+        <span>© 2025 KIMPVIEW</span>
+        <span class="footer-divider">|</span>
+        <a href="privacy.html" class="footer-link">Privacy</a>
+        <span class="footer-divider">|</span>
+        <a href="terms.html" class="footer-link">Terms</a>
+        <span class="footer-divider">|</span>
+        <a href="about.html" class="footer-link">About</a>
+        <span class="footer-divider">|</span>
+        <a href="guide.html" class="footer-link">Guide</a>
+        <span class="footer-divider">|</span>
+        <a href="https://t.me/KIMPVIEW" target="_blank" class="footer-link">Telegram</a>
+        <span class="footer-divider">|</span>
+        <a
+          href="https://mail.google.com/mail/?view=cm&to=kimpviewcs@gmail.com"
+          target="_blank"
+          rel="noopener"
+          class="footer-link"
+        >
+          Contact
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/features/topmetrics.js?v=1" defer></script>
+</body>
+</html>

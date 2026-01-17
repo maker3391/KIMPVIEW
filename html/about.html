@@ -1,0 +1,240 @@
+<!-- about.html (최종본) -->
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>About | KIMPVIEW</title>
+  <meta name="description" content="KIMPVIEW는 김치프리미엄을 중심으로 글로벌 암호화폐 시장 흐름을 제공하는 정보 서비스입니다.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://kimpview.com/about.html">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="About | KIMPVIEW">
+  <meta property="og:description" content="김치프리미엄, 글로벌 지표, 뉴스, 주식, 환율 정보를 제공하는 KIMPVIEW 소개 페이지입니다.">
+  <meta property="og:url" content="https://kimpview.com/about.html">
+  <meta property="og:image" content="https://kimpview.com/images/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="About | KIMPVIEW">
+  <meta name="twitter:description" content="김치프리미엄 기반 암호화폐 시장 정보 서비스 KIMPVIEW">
+  <meta name="twitter:image" content="https://kimpview.com/images/og.png">
+
+  <link rel="icon" href="/favicon.ico?v=3" sizes="any">
+  <link rel="icon" type="image/x-icon" href="/favicon-48.ico?v=3" sizes="48x48">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=3" sizes="180x180"> 
+  <link rel="stylesheet" href="../style.css?v=6">
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4958885788848761"
+    crossorigin="anonymous"></script>
+
+  <style>
+    body {
+      background: #ffffff;
+      color: #1f2937;
+    }
+    .policyWrap {
+      max-width: 920px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    .policyBody {
+      font-size: 14px;
+      line-height: 1.8;
+      color: #1f2937;
+    }
+    .policyBody h1,
+    .policyBody h2 {
+      color: #111827;
+      margin-top: 28px;
+    }
+    .policyBody li {
+      color: #374151;
+      margin-bottom: 8px;
+    }
+    .policyMeta {
+      color: #6b7280;
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+  </style>
+</head>
+
+<body class="subPages">
+
+  <div class="topMetrics">
+    <div class="topMetricsInner">
+      <span class="metric">
+        <img src="../images/icons/google.png" class="metricIcon" alt="Google">
+        환율: <strong id="fxKRW"></strong>
+      </span>
+      <span class="metric">
+        <img src="../images/icons/upbit.png" class="metricIcon" alt="Upbit">
+        테더(USDT): <strong id="usdtKRW"></strong>
+      </span>
+      <span class="metric">도미넌스: <strong id="btcDominance"></strong></span>
+      <span class="metric metricHide980">시가총액: <strong id="totalMcap"></strong></span>
+      <span class="metric metricHide980">24H 현물 거래량: <strong id="spotVolume"></strong></span>
+      <span class="metric metricHide980">24H 선물 거래량: <strong id="derivVolume"></strong></span>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <header class="topbar">
+      <div class="headerLeft">
+        <div class="logo">
+          <a href="../index.html">KIMPVIEW</a>
+        </div>
+
+        <nav class="topnav" aria-label="상단 메뉴">
+          <a href="../index.html">코인</a>
+          <a href="stats.html">글로벌 지표</a>
+          <a href="stocks.html">주식</a>
+          <a href="news.html">뉴스</a>
+          <a href="fx.html">종합 계산기</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="layout">
+
+      <main class="main">
+        <h1 class="visually-hidden">About</h1>
+
+        <section class="card policyCard">
+          <h2 class="policyTitle">About KIMPVIEW</h2>
+          <div class="policyMeta">
+            업데이트: 2026-01-04 · 문의:
+            <a href="mailto:kimpviewcs@gmail.com" style="color:#6b7280;">kimpviewcs@gmail.com</a>
+          </div>
+
+          <div class="policyBody">
+
+            <p>
+              KIMPVIEW는 글로벌 암호화폐 시장과 한국 거래소 간의 가격 차이,
+              즉 <strong>김치프리미엄(Kimchi Premium)</strong>을 중심으로
+              <br>시장 흐름을 한눈에 파악할 수 있도록 돕는
+              암호화폐 정보 제공 서비스입니다.
+            </p>
+
+            <p>
+              해외 거래소 가격, 환율, 글로벌 지표, 뉴스 정보가
+              여러 사이트에 흩어져 있는 불편함을 줄이기 위해<br>
+              주요 데이터를 하나의 화면에서 통합 제공하는 것을
+              목표로 합니다.
+            </p>
+
+            <h2>김치프리미엄(Kimchi Premium)이란?</h2>
+            <p>
+              김치프리미엄은 한국 거래소의 암호화폐 가격이
+              해외 거래소 가격보다 높거나 낮게 형성되는 현상을 의미합니다.
+            </p>
+            <p>
+              이는 환율 변동, 수급 차이, 자본 이동 제한,
+              글로벌 시장 심리 등의 요인으로 발생하며,
+              <br>시장 과열 또는 침체 여부를 판단하는
+              보조 지표로 활용될 수 있습니다.
+            </p>
+
+            <h2>제공하는 주요 콘텐츠</h2>
+            <ul>
+              <li><strong>코인 가격 비교</strong> – 국내 거래소와 글로벌 거래소 가격을 비교하여 김치프리미엄을 계산합니다.</li>
+              <li><strong>글로벌 지표</strong> – BTC Dominance, 전체 시가총액, 현물·선물 거래량 등 시장 흐름 지표를 제공합니다.</li>
+              <li><strong>암호화폐 뉴스</strong> – 글로벌 암호화폐 시장의 주요 뉴스 및 이슈를 제공합니다.</li>
+              <li><strong>주식 시장 정보</strong> – 글로벌 주요 주식 종목의 가격 흐름을 함께 확인할 수 있습니다.</li>
+              <li><strong>종합 계산기</strong> – 환율·물타기·수익률·손실 복구 계산기 기능을 제공합니다.</li>
+            </ul>
+
+            <h2>서비스 이용 안내 및 유의사항</h2>
+            <p>
+              본 서비스는 실시간 가격 데이터, 글로벌 지표, 뉴스 정보를 기반으로
+              시장 흐름을 한눈에 파악할 수 있도록 돕는 것을 목적으로 합니다.
+            </p>
+            <p>
+              제공되는 모든 정보는 참고용이며, 투자 권유 또는 재정적 조언이 아닙니다.
+              투자 판단 및 손익에 대한 책임은 이용자 본인에게 있습니다.
+            </p>
+
+            <h2>데이터 출처 안내</h2>
+            <ul>
+              <li>국내외 암호화폐 거래소의 공개 API</li>
+              <li>글로벌 암호화폐 데이터 제공 플랫폼</li>
+              <li>공개 뉴스 및 시장 정보 API</li>
+            </ul>
+            <p>
+              데이터는 지연, 오차, 누락이 발생할 수 있으며,
+              단독으로 거래·투자 결정을 내리는 근거로 사용하는 것을
+              권장하지 않습니다.
+            </p>
+
+            <h2>문의</h2>
+            <ul>
+              <li>Telegram: <a href="https://t.me/KIMPVIEW">@KIMPVIEW</a></li>
+              <li>Email: <a href="mailto:kimpviewcs@gmail.com">kimpviewcs@gmail.com</a></li>
+            </ul>
+
+          </div>
+        </section>
+      </main>
+
+      <aside class="side">
+        <div class="banner bannerTall">
+          <img src="../images/indevelopmentright.png" alt="KIMPVIEW 배너">
+        </div>
+      </aside>
+
+    </div>
+  </div>
+  
+  <section class="visually-hidden">
+    <h2>KIMPVIEW 서비스 소개</h2>
+    <p>
+      KIMPVIEW는 김치프리미엄과 주요 시장 지표, 뉴스 및 보조 도구를 한 화면에서 확인할 수 있도록 만든 정보 서비스입니다.
+      여러 곳에 흩어진 데이터를 간결한 화면 흐름으로 정리해 빠르게 판단할 수 있도록 돕습니다.
+    </p>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-left">
+        <span class="footer-title">KIMPVIEW</span>
+        <span class="footer-desc">Korea Premium Monitor</span>
+      </div>
+
+      <div class="footer-center">
+        본 사이트의 정보는 참고용이며, 투자 판단 및 손익에 대한 책임은 이용자 본인에게 있습니다.
+      </div>
+
+      <div class="footer-right">
+        <span>© 2025 KIMPVIEW</span>
+        <span class="footer-divider">|</span>
+        <a href="privacy.html" class="footer-link">Privacy</a>
+        <span class="footer-divider">|</span>
+        <a href="terms.html" class="footer-link">Terms</a>
+        <span class="footer-divider">|</span>
+        <a href="about.html" class="footer-link">About</a>
+        <span class="footer-divider">|</span>
+        <a href="guide.html" class="footer-link">Guide</a>
+        <span class="footer-divider">|</span>        
+        <a href="https://t.me/KIMPVIEW" target="_blank" class="footer-link">Telegram</a>
+        <span class="footer-divider">|</span>
+        <a
+          href="https://mail.google.com/mail/?view=cm&to=kimpviewcs@gmail.com"
+          target="_blank"
+          rel="noopener"
+          class="footer-link"
+        >
+          Contact
+        </a>
+
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/features/topmetrics.js?v=1" defer></script>
+</body>
+</html>

@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>글로벌 지표 | KIMPVIEW</title>
+
+  <meta name="description" content="글로벌 금융 시장의 핵심 지표를 실시간으로 확인하세요. 비트코인·이더리움 롱/숏 비율, 달러 인덱스(DXY), 금리, VIX, 원자재, 주요 주가지수와 경제 일정을 한 화면에서 제공합니다.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://kimpview.com/stats.html">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="글로벌 지표 | KIMPVIEW">
+  <meta property="og:description" content="달러 인덱스, 금리, VIX, 원자재, 글로벌 증시와 비트코인 롱/숏 비율을 한눈에 확인하세요.">
+  <meta property="og:url" content="https://kimpview.com/stats.html">
+  <meta property="og:image" content="https://kimpview.com/images/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630"> 
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="글로벌 지표 | KIMPVIEW">
+  <meta name="twitter:description" content="달러·금리·VIX·증시·BTC 롱/숏 비율까지 실시간 글로벌 지표 모니터링">
+  <meta name="twitter:image" content="https://kimpview.com/images/og.png">  
+ 
+  <link rel="icon" href="/favicon.ico?v=3" sizes="any">
+  <link rel="icon" type="image/x-icon" href="/favicon-48.ico?v=3" sizes="48x48">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=3" sizes="180x180"> 
+  <link rel="stylesheet" href="../style.css?v=6">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4958885788848761"
+  crossorigin="anonymous"></script>  
+</head>
+
+<body class="subPages">
+
+  <div class="topMetrics">
+    <div class="topMetricsInner">
+      <span class="metric">
+        <img src="../images/icons/google.png" class="metricIcon" alt="Google">
+        환율: <strong id="fxKRW"></strong>
+      </span>
+
+      <span class="metric">
+        <img src="../images/icons/upbit.png" class="metricIcon" alt="Upbit">
+        테더(USDT): <strong id="usdtKRW"></strong>
+      </span>
+
+      <span class="metric">도미넌스: <strong id="btcDominance"></strong></span>
+      <span class="metric metricHide980">시가총액: <strong id="totalMcap"></strong></span>
+      <span class="metric metricHide980">24H 현물 거래량: <strong id="spotVolume"></strong></span>
+      <span class="metric metricHide980">24H 선물 거래량: <strong id="derivVolume"></strong></span>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <header class="topbar">
+      <div class="headerLeft">
+        <div class="logo">
+          <a href="../index.html">KIMPVIEW</a>
+        </div>
+
+        <nav class="topnav" aria-label="상단 메뉴">
+          <a href="../index.html">코인</a>
+          <a href="stats.html" class="active">글로벌 지표</a>
+          <a href="stocks.html">주식</a>
+          <a href="news.html">뉴스</a>
+          <a href="fx.html">종합 계산기</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="layout">
+
+      <main class="main">
+          <h1 class="visually-hidden">달러·금리·VIX·증시·비트코인 롱숏 비율 글로벌 지표</h1> 
+          <a href="#" class="mainBanner" aria-label="메인 배너">
+          <img src="../images/main_banner.png" alt="메인 프로모션 배너">
+        </a>
+
+        <section class="statsDashboard">
+
+          <section class="statsBox statsBox--longshort">
+            <div class="statsBoxHead">
+              <div class="statsBoxMeta">포지션</div>
+              <h2 class="statsBoxTitle">BTC · ETH 롱/숏 비율</h2>
+              <div class="statsBoxTag">Futures</div>
+            </div>
+
+            <div class="lsGroup">
+              <div class="lsRow">
+                <div class="lsRowTop">
+                  <span class="lsSymbol">BTC</span>
+                  <span class="lsText">
+                    <span class="lsLongLabel">Long</span> <strong id="btcLong"></strong>% /
+                    <span class="lsShortLabel">Short</span> <strong id="btcShort"></strong>%
+                  </span>
+                </div>
+                <div class="lsBar">
+                  <div id="btcBarLong" class="lsBarLong"></div>
+                  <div id="btcBarShort" class="lsBarShort"></div>
+                </div>
+              </div>
+
+              <div class="lsRow">
+                <div class="lsRowTop">
+                  <span class="lsSymbol">ETH</span>
+                  <span class="lsText">
+                    <span class="lsLongLabel">Long</span> <strong id="ethLong"></strong>% /
+                    <span class="lsShortLabel">Short</span> <strong id="ethShort"></strong>%
+                  </span>
+                </div>
+                <div class="lsBar">
+                  <div id="ethBarLong" class="lsBarLong"></div>
+                  <div id="ethBarShort" class="lsBarShort"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="statsBoxFoot">
+              <span>출처: <span id="lsSource"></span></span>
+              <span class="dot">·</span>
+              <span>업데이트: <span id="lsAsOf"></span></span>
+            </div>
+          </section>
+
+          <div class="statsGrid statsGrid--top">
+
+            <section class="statsBox statsBox--dxy">
+              <div class="statsBoxHead">
+                <div class="statsBoxMeta">통화
+                   <button class="infoBtn">?</button>
+                   <div class="tooltipBox">
+                  <strong>출처:</strong> Yahoo Finance<br>
+                  <strong>갱신주기:</strong> 5분<br>
+                  <strong>기준:</strong> 현물 환율 (Spot)<br><br>
+                  · DXY는 달러의 상대적 강도를 나타내는 지표입니다.<br>
+                </div>
+                </div>
+                <h2 class="statsBoxTitle">달러 인덱스 (DXY)</h2>
+                <div class="statsBoxTag">USD</div>
+              </div>
+
+              <div class="statsValueRow">
+                <div class="statsValue" id="dxyValue"></div>
+                <div class="statsChange" id="dxyChange"></div>
+              </div>
+            </section>
+
+            <section class="statsBox statsBox--jpy">
+              <div class="statsBoxHead">
+                <div class="statsBoxMeta">
+                  통화
+                  <button class="infoBtn">?</button>
+
+                  <div class="tooltipBox">
+                    <strong>출처:</strong> Yahoo Finance<br>
+                    <strong>갱신주기:</strong> 5분<br>
+                    <strong>기준:</strong> USD/JPY 환율 기반<br><br>
+                    · 엔화 인덱스는 달러 대비 엔화의 상대적 강도를 나타냅니다.<br>
+                    · 수치가 상승할수록 엔화 약세를 의미합니다.<br>
+                  </div>
+                </div>
+
+                <h2 class="statsBoxTitle">엔화 인덱스 (JPY)</h2>
+                <div class="statsBoxTag">JPY</div>
+              </div>
+
+              <div class="statsValueRow">
+                <div class="statsValue" id="jpyxValue"></div>
+                <div class="statsChange" id="jpyxChange"></div>
+              </div>
+            </section>
+
+          <section class="statsBox statsBox--eur">
+            <div class="statsBoxHead">
+              <div class="statsBoxMeta">
+                통화
+                <button class="infoBtn">?</button>
+
+                <div class="tooltipBox">
+                  <strong>출처:</strong> Yahoo Finance<br>
+                  <strong>갱신주기:</strong> 5분<br>
+                  <strong>기준:</strong> EUR/USD 환율 기반<br><br>
+                  · 유로 인덱스는 달러 대비 유로화의 상대적 강도를 나타냅니다.<br>
+                  · 수치가 상승할수록 유로 강세를 의미합니다.<br>
+                </div>
+              </div>
+
+              <h2 class="statsBoxTitle">유로 인덱스 (EUR)</h2>
+              <div class="statsBoxTag">EUR</div>
+            </div>
+
+            <div class="statsValueRow">
+              <div class="statsValue" id="eurxValue"></div>
+              <div class="statsChange" id="eurxChange"></div>
+            </div>
+          </section>
+
+          </div>
+
+          <div class="statsGrid statsGrid--rates2">
+
+          <section class="statsBox statsBox--us10y">
+            <div class="statsBoxHead">
+              <div class="statsBoxMeta">
+                채권
+                <button class="infoBtn">?</button>
+
+                <div class="tooltipBox">
+                  <strong>출처:</strong> Yahoo Finance<br>
+                  <strong>갱신주기:</strong> 5분<br>
+                  <strong>기준:</strong> 미국 국채 10년물 수익률 (%)<br><br>
+                  · 장기 금리는 인플레이션·경기 전망을 반영합니다.<br>
+                  · 금리 상승은 긴축·위험자산 부담 요인으로 해석됩니다.<br>
+                  · 비거래 시간에는 마지막 종가 기준으로 표시됩니다.
+                </div>
+              </div>
+
+              <h2 class="statsBoxTitle">미 국채 10년물 금리</h2>
+              <div class="statsBoxTag">US10Y</div>
+            </div>
+
+            <div class="statsValueRow">
+              <div class="statsValue mono" id="us10yValue"></div>
+              <div class="statsChange" id="us10yChange"></div>
+            </div>
+          </section>
+
+          <section class="statsBox statsBox--vix">
+            <div class="statsBoxHead">
+              <div class="statsBoxMeta">
+                변동성
+                <button class="infoBtn">?</button>
+
+                <div class="tooltipBox">
+                  <strong>출처:</strong> Yahoo Finance<br>
+                  <strong>갱신주기:</strong> 5분<br>
+                  <strong>기준:</strong> S&P 500 옵션 변동성 지수<br><br>
+                  · VIX는 시장의 공포 수준을 나타내는 지표입니다.<br>
+                  · 수치 상승은 위험회피 심리 강화로 해석됩니다.<br>
+                  · 일반적으로 주식 시장과 역상관 관계를 가집니다.<br>
+                </div>
+              </div>
+
+              <h2 class="statsBoxTitle">VIX (S&P 500 변동성)</h2>
+              <div class="statsBoxTag">VIX</div>
+            </div>
+
+            <div class="statsValueRow">
+              <div class="statsValue mono" id="vixValue"></div>
+              <div class="statsChange" id="vixChange"></div>
+            </div>
+          </section>
+
+          </div>
+
+          <div class="statsGrid statsGrid--commodities">
+          <section class="statsBox statsBox--gold">
+            <div class="statsBoxHead">
+              <div class="statsBoxMeta">
+                원자재
+                <button class="infoBtn">?</button>
+
+                <div class="tooltipBox">
+                  <strong>출처:</strong> Yahoo Finance<br>
+                  <strong>갱신주기:</strong> 15분<br>
+                  <strong>기준:</strong> 금 현물 가격 (XAUUSD)<br><br>
+                  · 금은 대표적인 안전자산으로 분류됩니다.<br>
+                  · 인플레이션, 지정학적 리스크 상승 시 선호됩니다.<br>
+                  · 달러 가치 및 실질금리와 역상관 관계를 가집니다.<br>
+                </div>
+              </div>
+
+              <h2 class="statsBoxTitle">금 (Gold)</h2>
+              <div class="statsBoxTag">XAU</div>
+            </div>
+
+            <div class="statsValueRow">
+              <div class="statsValue mono" id="goldValue"></div>
+              <div class="statsChange" id="goldChange"></div>
+            </div>
+          </section>
+
+          <section class="statsBox statsBox--oil">
+            <div class="statsBoxHead">
+              <div class="statsBoxMeta">
+                원자재
+                <button class="infoBtn">?</button>
+
+                <div class="tooltipBox">
+                  <strong>출처:</strong> Yahoo Finance<br>
+                  <strong>갱신주기:</strong> 5분<br>
+                  <strong>기준:</strong> WTI 원유 선물 가격 (CL=F)<br><br>
+                  · WTI는 미국 기준 원유 가격 지표입니다.<br>
+                  · 글로벌 경기 전망과 인플레이션 기대를 반영합니다.<br>
+                  · 중동 정세, OPEC 정책, 재고 발표에 민감합니다.
+                </div>
+              </div>
+
+              <h2 class="statsBoxTitle">원유 (WTI)</h2>
+              <div class="statsBoxTag">OIL</div>
+            </div>
+
+            <div class="statsValueRow">
+              <div class="statsValue mono" id="wtiValue"></div>
+              <div class="statsChange" id="wtiChange"></div>
+            </div>
+          </section>
+          </div>
+
+          <section class="statsBox statsBox--equity">
+            <div class="statsBoxHead">
+              <div class="statsBoxMeta">
+                주식 지수
+                <button class="infoBtn">?</button>
+
+                <div class="tooltipBox">
+                  <strong>출처:</strong> Yahoo Finance<br>
+                  <strong>갱신주기:</strong> 5분<br>
+                  <strong>기준:</strong> 각국 대표 주가지수 (현물 기준)<br><br>
+
+                  · 주식 지수는 해당 국가 증시 전반의 흐름을 나타냅니다.<br>
+                  · 장중에는 실시간에 가깝게, 장마감 후에는 종가 기준으로 유지됩니다.<br>
+                  · 글로벌 지수는 환율·금리·매크로 지표의 영향을 받습니다.
+                </div>
+              </div>
+
+              <h2 class="statsBoxTitle">미국 · 한국</h2>
+              <div class="statsBoxTag">Index</div>
+            </div>
+
+            <div class="indexGrid">
+
+              <div class="indexCard">
+                <div class="indexTop">
+                  <span>NASDAQ</span>
+                  <span id="nasdaqTag"></span>
+                </div>
+                <div class="indexRow">
+                  <div class="indexValue mono" id="nasdaqValue"></div>
+                  <div class="indexChange" id="nasdaqChange"></div>
+                </div>
+              </div>
+
+              <div class="indexCard">
+                <div class="indexTop">
+                  <span>S&P 500</span>
+                  <span id="spxTag"></span>
+                </div>
+                <div class="indexRow">
+                  <div class="indexValue" id="spxValue"></div>
+                  <div class="indexChange" id="spxChange"></div>
+                </div>
+              </div>
+
+              <div class="indexCard">
+                <div class="indexTop">
+                  <span>KOSPI</span>
+                  <span id="kospiTag"></span>
+                </div>
+                <div class="indexRow">
+                  <div class="indexValue mono" id="kospiValue"></div>
+                  <div class="indexChange" id="kospiChange"></div>
+                </div>
+              </div>
+
+              <div class="indexCard">
+                <div class="indexTop">
+                  <span>KOSDAQ</span>
+                  <span id="kosdaqTag"></span>
+                </div>
+                <div class="indexRow">
+                  <div class="indexValue mono" id="kosdaqValue"></div>
+                  <div class="indexChange" id="kosdaqChange"></div>
+                </div>
+              </div>
+
+            </div>
+          </section>
+
+          <section class="statsBox statsBox--calendar">
+          <div class="statsBoxHead">
+            <div class="statsBoxMeta">
+              일정
+              <button class="infoBtn">?</button>
+
+              <div class="tooltipBox">
+                <strong>출처:</strong> Investing / ForexFactory<br>
+                <strong>기준:</strong> 발표 시간 (KST)<br><br>
+                · 주요 경제지표 발표 일정입니다.<br>
+                · 실제 수치는 발표 시점에 반영됩니다.<br>
+                · 변동성 높은 이벤트는 시장에 즉각적 영향을 줄 수 있습니다.
+              </div>
+            </div>
+
+            <h2 class="statsBoxTitle">주요 경제 일정</h2>
+            <div class="statsBoxTag">Calendar</div>
+          </div>
+
+          <ul class="calendarList">
+
+          <li class="calendarItem high" data-datetime="2026-01-02T22:30">
+            <div class="calDateTime">2026.01.02 (금) 22:30</div>
+            <div class="calMain">
+              <span class="calCountry">🇺🇸</span>
+              <span class="calTitle">미국 비농업 고용지표 (Non-Farm Payrolls)</span>
+            </div>
+          </li>
+
+          <li class="calendarItem high" data-datetime="2026-01-14T22:30">
+            <div class="calDateTime">2026.01.14 (수) 22:30</div>
+            <div class="calMain">
+              <span class="calCountry">🇺🇸</span>
+              <span class="calTitle">미국 소비자물가지수 (CPI)</span>
+            </div>
+          </li>
+
+          <li class="calendarItem medium" data-datetime="2026-01-15T22:30">
+            <div class="calDateTime">2026.01.15 (목) 22:30</div>
+            <div class="calMain">
+              <span class="calCountry">🇺🇸</span>
+              <span class="calTitle">미국 생산자물가지수 (PPI)</span>
+            </div>
+          </li>
+
+          <li class="calendarItem high" data-datetime="2026-01-29T03:00">
+            <div class="calDateTime">2026.01.29 (목) 03:00</div>
+            <div class="calMain">
+              <span class="calCountry">🇺🇸</span>
+              <span class="calTitle">미국 FOMC 금리 결정</span>
+            </div>
+          </li>
+
+          <li class="calendarItem medium" data-datetime="2026-01-29T22:30">
+            <div class="calDateTime">2026.01.29 (목) 22:30</div>
+            <div class="calMain">
+              <span class="calCountry">🇺🇸</span>
+              <span class="calTitle">미국 GDP (분기 성장률, 예비치)</span>
+            </div>
+          </li>
+
+          <li class="calendarItem medium" data-datetime="2026-01-30T22:30">
+            <div class="calDateTime">2026.01.30 (금) 22:30</div>
+            <div class="calMain">
+              <span class="calCountry">🇺🇸</span>
+              <span class="calTitle">미국 개인소비지출 물가지수 (PCE)</span>
+            </div>
+          </li>
+          </ul>
+
+          <div class="statsBoxFoot">
+            ※ 일정은 사전 발표 기준이며 발표 일정은 변동될 수 있습니다.
+          </div>
+        </section>
+
+      </main>
+
+      <aside class="side">
+        <div class="banner bannerTall">
+          <img src="../images/indevelopmentright.png" alt="KIMPVIEW 배너">
+        </div>
+      </aside>
+
+    </div>
+  </div>
+  
+  <section class="visually-hidden">
+    <h2>글로벌 시장 지표 안내</h2>
+    <p>
+      본 페이지는 시장 상황을 파악할 수 있는 글로벌 지표를 요약해 제공합니다.
+      시가총액, 도미넌스 등 주요 지표를 통해 시장 흐름을 참고할 수 있습니다.
+      제공되는 정보는 참고용이며 실제 투자 결과를 보장하지 않습니다.
+    </p>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-left">
+        <span class="footer-title">KIMPVIEW</span>
+        <span class="footer-desc">Korea Premium Monitor</span>
+      </div>
+
+      <div class="footer-center">
+        본 사이트의 정보는 참고용이며, 투자 판단 및 손익에 대한 책임은 이용자 본인에게 있습니다.<br>
+      </div>
+
+      <div class="footer-right">
+        <span>© 2025 KIMPVIEW</span>
+        <span class="footer-divider">|</span>
+
+        <a href="privacy.html" class="footer-link">Privacy</a>
+        <span class="footer-divider">|</span>
+
+        <a href="terms.html" class="footer-link">Terms</a>
+        <span class="footer-divider">|</span>
+
+        <a href="about.html" class="footer-link">About</a>
+        <span class="footer-divider">|</span>
+        
+        <a href="guide.html" class="footer-link">Guide</a>
+        <span class="footer-divider">|</span>
+
+        <a href="https://t.me/KIMPVIEW" target="_blank" class="footer-link">Telegram</a>
+        <span class="footer-divider">|</span>
+        <a
+          href="https://mail.google.com/mail/?view=cm&to=kimpviewcs@gmail.com"
+          target="_blank"
+          rel="noopener"
+          class="footer-link"
+        >
+          Contact
+        </a>
+        
+      </div>
+    </div>
+  </footer>
+  
+  <script src="../js/features/topmetrics.js?v=1"></script>
+
+  <script src="../js/features/stats.js?v=999"></script>
+
+</body>
+</html>
