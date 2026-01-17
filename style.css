@@ -85,7 +85,7 @@
   .main{ flex:1; min-width:0; }
   .side{
     position: sticky;
-    top : 50px;
+    top : 80px;
     align-self: flex-start;
     width:360px;
     flex:0 0 360px;
@@ -893,16 +893,19 @@
       MOBILE
   ========================================================= */
  @media (max-width: 1440px){
-  
   .side{
-    zoom: 0.9;
-    padding-top: 50px;   
+    padding-top: 70px;   
     gap: 8px;          
   }
   
   
 } 
   @media (max-width: 1150px){
+  .side{
+    zoom: 0.9;
+    padding-top: 25px;   
+    gap: 8px;          
+  }    
     .layout{
       grid-template-columns: minmax(0, 1fr) 320px; 
       gap: 12px;
@@ -1067,7 +1070,7 @@
     
     .assetIconImg{ width:24px; height:24px; }
      td.changeStack .chgMain { font-size:12px; }
-    .assetName{ font-size:12px; }
+    .assetName{ font-size:12px !important; }
   }
 
 
@@ -1166,19 +1169,9 @@
       opacity:.7;
     }
     td.td-kimp, td.kimp{
-      font-size:12px;
+      font-size:12px !important;
       line-height:1.1;
       letter-spacing:-0.2px;
-    }
-    td.td-kimp .kimpSub,
-    td.kimp .kimpSub{
-      display:block;
-      font-size:10px;
-      line-height:1.05;        
-      margin-top:3px;          
-      opacity:.68;
-      font-weight:500;        
-      letter-spacing:-0.25px;  
     }
   .marketTable .kimpSub{
     font-size:10px !important;
@@ -1262,6 +1255,8 @@
 
   }
   @media (max-width: 365px){
+
+  .assetName{ font-size:11px !important; }    
   .logo { font-size: 16px; }    
   .mainBanner{ height:90px; }    
   .topMetricsInner{
@@ -1298,7 +1293,7 @@
   }
 
   td.priceStack .priceMain { font-size: 11px !important; }
-  td.priceStack .priceSub  { font-size: 9px; }
+  td.priceStack .priceSub  { font-size: 9px !important; }
 
 
   td.changeStack .chgMain{
@@ -1311,7 +1306,7 @@
 
   .table td { padding: 12px 4px; }
     td.td-kimp{
-    font-size:11px;
+    font-size:11px !important;
     line-height:1.12;
   }
   .marketTable .kimpSub{
