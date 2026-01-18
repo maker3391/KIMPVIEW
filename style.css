@@ -958,17 +958,7 @@
   @media (max-width: 980px){
     
     .assetText{ gap: 0px; }
-    td.priceStack > .priceMain{
-      font-size: 12px;
-      line-height: 1.15;
-      letter-spacing: -0.25px;
-      font-weight: 500;
-    }
-    td.priceStack > .priceSub{
-      font-size: 12px;
-      line-height: 1.1;
-      opacity: .65;
-    }    
+  
     .side{ display:none !important; }
     .chartBox{ height:320px;}
 
