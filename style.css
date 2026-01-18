@@ -901,7 +901,7 @@
   ========================================================= */
  @media (max-width: 1440px){
   .side{
-    padding-top: 70px;   
+    padding-top: 60px;   
     gap: 8px;          
   }
   
@@ -1055,7 +1055,7 @@
 
 
 
-    th.sortable .thLabel{ gap:6px !important; }
+    th.sortable .thLabel{ gap:5px !important; }
     th.sortable .thArrows{ width:12px !important; }
 
     .table thead th{ font-size:12px; }
@@ -1130,6 +1130,18 @@
     col.col-price{ width:26% !important; }
     col.col-ch24{  width:16% !important; }
     col.col-kimp{  width:16% !important; }
+
+    th.th-coin .thLabel{
+      padding-left: 45px !important;           
+    }
+    th.th-kimp, th.th-ch24 .thLabel{
+      padding-left: 45px !important;           
+    }
+
+    th.th-price .thLabel{
+      padding-left: 80px !important;           
+    }    
+
 
     .table thead th{ font-size:11px; }
 
