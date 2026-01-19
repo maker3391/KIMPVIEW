@@ -168,13 +168,21 @@
     return LS_TABLE_PREFIX + String(exchange || "upbit_krw").toLowerCase();
   }
 
+  const TABLE_TTL_MS = 10 * 1000;
+
   function loadTableCache(exchange) {
     try {
       const raw = localStorage.getItem(tableCacheKey(exchange));
       if (!raw) return null;
+
       const obj = JSON.parse(raw);
+      const ts = Number(obj?.ts || 0);
       const list = obj?.coins;
-      return Array.isArray(list) ? list : null;
+
+      if (!ts || !Array.isArray(list)) return null;
+      if ((Date.now() - ts) > TABLE_TTL_MS) return null;
+
+      return list;
     } catch {
       return null;
     }
@@ -372,7 +380,7 @@
         console.error("거래소 데이터 로드 실패", e);
       }
 
-      if (list.length === 0) {
+      if (!force && list.length === 0) {
         const cached = loadTableCache(state.exchange);
         if (cached && cached.length > 0) list = cached;
       }
@@ -399,8 +407,6 @@
   toggleClearBtn();
 
   restoreTopMetricsFromLS();
-  restoreTableFromCache(exchangeSelect?.value || state.exchange);
-
   startUnifiedTopMetrics();
 
   loadCoinsAndRender(true);
