@@ -259,8 +259,8 @@
   }
 
   function getLatestCursorFromState() {
-    const last = state.all?.[state.all.length - 1];
-    const d = parseDateAny(last?.updatedAt || last?.publishedAt);
+    const first = state.all?.[0]; // ✅ newest
+    const d = parseDateAny(first?.updatedAt || first?.publishedAt);
     return d ? d.toISOString() : "";
   }
 
@@ -331,7 +331,15 @@
 
   function appendIncomingToDom(items) {
     if (!newsList || !items?.length) return;
-    newsList.insertAdjacentHTML("beforeend", items.map(renderItem).join(""));
+
+    const html = items.map(renderItem).join("");
+
+    if (state.tab === "breaking") {
+      newsList.insertAdjacentHTML("afterbegin", html);
+    } else {
+      newsList.insertAdjacentHTML("beforeend", html);
+    }
+
     state.rendered += items.length;
     updateMoreBtn();
   }
@@ -355,7 +363,7 @@
         });
         if (!onlyNew.length) return;
 
-        state.all = dedupeKeepOrder([...state.all, ...onlyNew]);
+        state.all = dedupeKeepOrder([...onlyNew, ...state.all]); 
 
         const newCursor = getLatestCursorFromState();
         if (newCursor) saveBreakingCursor(newCursor);
@@ -384,7 +392,7 @@
         });
         if (!onlyNew.length) return;
 
-        state.all = dedupeKeepOrder([...state.all, ...onlyNew]);
+        state.all = dedupeKeepOrder([...onlyNew, ...state.all]); 
         saveCache("news", state.all);
 
         if (isNearBottom()) appendIncomingToDom(onlyNew);
