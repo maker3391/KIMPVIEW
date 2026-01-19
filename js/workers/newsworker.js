@@ -29,7 +29,7 @@ async function handleCoinnessBreaking(request, env, ctx) {
 
   const cache = caches.default;
   const cacheKey = new Request(
-    `${url.origin}${url.pathname}?limit=${limit}&since=${encodeURIComponent(since)}&updatedAt=${encodeURIComponent(clientUpdatedAt)}&b=${bucket}`,
+    `${url.origin}${url.pathname}?limit=${limit}&b=${bucket}`,
     { method: "GET" }
   );
 
@@ -37,23 +37,26 @@ async function handleCoinnessBreaking(request, env, ctx) {
   if (cached) return withCors(cached);
 
   try {
-    let updatedAt = clampCoinnessUpdatedAt(
-      clientUpdatedAt || new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString()
+    const latestCursor = clampCoinnessUpdatedAt(
+      clientUpdatedAt || new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString()
     );
+  
+    let itemsA = await fetchCoinnessByUpdatedAt(API_KEY, limit, latestCursor);
+    itemsA = itemsA.filter((x) => x && x.isDisplay !== false);
 
-    let items = await fetchCoinnessByUpdatedAt(API_KEY, limit, updatedAt);
-
-    if (!items.length) {
-      updatedAt = clampCoinnessUpdatedAt(new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
-      items = await fetchCoinnessByUpdatedAt(API_KEY, limit, updatedAt);
+    const itemsB = [];
+  
+    const key = (x) =>
+      `${x?.source || x?.link || ""}__${x?.publishAt || x?.updatedAt || ""}__${x?.title || ""}`;
+  
+    const seen = new Set();
+    let items = [];
+    for (const it of [...itemsA, ...itemsB]) { 
+      const k = key(it);
+      if (!k || seen.has(k)) continue;
+      seen.add(k);
+      items.push(it);
     }
-
-    if (!items.length) {
-      updatedAt = clampCoinnessUpdatedAt(new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString());
-      items = await fetchCoinnessByUpdatedAt(API_KEY, limit, updatedAt);
-    }
-
-    items = items.filter((x) => x && x.isDisplay !== false);
 
     items.sort((a, b) => {
       const ta = new Date(a.publishAt || a.updatedAt || 0).getTime();
@@ -71,7 +74,9 @@ async function handleCoinnessBreaking(request, env, ctx) {
       }
     }
 
-    const resp = json(items, 200, { "Cache-Control": "public, max-age=10" });
+    items = items.slice(0, limit);
+
+    const resp = json(items, 200, { "Cache-Control": "no-store" });
     ctx.waitUntil(cache.put(cacheKey, resp.clone()));
     return withCors(resp);
   } catch (e) {
@@ -82,6 +87,7 @@ async function handleCoinnessBreaking(request, env, ctx) {
     );
   }
 }
+
 
 function clampCoinnessUpdatedAt(iso) {
   const now = Date.now();

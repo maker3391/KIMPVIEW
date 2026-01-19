@@ -3517,7 +3517,7 @@
     }
 
     .newsCard{
-      padding:14px 14px;
+      padding:20px 14px;
     }
 
     .newsMainRow{
@@ -3534,7 +3534,7 @@
     }
 
     .newsSummary{
-      font-size:12.5px;
+      font-size:14px;
       line-height:1.55;
       max-height:calc(1.55em * 2);
     }
