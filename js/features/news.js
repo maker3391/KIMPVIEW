@@ -30,7 +30,7 @@
     news: 60_000,
   };
 
-  const POLL_MS = 10_000;
+  const POLL_MS = 60_000;
   const NEWS_POLL_MS = 60_000;
 
   /* -------------------------------------------------------------------------- */
@@ -59,9 +59,31 @@
     newsSource.textContent = (tab === "breaking") ? "출처: CoinNess" : "출처: Naver";
   }
 
+  // Robust date parser:
+  // - supports Date string
+  // - supports unix seconds/ms (number or numeric string)
+  // - supports "YYYY-MM-DD HH:mm:ss" (space) by converting to ISO-ish
   function parseDateAny(v) {
-    if (!v) return null;
-    const d = new Date(v);
+    if (v == null) return null;
+
+    const s = String(v).trim();
+    if (!s) return null;
+
+    // numeric timestamp
+    if (/^\d+$/.test(s)) {
+      const n = Number(s);
+      if (!Number.isFinite(n)) return null;
+
+      // 10 digits => seconds, 13 digits => ms
+      const ms = s.length <= 10 ? n * 1000 : n;
+      const d = new Date(ms);
+      return Number.isFinite(d.getTime()) ? d : null;
+    }
+
+    // "YYYY-MM-DD HH:mm:ss" -> "YYYY-MM-DDTHH:mm:ss"
+    const fixed = (s.includes(" ") && !s.includes("T")) ? s.replace(" ", "T") : s;
+
+    const d = new Date(fixed);
     return Number.isFinite(d.getTime()) ? d : null;
   }
 
@@ -117,59 +139,83 @@
     );
   }
 
+  // "displayAt" is the time we use for:
+  // - sorting
+  // - relative time display
+  // - cursor
+  // For CoinNess breaking, prefer updatedAt (often changes) over publishAt.
   function normalizeItem(x, tab) {
     const defaultImg = "../images/default.jpg";
 
     if (tab === "breaking") {
       if (isCoinnessShape(x)) {
+        const publishedAt = x.publishAt || x.pubDate || "";
+        const updatedAt = x.updatedAt || x.publishAt || x.pubDate || "";
+
         return {
           title: cleanText(x.title),
-          url: x.source || x.link || x.originallink,
-          summary: cleanText(x.content || x.description),
+          url: x.source || x.link || x.originallink || "",
+          summary: cleanText(x.content || x.description || ""),
           image: x.thumbnailImage || x.contentImage || x.extractedImage || defaultImg,
-          publishedAt: x.publishAt || x.updatedAt || x.pubDate,
-          updatedAt: x.updatedAt || x.publishAt || "",
+          publishedAt,
+          updatedAt,
+          displayAt: updatedAt || publishedAt, // ✅ 핵심
           badge: x.isImportant ? "중요" : (x.categoryName || ""),
         };
       }
+
       if (isNaverShape(x)) {
+        const publishedAt = x.pubDate || "";
         return {
           title: cleanText(x.title),
-          url: x.originallink || x.link,
-          summary: cleanText(x.extractedDesc || x.description),
+          url: x.originallink || x.link || "",
+          summary: cleanText(x.extractedDesc || x.description || ""),
           image: x.extractedImage || defaultImg,
-          publishedAt: x.pubDate,
+          publishedAt,
           updatedAt: x.pubDate || "",
+          displayAt: x.pubDate || "", // breaking fallback
           badge: "속보",
         };
       }
+
+      const publishedAt = x.publishedAt || x.pubDate || "";
+      const updatedAt = x.updatedAt || x.publishedAt || x.pubDate || "";
       return {
         title: cleanText(x.title),
         url: x.url || x.link || "",
         summary: cleanText(x.summary || x.description || ""),
         image: x.image || defaultImg,
-        publishedAt: x.publishedAt || x.pubDate || "",
-        updatedAt: x.updatedAt || x.publishedAt || "",
+        publishedAt,
+        updatedAt,
+        displayAt: updatedAt || publishedAt,
         badge: "속보",
       };
     }
 
+    // news tab (naver)
+    const publishedAt = x.pubDate || "";
     return {
       title: cleanText(x.title),
-      url: x.originallink || x.link,
-      summary: cleanText(x.extractedDesc || x.description),
+      url: x.originallink || x.link || "",
+      summary: cleanText(x.extractedDesc || x.description || ""),
       image: x.extractedImage || defaultImg,
-      publishedAt: x.pubDate,
+      publishedAt,
       updatedAt: x.pubDate || "",
+      displayAt: x.pubDate || "",
       badge: "",
     };
+  }
+
+  function getSortTime(it) {
+    const d = parseDateAny(it?.displayAt || it?.updatedAt || it?.publishedAt);
+    return d ? d.getTime() : 0;
   }
 
   /* -------------------------------------------------------------------------- */
   /* 5. Rendering Logic                                                         */
   /* -------------------------------------------------------------------------- */
   function renderItem(item) {
-    const timeText = esc(toTimeText(item.publishedAt));
+    const timeText = esc(toTimeText(item.displayAt || item.updatedAt || item.publishedAt));
     const badgeHtml = item.badge
       ? `<span style="display:inline-flex; align-items:center; height:20px; padding:0 8px; border-radius:999px; font-size:12px; background:#eef2ff; color:#3730a3; margin-right:8px; white-space:nowrap;">${esc(item.badge)}</span>`
       : "";
@@ -239,11 +285,13 @@
   /* -------------------------------------------------------------------------- */
   /* 6. Data Management (Dedupe, Cache)                                         */
   /* -------------------------------------------------------------------------- */
+  // ✅ dedupe key: do NOT rely on publishedAt alone (can cause weird duplicates)
+  // use displayAt(updatedAt-first) so "갱신형"이 중복으로 쌓이는 걸 막음
   function itemKey(it) {
     const u = (it?.url || "").trim();
     const t = (it?.title || "").trim();
-    const p = (it?.publishedAt || "").trim();
-    return `${u}__${p}__${t}`;
+    const a = (it?.displayAt || it?.updatedAt || it?.publishedAt || "").trim();
+    return `${u}__${a}__${t}`;
   }
 
   function dedupeKeepOrder(list) {
@@ -259,8 +307,8 @@
   }
 
   function getLatestCursorFromState() {
-    const first = state.all?.[0]; // ✅ newest
-    const d = parseDateAny(first?.updatedAt || first?.publishedAt);
+    const first = state.all?.[0]; // newest
+    const d = parseDateAny(first?.displayAt || first?.updatedAt || first?.publishedAt);
     return d ? d.toISOString() : "";
   }
 
@@ -290,32 +338,27 @@
   /* -------------------------------------------------------------------------- */
   async function fetchLatest(tab, opts = {}) {
     if (tab === "breaking") {
-      const limit = 40;
-      const updatedAt = (opts.updatedAt || "").trim();
-      const url = updatedAt
-        ? `${ENDPOINTS.breaking}?limit=${limit}&updatedAt=${encodeURIComponent(updatedAt)}`
-        : `${ENDPOINTS.breaking}?limit=${limit}`;
+      const limit = 50;
+      const hours = 24;
+      const url = `${ENDPOINTS.breaking}?limit=${limit}&hours=${hours}`;
 
       const res = await fetch(url, { cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const raw = await res.json();
 
-      return raw.map((x) => normalizeItem(x, "breaking")).sort((a, b) => {
-        const ta = parseDateAny(a.publishedAt)?.getTime() ?? 0;
-        const tb = parseDateAny(b.publishedAt)?.getTime() ?? 0;
-        return tb - ta;
-      });
+      return raw
+        .map((x) => normalizeItem(x, "breaking"))
+        .sort((a, b) => getSortTime(b) - getSortTime(a)); 
     }
 
     const res = await fetch(ENDPOINTS.news, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     const raw = Array.isArray(json) ? json : (json.items || []);
-    return raw.map((x) => normalizeItem(x, "news")).sort((a, b) => {
-      const ta = parseDateAny(a.publishedAt)?.getTime() ?? 0;
-      const tb = parseDateAny(b.publishedAt)?.getTime() ?? 0;
-      return tb - ta;
-    });
+
+    return raw
+      .map((x) => normalizeItem(x, "news"))
+      .sort((a, b) => getSortTime(b) - getSortTime(a));
   }
 
   function stopBreakingPoll() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
@@ -349,32 +392,35 @@
     pollTimer = setInterval(async () => {
       if (state.loading || state.tab !== "breaking") return;
 
-      const cursor = getLatestCursorFromState() || loadBreakingCursor();
-
       try {
-        const incomingRaw = await fetchLatest("breaking", { updatedAt: cursor });
-        if (!incomingRaw.length) return;
+        const incoming = await fetchLatest("breaking");
+        if (!incoming.length) return;
 
         const existed = new Set(state.all.map(itemKey));
-
-        const onlyNew = incomingRaw.filter((it) => {
+        const onlyNew = incoming.filter((it) => {
           const k = itemKey(it);
           return k && !existed.has(k);
         });
-        if (!onlyNew.length) return;
 
-        state.all = dedupeKeepOrder([...onlyNew, ...state.all]); 
-
-        const newCursor = getLatestCursorFromState();
-        if (newCursor) saveBreakingCursor(newCursor);
-
+        state.all = dedupeKeepOrder(incoming).sort((a, b) => getSortTime(b) - getSortTime(a));
         saveCache("breaking", state.all);
 
-        if (isNearBottom()) appendIncomingToDom(onlyNew);
-        else updateMoreBtn(); 
+      if (onlyNew.length) {
+        if (isNearBottom()) {
+          const keepCount = Math.max(state.rendered, state.first);
+
+          newsList.innerHTML = "";
+          state.rendered = 0;
+
+          appendNext(keepCount);
+        } else {
+          updateMoreBtn();
+        }
+      }
       } catch {}
     }, POLL_MS);
   }
+
 
   function startNewsPoll() {
     stopNewsPoll();
@@ -392,7 +438,7 @@
         });
         if (!onlyNew.length) return;
 
-        state.all = dedupeKeepOrder([...onlyNew, ...state.all]); 
+        state.all = dedupeKeepOrder([...onlyNew, ...state.all]).sort((a, b) => getSortTime(b) - getSortTime(a));
         saveCache("news", state.all);
 
         if (isNearBottom()) appendIncomingToDom(onlyNew);
@@ -437,11 +483,10 @@
       const cached = loadCache(tab);
       const freshEnough = cached && (Date.now() - (cached.ts || 0) < TTL_MS[tab]);
       if (cached?.items?.length) {
-        state.all = cached.items.slice().sort((a, b) => {
-          const ta = parseDateAny(a.publishedAt)?.getTime() ?? 0;
-          const tb = parseDateAny(b.publishedAt)?.getTime() ?? 0;
-          return tb - ta;
-        });
+        state.all = cached.items
+          .slice()
+          .sort((a, b) => getSortTime(b) - getSortTime(a));
+
         renderFromState();
         if (freshEnough) hide(newsLoading);
       } else {
@@ -456,14 +501,10 @@
     try {
       const items = await fetchLatest(tab);
 
-      state.all = dedupeKeepOrder(items);
+      state.all = dedupeKeepOrder(items).sort((a, b) => getSortTime(b) - getSortTime(a));
       renderFromState();
       saveCache(tab, state.all);
 
-      if (tab === "breaking") {
-        const cursor = getLatestCursorFromState();
-        if (cursor) saveBreakingCursor(cursor);
-      }
     } catch {
       const cached = ignoreCache ? null : loadCache(tab);
       if (!cached?.items?.length) {

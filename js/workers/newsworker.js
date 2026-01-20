@@ -18,18 +18,21 @@ async function handleCoinnessBreaking(request, env, ctx) {
 
   const url = new URL(request.url);
 
-  const rawLimit = Number(url.searchParams.get("limit") || 40);
-  const limit = Math.max(1, Math.min(40, Number.isFinite(rawLimit) ? rawLimit : 40));
+  const rawLimit = Number(url.searchParams.get("limit") || 50);
+  const limit = Math.max(1, Math.min(40, Number.isFinite(rawLimit) ? rawLimit : 50));
 
   const since = (url.searchParams.get("since") || "").trim();
   const clientUpdatedAt = (url.searchParams.get("updatedAt") || "").trim();
+
+  const hoursParam = Number(url.searchParams.get("hours") || 24);
+  const hours = Math.max(6, Math.min(48, Number.isFinite(hoursParam) ? hoursParam : 24));
 
   const BUCKET_MS = 10_000;
   const bucket = Math.floor(Date.now() / BUCKET_MS);
 
   const cache = caches.default;
   const cacheKey = new Request(
-    `${url.origin}${url.pathname}?limit=${limit}&b=${bucket}`,
+    `${url.origin}${url.pathname}?limit=${limit}&hours=${hours}&b=${bucket}`,
     { method: "GET" }
   );
 
@@ -37,40 +40,65 @@ async function handleCoinnessBreaking(request, env, ctx) {
   if (cached) return withCors(cached);
 
   try {
-    const latestCursor = clampCoinnessUpdatedAt(
-      clientUpdatedAt || new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString()
-    );
-  
-    let itemsA = await fetchCoinnessByUpdatedAt(API_KEY, limit, latestCursor);
-    itemsA = itemsA.filter((x) => x && x.isDisplay !== false);
+    const now = Date.now();
+    const startIso = clampCoinnessUpdatedAt(clientUpdatedAt || new Date(now - hours * 60 * 60 * 1000).toISOString());
 
-    const itemsB = [];
-  
+    const windowHours = 6;
+    const windows = Math.max(1, Math.ceil(hours / windowHours));
+
+    const parseDateAny = (v) => {
+      if (v == null) return null;
+      const s = String(v).trim();
+      if (!s) return null;
+      if (/^\d+$/.test(s)) {
+        const n = Number(s);
+        if (!Number.isFinite(n)) return null;
+        const ms = s.length <= 10 ? n * 1000 : n;
+        const d = new Date(ms);
+        return Number.isFinite(d.getTime()) ? d : null;
+      }
+      const fixed = (s.includes(" ") && !s.includes("T")) ? s.replace(" ", "T") : s;
+      const d = new Date(fixed);
+      return Number.isFinite(d.getTime()) ? d : null;
+    };
+
+    const timeMs = (x) => {
+      const d = parseDateAny(x?.updatedAt || x?.publishAt);
+      return d ? d.getTime() : 0;
+    };
+
     const key = (x) =>
-      `${x?.source || x?.link || ""}__${x?.publishAt || x?.updatedAt || ""}__${x?.title || ""}`;
-  
+      `${(x?.source || x?.link || "").trim()}__${(x?.title || "").trim()}__${(x?.updatedAt || x?.publishAt || "").trim()}`;
+
     const seen = new Set();
-    let items = [];
-    for (const it of [...itemsA, ...itemsB]) { 
-      const k = key(it);
-      if (!k || seen.has(k)) continue;
-      seen.add(k);
-      items.push(it);
+    const merged = [];
+
+    for (let i = 0; i < windows; i++) {
+      const cursorIso = clampCoinnessUpdatedAt(new Date(now - (i * windowHours) * 60 * 60 * 1000).toISOString());
+      let part = await fetchCoinnessByUpdatedAt(API_KEY, limit, cursorIso);
+      part = part.filter((x) => x && x.isDisplay !== false);
+
+      for (const it of part) {
+        const k = key(it);
+        if (!k || seen.has(k)) continue;
+        seen.add(k);
+        merged.push(it);
+      }
     }
 
-    items.sort((a, b) => {
-      const ta = new Date(a.publishAt || a.updatedAt || 0).getTime();
-      const tb = new Date(b.publishAt || b.updatedAt || 0).getTime();
-      return tb - ta;
-    });
+    merged.sort((a, b) => timeMs(b) - timeMs(a));
+
+    const startMs = Date.parse(startIso);
+    let items = merged;
+
+    if (Number.isFinite(startMs)) {
+      items = items.filter((x) => timeMs(x) >= startMs);
+    }
 
     if (since) {
       const sinceMs = Date.parse(since);
       if (Number.isFinite(sinceMs)) {
-        items = items.filter((x) => {
-          const t = new Date(x.publishAt || x.updatedAt || 0).getTime();
-          return t > sinceMs;
-        });
+        items = items.filter((x) => timeMs(x) > sinceMs);
       }
     }
 
@@ -87,6 +115,7 @@ async function handleCoinnessBreaking(request, env, ctx) {
     );
   }
 }
+
 
 
 function clampCoinnessUpdatedAt(iso) {
