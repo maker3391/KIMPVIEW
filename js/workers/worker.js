@@ -20,15 +20,17 @@ export default {
       };
       return new Response(JSON.stringify(obj), { status, headers });
     };
-    
 
     // ===== helpers =====
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-    function withCors(response, cacheSec = 0, contentType = "application/json; charset=utf-8") {
+    function withCors(response, cacheSec = 0, contentType = null) {
       const h = new Headers(response.headers);
       for (const [k, v] of Object.entries(corsHeaders)) h.set(k, v);
+
+      // If contentType is provided, override it. Otherwise keep origin content-type.
       if (contentType) h.set("Content-Type", contentType);
+
       h.set("Cache-Control", cacheSec > 0 ? `public, max-age=${cacheSec}` : "no-store");
       return new Response(response.body, { status: response.status, headers: h });
     }
@@ -119,8 +121,7 @@ export default {
               mcap = fData.marketCapitalization * 1000000;
             }
           }
-        } catch (e) {
-        }
+        } catch (e) {}
       }
 
       const volume = meta.regularMarketVolume || 0;
@@ -177,7 +178,6 @@ export default {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
           "Accept": "application/json",
         },
-
         cf: { cacheTtl: 20, cacheEverything: true },
       });
 
@@ -223,7 +223,7 @@ export default {
         dayLow: q?.regularMarketDayLow ?? null,
         currency: q?.currency || "USD",
         ts,
-        closes: [], 
+        closes: [],
         source: "Yahoo Quote (Batch)",
       };
     }
@@ -245,12 +245,12 @@ export default {
         const cacheSec = 60 * 60; // 1 hour
         const cacheKey = new Request(url.origin + "/__paprika_caps_v3");
         const cache = caches.default;
-      
+
         const cached = await cache.match(cacheKey);
         if (cached) return withCors(cached, cacheSec);
-      
+
         const pUrl = "https://api.coinpaprika.com/v1/tickers?quotes=USD";
-      
+
         const pRes = await fetchWithRetry(pUrl, {
           timeoutMs: 12000,
           retries: 2,
@@ -260,16 +260,16 @@ export default {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
           },
         });
-      
+
         if (!pRes.ok) {
           return jsonRes({ error: "CoinPaprika HTTP error", status: pRes.status }, { status: 502, cacheSec: 30 });
         }
-      
+
         const arr = await pRes.json();
         if (!Array.isArray(arr)) {
           return jsonRes({ error: "CoinPaprika unexpected payload" }, { status: 502, cacheSec: 30 });
         }
-      
+
         // symbol -> market_cap (USD)
         const caps = {};
         for (const it of arr) {
@@ -277,27 +277,28 @@ export default {
           const sym = String(it?.symbol || "").toUpperCase();
           const mc = Number(it?.quotes?.USD?.market_cap || 0);
           if (!mc) continue;
-        
+
           // ✅ USDT: tether id 우선, 없으면 max fallback
           if (sym === "USDT") {
             if (id === "tether-usdt") {
-              caps.USDT = mc;          // 진짜 테더
+              caps.USDT = mc; // real tether
             } else {
               const prev = Number(caps.USDT || 0);
-              if (mc > prev) caps.USDT = mc;  // fallback: max 유지
+              if (mc > prev) caps.USDT = mc;
             }
             continue;
           }
-        
-          // 나머지 심볼: max 유지
+
+          // others: max 유지
           const prev = Number(caps[sym] || 0);
           if (mc > prev) caps[sym] = mc;
         }
-      
+
         const resp = jsonRes(caps, { cacheSec });
         ctx.waitUntil(cache.put(cacheKey, resp.clone()));
         return resp;
       }
+
       // ===== FX Google =====
       if (path === "/fx/google") {
         const gRes = await fetchWithRetry("https://www.google.com/finance/quote/USD-KRW?hl=en", {
@@ -389,6 +390,41 @@ export default {
         return jsonRes(data, { cacheSec: 60 });
       }
 
+      // ===== NEW: Stock icon proxy (CORS + cache) =====
+      if (path === "/stock-icon") {
+        const symRaw = (url.searchParams.get("symbol") || "").trim();
+        if (!symRaw) return jsonRes({ error: "Missing symbol" }, { status: 400 });
+
+        const symbol = symRaw.toUpperCase();
+
+        const iconUrl = `https://financialmodelingprep.com/image-stock/${encodeURIComponent(symbol)}.png`;
+
+        const cacheSec = 60 * 60 * 24 * 7; // 7 days
+        const cache = caches.default;
+        const cacheKey = new Request(`${url.origin}/__stock_icon__/${encodeURIComponent(symbol)}`);
+
+        const cached = await cache.match(cacheKey);
+        if (cached) return withCors(cached, cacheSec); // keep cached content-type
+
+        const res = await fetchWithRetry(iconUrl, {
+          timeoutMs: 7000,
+          retries: 1,
+          headers: {
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+          },
+          cf: { cacheTtl: cacheSec, cacheEverything: true },
+        });
+
+        if (!res.ok) {
+          return withCors(new Response("Not Found", { status: 404 }), 60, "text/plain; charset=utf-8");
+        }
+
+        const out = withCors(res, cacheSec); // keep origin content-type
+        ctx.waitUntil(cache.put(cacheKey, out.clone()));
+        return out;
+      }
+
       // ===== Stocks =====
       if (path === "/stocks" || path === "/stock") {
         const raw = url.searchParams.get("symbols") || url.searchParams.get("symbol") || "";
@@ -415,6 +451,7 @@ export default {
           );
           return jsonRes({ items: itemsFallback }, { cacheSec: 60 });
         }
+
         const qMap = new Map();
         for (const q of quotes) {
           const s = String(q?.symbol || "").trim();
@@ -423,7 +460,7 @@ export default {
 
         const items = syms.map((s) => {
           const key = String(s).trim().toUpperCase();
-          const q = qMap.get(key) || qMap.get(key.replace(".", "")); 
+          const q = qMap.get(key) || qMap.get(key.replace(".", ""));
           if (!q) return { symbol: s, error: true };
           return normalizeQuoteToPayload(q, s);
         });
@@ -445,6 +482,7 @@ export default {
           "/upbit/* (proxy)",
           "/bithumb/* (proxy)",
           ...Object.keys(PATH_TO_SYMBOL),
+          "/stock-icon?symbol=AAPL",
           "/stock?symbol=...",
           "/stocks?symbols=AAPL,MSFT",
           "/yahoo?symbol=...",

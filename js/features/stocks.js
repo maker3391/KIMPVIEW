@@ -208,7 +208,7 @@ function buildPriceStack(priceUSD) {
 
 function getStockIconUrl(symbol) {
   const s = String(symbol || "").toUpperCase().trim();
-  return `https://financialmodelingprep.com/image-stock/${encodeURIComponent(s)}.png`;
+  return `${PROXY_BASE}/stock-icon?symbol=${encodeURIComponent(s)}`;
 }
 
 function getStockIconCandidates(symbol) {
