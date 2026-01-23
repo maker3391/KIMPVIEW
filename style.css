@@ -358,7 +358,30 @@
     border-radius:16px;
     overflow:visible;
   }
+  .tableSpinner {
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:120px;
+    margin: 8px 0 12px;
+  }
 
+  .spinner {
+    width:64px;
+    height:64px;
+    border-radius:50%;
+
+    border:4px solid rgba(0,0,0,0.06);
+
+    border-top-color:#3b82f6;
+    border-right-color:#3b82f6;
+
+    animation: spin 0.9s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
   /* ===== MAIN TABLE ===== */
   .table{
     width:100%;

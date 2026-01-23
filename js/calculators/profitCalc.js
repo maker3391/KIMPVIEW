@@ -82,7 +82,6 @@
     if (el) el.value = String(val);
   }
 
-  // ===== input comma formatting (keep caret) =====
   function formatCommaIntString(raw) {
     const s = String(raw ?? "").replace(/[^\d]/g, "");
     if (!s) return "";
@@ -228,7 +227,6 @@
   }
 
   function bindAutoCalc() {
-    // fee/tax: decimal (no comma)
     if (feeEl) {
       feeEl.addEventListener("input", compute);
       feeEl.addEventListener("blur", () => {
@@ -245,7 +243,6 @@
       });
     }
 
-    // prices/qty: integer-like (comma while typing)
     [buyPriceEl, sellQtyEl, sellPriceEl].filter(Boolean).forEach((el) => {
       el.addEventListener("input", () => {
         applyCommaWhileTyping(el);

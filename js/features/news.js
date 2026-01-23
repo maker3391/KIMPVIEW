@@ -1,7 +1,4 @@
 (() => {
-  /* -------------------------------------------------------------------------- */
-  /* 1. Configuration & Constants                                               */
-  /* -------------------------------------------------------------------------- */
   const PROXY_BASE = "https://news.cjstn3391.workers.dev";
   const $ = (id) => document.getElementById(id);
 
@@ -33,9 +30,6 @@
   const POLL_MS = 60_000;
   const NEWS_POLL_MS = 60_000;
 
-  /* -------------------------------------------------------------------------- */
-  /* 2. Global State                                                            */
-  /* -------------------------------------------------------------------------- */
   let pollTimer = null;
   let newsPollTimer = null;
 
@@ -48,9 +42,6 @@
     loading: false,
   };
 
-  /* -------------------------------------------------------------------------- */
-  /* 3. Utility Functions (Format & Sanitize)                                   */
-  /* -------------------------------------------------------------------------- */
   function show(el) { if (el) el.style.display = ""; }
   function hide(el) { if (el) el.style.display = "none"; }
 
@@ -59,28 +50,21 @@
     newsSource.textContent = (tab === "breaking") ? "출처: CoinNess" : "출처: Naver";
   }
 
-  // Robust date parser:
-  // - supports Date string
-  // - supports unix seconds/ms (number or numeric string)
-  // - supports "YYYY-MM-DD HH:mm:ss" (space) by converting to ISO-ish
   function parseDateAny(v) {
     if (v == null) return null;
 
     const s = String(v).trim();
     if (!s) return null;
 
-    // numeric timestamp
     if (/^\d+$/.test(s)) {
       const n = Number(s);
       if (!Number.isFinite(n)) return null;
 
-      // 10 digits => seconds, 13 digits => ms
       const ms = s.length <= 10 ? n * 1000 : n;
       const d = new Date(ms);
       return Number.isFinite(d.getTime()) ? d : null;
     }
 
-    // "YYYY-MM-DD HH:mm:ss" -> "YYYY-MM-DDTHH:mm:ss"
     const fixed = (s.includes(" ") && !s.includes("T")) ? s.replace(" ", "T") : s;
 
     const d = new Date(fixed);
@@ -118,9 +102,6 @@
       .replace(/&amp;/g, "&");
   }
 
-  /* -------------------------------------------------------------------------- */
-  /* 4. Data Normalization                                                      */
-  /* -------------------------------------------------------------------------- */
   function isCoinnessShape(x) {
     return x && (
       typeof x.content === "string" ||
@@ -139,11 +120,6 @@
     );
   }
 
-  // "displayAt" is the time we use for:
-  // - sorting
-  // - relative time display
-  // - cursor
-  // For CoinNess breaking, prefer updatedAt (often changes) over publishAt.
   function normalizeItem(x, tab) {
     const defaultImg = "../images/default.jpg";
 
@@ -159,7 +135,7 @@
           image: x.thumbnailImage || x.contentImage || x.extractedImage || defaultImg,
           publishedAt,
           updatedAt,
-          displayAt: updatedAt || publishedAt, // ✅ 핵심
+          displayAt: updatedAt || publishedAt, 
           badge: x.isImportant ? "중요" : (x.categoryName || ""),
         };
       }
@@ -173,7 +149,7 @@
           image: x.extractedImage || defaultImg,
           publishedAt,
           updatedAt: x.pubDate || "",
-          displayAt: x.pubDate || "", // breaking fallback
+          displayAt: x.pubDate || "", 
           badge: "속보",
         };
       }
@@ -192,7 +168,6 @@
       };
     }
 
-    // news tab (naver)
     const publishedAt = x.pubDate || "";
     return {
       title: cleanText(x.title),
@@ -211,9 +186,6 @@
     return d ? d.getTime() : 0;
   }
 
-  /* -------------------------------------------------------------------------- */
-  /* 5. Rendering Logic                                                         */
-  /* -------------------------------------------------------------------------- */
   function renderItem(item) {
     const timeText = esc(toTimeText(item.displayAt || item.updatedAt || item.publishedAt));
     const badgeHtml = item.badge
@@ -282,11 +254,6 @@
     }
   }
 
-  /* -------------------------------------------------------------------------- */
-  /* 6. Data Management (Dedupe, Cache)                                         */
-  /* -------------------------------------------------------------------------- */
-  // ✅ dedupe key: do NOT rely on publishedAt alone (can cause weird duplicates)
-  // use displayAt(updatedAt-first) so "갱신형"이 중복으로 쌓이는 걸 막음
   function itemKey(it) {
     const u = (it?.url || "").trim();
     const t = (it?.title || "").trim();
@@ -333,9 +300,6 @@
     try { localStorage.setItem(LS_KEYS[tab], JSON.stringify({ ts: Date.now(), items })); } catch {}
   }
 
-  /* -------------------------------------------------------------------------- */
-  /* 7. API Interaction (Fetch & Polling)                                       */
-  /* -------------------------------------------------------------------------- */
   async function fetchLatest(tab, opts = {}) {
     if (tab === "breaking") {
       const limit = 50;
@@ -447,9 +411,6 @@
     }, NEWS_POLL_MS);
   }
 
-  /* -------------------------------------------------------------------------- */
-  /* 8. Main Loader                                                             */
-  /* -------------------------------------------------------------------------- */
   async function loadAll(tab, opts = {}) {
     if (state.loading) return;
     state.loading = true;
@@ -519,9 +480,6 @@
     }
   }
 
-  /* -------------------------------------------------------------------------- */
-  /* 9. Event Listeners                                                         */
-  /* -------------------------------------------------------------------------- */
   newsList?.addEventListener("click", (e) => {
     if (e.target.closest(".newsReadMore")) return;
     const card = e.target.closest(".newsCard");

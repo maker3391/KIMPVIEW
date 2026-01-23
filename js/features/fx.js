@@ -82,7 +82,6 @@ function renderFlag(emoji, altText = "") {
   return `<img class="fxFlagImg" src="${url}" alt="${altText}" loading="lazy">`;
 }
 
-  // ---------- State ----------
   const state = {
     from: "KRW",
     to: "USD",
@@ -92,9 +91,8 @@ function renderFlag(emoji, altText = "") {
     inflight: null
   };
 
-  // ---------- Rates fetch ----------
   const CACHE_KEY = "KIMPVIEW_FX_RATES_USD_V1";
-  const TTL = 10 * 60 * 1000; // 10 min
+  const TTL = 10 * 60 * 1000;
 
   function readCache() {
     try {
@@ -148,7 +146,6 @@ function renderFlag(emoji, altText = "") {
     return state.inflight;
   }
 
-  // ---------- Formatting ----------
   function fmtNumber(n, code) {
     if (!Number.isFinite(n)) return "-";
     const noDecimals = new Set(["VND", "IDR", "KRW", "JPY"]);
@@ -174,7 +171,6 @@ function renderFlag(emoji, altText = "") {
     return `기준 시각: ${kst} (KST)`;
   }
 
-  // ---------- Conversion ----------
   function getRate(base, quote) {
     const rates = state.rates;
     if (!rates) return null;
@@ -263,7 +259,6 @@ function renderFlag(emoji, altText = "") {
     renderList("to", elToSearch.value);
   }
 
-  // ---------- Dropdown UI ----------
   function openDrop(which) {
     state.openDrop = which;
     elBackdrop.classList.remove("fxHidden");
@@ -327,7 +322,6 @@ function renderFlag(emoji, altText = "") {
     closeDrop();
   }
 
-  // ---------- Events ----------
   elFromBtn.addEventListener("click", () => openDrop("from"));
   elToBtn.addEventListener("click", () => openDrop("to"));
 
@@ -373,7 +367,6 @@ function renderFlag(emoji, altText = "") {
     updateResult();
   });
 
-  // ---------- Init ----------
   async function init() {
     setCurrency("from", state.from);
     setCurrency("to", state.to);
