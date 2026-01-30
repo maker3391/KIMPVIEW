@@ -17,6 +17,11 @@
 
   let sideState = { tradeRows: [], liqRows: [] };
 
+  const STORAGE = sessionStorage;
+
+  const LS_TRADE_KEY = "kimpview:side:tradeRows:v1";
+  const LS_LIQ_KEY = "kimpview:side:liqRows:v1";
+
   function escapeHtml(s) {
     return String(s ?? "").replace(/[&<>"']/g, (m) => ({
       "&": "&amp;",
@@ -67,6 +72,49 @@
 
   function makeEmptyRow() {
     return { sym: "", type: "", label: null, amount: null, price: null, time: null };
+  }
+
+  function safeParseArray(raw) {
+    try {
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function normalizeRows(arr, maxLen = 3) {
+    const safe = Array.isArray(arr) ? arr : [];
+    const out = safe
+      .filter(Boolean)
+      .map((r) => ({
+        sym: String(r?.sym || ""),
+        type: String(r?.type || ""),
+        label: (r?.label == null ? null : String(r.label)),
+        amount: (r?.amount == null ? null : Number(r.amount)),
+        price: (r?.price == null ? null : Number(r.price)),
+        time: (r?.time == null ? null : String(r.time)),
+      }))
+      .slice(0, maxLen);
+
+    while (out.length < maxLen) out.push(makeEmptyRow());
+    return out;
+  }
+
+  function saveSideRows() {
+    try { STORAGE.setItem(LS_TRADE_KEY, JSON.stringify(sideState.tradeRows)); } catch {}
+    try { STORAGE.setItem(LS_LIQ_KEY, JSON.stringify(sideState.liqRows)); } catch {}
+  }
+
+  function restoreSideRows() {
+    const tradeRaw = STORAGE.getItem(LS_TRADE_KEY);
+    const liqRaw = STORAGE.getItem(LS_LIQ_KEY);
+
+    const tradeArr = tradeRaw ? safeParseArray(tradeRaw) : null;
+    const liqArr = liqRaw ? safeParseArray(liqRaw) : null;
+
+    sideState.tradeRows = normalizeRows(tradeArr, 3);
+    sideState.liqRows = normalizeRows(liqArr, 3);
   }
 
   function renderAlert(kind) {
@@ -130,7 +178,8 @@
       price: priceUSD,
       time: nowTime(),
     });
-    sideState.tradeRows = sideState.tradeRows.slice(0, 3);
+    sideState.tradeRows = normalizeRows(sideState.tradeRows, 3);
+    saveSideRows();
     renderTrade();
   }
 
@@ -143,7 +192,8 @@
       price: priceUSD,
       time: nowTime(),
     });
-    sideState.liqRows = sideState.liqRows.slice(0, 3);
+    sideState.liqRows = normalizeRows(sideState.liqRows, 3);
+    saveSideRows();
     renderLiq();
   }
 
@@ -151,7 +201,7 @@
     body.classList.toggle("is-collapsed", collapsed);
     btn.classList.toggle("rot", collapsed);
     btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
-    localStorage.setItem(storageKey, collapsed ? "1" : "0");
+    STORAGE.setItem(storageKey, collapsed ? "1" : "0");
   }
 
   function bindCollapseById(toggleId, bodyId, storageKey) {
@@ -159,7 +209,7 @@
     const body = document.getElementById(bodyId);
     if (!btn || !body) return;
 
-    const saved = localStorage.getItem(storageKey) === "1";
+    const saved = STORAGE.getItem(storageKey) === "1";
     setCollapse(btn, body, storageKey, saved);
 
     btn.addEventListener("click", () => {
@@ -178,7 +228,7 @@
         if (!body) return;
 
         const storageKey = `kimpview:${key}Collapsed`;
-        const saved = localStorage.getItem(storageKey) === "1";
+        const saved = STORAGE.getItem(storageKey) === "1";
         setCollapse(btn, body, storageKey, saved);
 
         btn.addEventListener("click", () => {
@@ -255,8 +305,6 @@
 
     wsFutures.onopen = () => {
       wsRetry = 0;
-      sideState.tradeRows = Array.from({ length: 3 }, makeEmptyRow);
-      sideState.liqRows = Array.from({ length: 3 }, makeEmptyRow);
       renderTrade();
       renderLiq();
     };
@@ -314,8 +362,7 @@
   function init() {
     bindAlertCollapse();
 
-    sideState.tradeRows = Array.from({ length: 3 }, makeEmptyRow);
-    sideState.liqRows = Array.from({ length: 3 }, makeEmptyRow);
+    restoreSideRows();
     renderTrade();
     renderLiq();
 
