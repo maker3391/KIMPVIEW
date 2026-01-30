@@ -22,6 +22,8 @@
   const LS_TRADE_KEY = "kimpview:side:tradeRows:v1";
   const LS_LIQ_KEY = "kimpview:side:liqRows:v1";
 
+  const LS_MARKET_KEY = "kimpview:side:marketStatus:v1";
+
   function escapeHtml(s) {
     return String(s ?? "").replace(/[&<>"']/g, (m) => ({
       "&": "&amp;",
@@ -115,6 +117,56 @@
 
     sideState.tradeRows = normalizeRows(tradeArr, 3);
     sideState.liqRows = normalizeRows(liqArr, 3);
+  }
+
+  function saveMarketStatusToSession({ longPct, shortPct, fgValue, fgClass }) {
+    try {
+      STORAGE.setItem(LS_MARKET_KEY, JSON.stringify({
+        ts: Date.now(),
+        longPct: Number.isFinite(longPct) ? longPct : null,
+        shortPct: Number.isFinite(shortPct) ? shortPct : null,
+        fgValue: Number.isFinite(fgValue) ? fgValue : null,
+        fgClass: (fgClass == null ? null : String(fgClass)),
+      }));
+    } catch {}
+  }
+
+  function applyFearGreedUI(value, clsName) {
+    if (!$fearGreed) return;
+    if (!Number.isFinite(value)) return;
+
+    const v = Math.round(value);
+    const label = String(clsName || "").trim();
+
+    $fearGreed.textContent = label ? `${v} (${label})` : String(v);
+    $fearGreed.classList.remove("fear-low", "fear-mid", "fear-high");
+    if (v < 40) $fearGreed.classList.add("fear-low");
+    else if (v < 60) $fearGreed.classList.add("fear-mid");
+    else $fearGreed.classList.add("fear-high");
+  }
+
+  function restoreMarketStatusFromSession() {
+    try {
+      const raw = STORAGE.getItem(LS_MARKET_KEY);
+      if (!raw) return false;
+
+      const obj = JSON.parse(raw);
+      if (!obj || typeof obj !== "object") return false;
+
+      const longPct = Number(obj.longPct);
+      const shortPct = Number(obj.shortPct);
+
+      if ($longRate && Number.isFinite(longPct)) $longRate.textContent = longPct.toFixed(2) + "%";
+      if ($shortRate && Number.isFinite(shortPct)) $shortRate.textContent = shortPct.toFixed(2) + "%";
+
+      const fgValue = Number(obj.fgValue);
+      const fgClass = obj.fgClass;
+      if (Number.isFinite(fgValue)) applyFearGreedUI(fgValue, fgClass);
+
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   function renderAlert(kind) {
@@ -246,6 +298,11 @@
   async function loadMarketStatus() {
     if (!$longRate || !$shortRate || !$fearGreed) return;
 
+    let longPct = NaN;
+    let shortPct = NaN;
+    let fgValue = NaN;
+    let fgClass = "";
+
     try {
       const url = "https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=1d&limit=1";
       const arr = await fetchJsonWithTimeout(url, 7000);
@@ -255,16 +312,12 @@
       const shortAcc = Number(d?.shortAccount ?? NaN);
 
       if (Number.isFinite(longAcc) && Number.isFinite(shortAcc) && (longAcc + shortAcc) > 0) {
-        $longRate.textContent = (longAcc * 100).toFixed(2) + "%";
-        $shortRate.textContent = (shortAcc * 100).toFixed(2) + "%";
-      } else {
-        $longRate.textContent = "-";
-        $shortRate.textContent = "-";
+        longPct = longAcc * 100;
+        shortPct = shortAcc * 100;
+        $longRate.textContent = longPct.toFixed(2) + "%";
+        $shortRate.textContent = shortPct.toFixed(2) + "%";
       }
-    } catch {
-      $longRate.textContent = "-";
-      $shortRate.textContent = "-";
-    }
+    } catch {}
 
     try {
       const j = await fetchJsonWithTimeout("https://api.alternative.me/fng/?limit=1", 7000);
@@ -272,16 +325,14 @@
       const clsName = String(j?.data?.[0]?.value_classification ?? "").trim();
 
       if (Number.isFinite(v)) {
-        $fearGreed.textContent = `${Math.round(v)} (${clsName})`;
-        $fearGreed.classList.remove("fear-low", "fear-mid", "fear-high");
-        if (v < 40) $fearGreed.classList.add("fear-low");
-        else if (v < 60) $fearGreed.classList.add("fear-mid");
-        else $fearGreed.classList.add("fear-high");
-      } else {
-        $fearGreed.textContent = "-";
+        fgValue = v;
+        fgClass = clsName;
+        applyFearGreedUI(v, clsName);
       }
-    } catch {
-      $fearGreed.textContent = "-";
+    } catch {}
+
+    if (Number.isFinite(longPct) || Number.isFinite(shortPct) || Number.isFinite(fgValue)) {
+      saveMarketStatusToSession({ longPct, shortPct, fgValue, fgClass });
     }
   }
 
@@ -366,6 +417,7 @@
     renderTrade();
     renderLiq();
 
+    restoreMarketStatusFromSession();
     loadMarketStatus();
     setInterval(loadMarketStatus, 60_000);
 

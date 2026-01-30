@@ -13,6 +13,13 @@
   const clearSearchBtn = document.getElementById("clearSearchBtn");
   const imageLoadFailures = new Set();
 
+  const $tradeAlertBody = document.getElementById("tradeAlertBody");
+
+  if (!coinTableBody) {
+    console.warn("[KIMPVIEW] #coinTableBody 없음. HTML id 확인!");
+    return;
+  }
+
   function showSpinner() {
     if (tableSpinner) tableSpinner.style.display = "flex";
     if (tableWrapEl) tableWrapEl.style.display = "none";
@@ -23,88 +30,24 @@
     if (tableWrapEl) tableWrapEl.style.display = "";
   }
 
-  if (!coinTableBody) {
-    console.warn("[KIMPVIEW] #coinTableBody 없음. HTML id 확인!");
-    return;
+  function escapeHtml(s) {
+    return String(s ?? "").replace(/[&<>"']/g, (m) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    }[m]));
   }
 
-  const LS_KEY = "kimpview:favorites";
-  const KIMP_EXCLUDE = new Set([]);
-
-  const state = {
-    exchange: exchangeSelect?.value || "upbit_krw",
-    query: "",
-    favOnly: false,
-    sortKey: "volKRW",
-    sortDir: "desc",
-    _sortedOnce: false,
-    favorites: loadFavorites(),
-    coins: [],
-    _coinCaps: new Map(),
-    _coinCapsTs: 0,
-    _refreshTimer: null,
-    _aborter: null,
-    _isLoading: false,
-    fxKRW: 0,
-    usdtKRW: 0,
-    btcDom: 0,
-    _inlineCharts: [],
-    _inlineMaxCharts: 3,
-    _binance: { map: new Map(), ts: 0, ttlMs: 3000 },
-    _binance24h: { map: new Map(), ts: 0, ttlMs: 3000 },
-    _binanceActive: { set: new Set(), ts: 0, ttlMs: 60_000 },
-  };
-
-  const prevPriceMap = new Map();
-  const visibleSymbols = new Set();
-  state._ioReady = false;
-
-  const rowObserver = ("IntersectionObserver" in window)
-    ? new IntersectionObserver((entries) => {
-        for (const e of entries) {
-          const sym = e?.target?.dataset?.symbol;
-          if (!sym) continue;
-          if (e.isIntersecting) visibleSymbols.add(sym);
-          else visibleSymbols.delete(sym);
-        }
-        state._ioReady = true;
-      }, { root: null, threshold: 0.01 })
-    : null;
-
-  function observeRow(tr) {
-    if (!rowObserver || !tr) return;
-    rowObserver.observe(tr);
+  function pad2(n) { return String(n).padStart(2, "0"); }
+  function nowTime() {
+    const d = new Date();
+    return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
   }
 
-  function resetRowObserver() {
-    if (!rowObserver) return;
-    rowObserver.disconnect();
-    visibleSymbols.clear();
-    state._ioReady = false;
-  }
-
-  const UPBIT_MARKETS_LS = "kimpview:upbitMarketsKRW";
-  const UPBIT_MARKETS_TTL_MS = 6 * 60 * 60 * 1000;
-
-  let upbitMarketsCache = null;
-
-  function loadUpbitMarketsFromLS() {
-    try {
-      const raw = localStorage.getItem(UPBIT_MARKETS_LS);
-      if (!raw) return null;
-      const obj = JSON.parse(raw);
-      if (!obj || !obj.ts || !obj.data) return null;
-      if ((Date.now() - Number(obj.ts)) > UPBIT_MARKETS_TTL_MS) return null;
-      return { ts: Number(obj.ts), marketsJson: obj.data };
-    } catch {
-      return null;
-    }
-  }
-
-  function saveUpbitMarketsToLS(marketsJson) {
-    try {
-      localStorage.setItem(UPBIT_MARKETS_LS, JSON.stringify({ ts: Date.now(), data: marketsJson }));
-    } catch {}
+  function sleep(ms) {
+    return new Promise((r) => setTimeout(r, ms));
   }
 
   function makeTimeoutSignal(ms) {
@@ -114,10 +57,6 @@
     const controller = new AbortController();
     setTimeout(() => controller.abort(), ms);
     return controller.signal;
-  }
-
-  function sleep(ms) {
-    return new Promise((r) => setTimeout(r, ms));
   }
 
   async function safeFetchJson(url, { signal, timeoutMs = 8000, label = "API", retries = 2 } = {}) {
@@ -130,7 +69,6 @@
         res = await fetch(url, { signal: timeoutSignal, cache: "no-store" });
       } catch (e) {
         lastErr = e;
-        console.warn(`[${label}] fetch failed (attempt ${attempt + 1}/${retries + 1}):`, url, e?.message || e);
         await sleep(200 * (attempt + 1));
         continue;
       }
@@ -139,18 +77,14 @@
       const text = await res.text();
 
       if (!res.ok) {
-        console.warn(`[${label}] HTTP ${res.status} (attempt ${attempt + 1}/${retries + 1}):`, url, text.slice(0, 200));
-
         if ((res.status === 429 || (res.status >= 500 && res.status <= 599)) && attempt < retries) {
           await sleep(250 * (attempt + 1));
           continue;
         }
-
         throw new Error(`HTTP ${res.status}`);
       }
 
       if (!ct.includes("application/json")) {
-        console.warn(`[${label}] Not JSON:`, url, ct, text.slice(0, 200));
         if (attempt < retries) {
           await sleep(250 * (attempt + 1));
           continue;
@@ -161,7 +95,6 @@
       try {
         return JSON.parse(text);
       } catch (e) {
-        console.warn(`[${label}] JSON parse failed:`, url, text.slice(0, 200));
         if (attempt < retries) {
           await sleep(250 * (attempt + 1));
           continue;
@@ -185,14 +118,220 @@
     }
   }
 
+  function formatKoreanMoneyKRW(amount) {
+    if (!amount) return "";
+    if (amount >= 1e8) return (amount / 1e8).toFixed(2) + "억";
+    if (amount >= 1e4) return (amount / 1e4).toFixed(0) + "만";
+    return Math.round(amount).toLocaleString("ko-KR");
+  }
+
+  function formatKRW(n) {
+    const v = Number(n || 0);
+    if (!v) return "";
+    let digits = 0;
+    if (v >= 100) digits = 0;
+    else if (v < 0.001) digits = 10;
+    else if (v < 1) digits = 6;
+    else digits = 2;
+
+    return "₩" + v.toLocaleString("ko-KR", {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+      useGrouping: true
+    });
+  }
+
+  function formatPct(n) {
+    if (n == null || Number.isNaN(Number(n))) return "";
+    const v = Number(n);
+    if (Math.abs(v) < 0.005) return "0.00%";
+    const sign = v > 0 ? "+" : "";
+    return sign + v.toFixed(2) + "%";
+  }
+
+  function formatDeltaKRW(n) {
+    const v = Number(n);
+    if (!Number.isFinite(v) || v === 0) return "";
+
+    const absV = Math.abs(v);
+    const sign = v > 0 ? "+" : "-";
+
+    let digits = 0;
+    if (absV < 0.0001) digits = 10;
+    else if (absV < 1) digits = 7;
+    else if (absV < 100) digits = 2;
+    else digits = 0;
+
+    const formatted = absV.toLocaleString("ko-KR", {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits
+    });
+
+    return sign + formatted.replace(/(\.\d*?[1-9])0+$/, "$1").replace(/\.0+$/, "");
+  }
+
+  function formatKRWDiff(n) {
+    const v = Number(n);
+    if (!Number.isFinite(v) || v === 0) return "";
+
+    const sign = v > 0 ? "+" : "-";
+    const abs = Math.abs(v);
+
+    let s;
+    if (abs < 1) s = abs.toFixed(6);
+    else if (abs < 100) s = abs.toFixed(2);
+    else s = Math.floor(abs).toLocaleString("ko-KR");
+
+    s = s.replace(/(\.\d*?[1-9])0+$/, "$1").replace(/\.0+$/, "");
+
+    if (s.includes(".") && abs >= 1) {
+      const [i, d] = s.split(".");
+      s = Number(i).toLocaleString("ko-KR") + "." + d;
+    }
+
+    return sign + s;
+  }
+
+  function formatKRWCompact(n) {
+    const v = Number(n || 0);
+    if (!v) return "";
+
+    const ONE_EOK = 100_000_000;
+    const TEN_M = 10_000_000;
+    const ONE_JO = 1_000_000_000_000;
+
+    if (v >= ONE_JO) {
+      const jo = Math.floor(v / ONE_JO);
+      const eok = Math.floor((v % ONE_JO) / ONE_EOK);
+      return eok > 0 ? `${jo.toLocaleString("ko-KR")}조 ${eok.toLocaleString("ko-KR")}억` : `${jo.toLocaleString("ko-KR")}조`;
+    }
+
+    if (v >= ONE_EOK) {
+      const eok = Math.floor(v / ONE_EOK);
+      return `${eok.toLocaleString("ko-KR")}억`;
+    }
+
+    const tenMillion = Math.floor(v / TEN_M) * TEN_M;
+    if (tenMillion <= 0) return "";
+    return `${Math.floor(tenMillion / TEN_M).toLocaleString("ko-KR")}천만`;
+  }
+
+  function formatMcapKRW(n) {
+    const v = Number(n || 0);
+    if (!Number.isFinite(v) || v === 0) return "";
+
+    const abs = Math.abs(v);
+    if (abs >= 1e12) return `${(v / 1e12).toFixed(2)}조`;
+    if (abs >= 1e8) return `${Math.floor(v / 1e8).toLocaleString("ko-KR")}억`;
+    if (abs >= 1e4) return `${Math.floor(v / 1e4).toLocaleString("ko-KR")}만`;
+    return `${Math.floor(v).toLocaleString("ko-KR")}원`;
+  }
+
+  function formatMcapUSD(n) {
+    const v = Number(n || 0);
+    if (!Number.isFinite(v) || v === 0) return "";
+    if (v >= 1e12) return `$${(v / 1e12).toFixed(2)}T`;
+    if (v >= 1e9) return `$${(v / 1e9).toFixed(2)}B`;
+    if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
+    return `$${Math.floor(v).toLocaleString("en-US")}`;
+  }
+
+  function renderKimpDiff(diff) {
+    if (diff == null || Number.isNaN(Number(diff))) return "";
+    const v = Number(diff);
+    if (!Number.isFinite(v) || v === 0) return "";
+    return `<span class="kimpSub smallkimpsub">${formatKRWDiff(v)}</span>`;
+  }
+
+  function parseNumberFromText(text) {
+    const s = String(text ?? "").replace(/[^\d.]/g, "");
+    if (!s) return 0;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  const LS_KEY = "kimpview:favorites";
+
+  const state = {
+    exchange: exchangeSelect?.value || "upbit_krw",
+    query: "",
+    favOnly: false,
+    sortKey: "volKRW",
+    sortDir: "desc",
+    _sortedOnce: false,
+    favorites: loadFavorites(),
+    coins: [],
+    _coinCaps: new Map(),
+    _coinCapsTs: 0,
+    _refreshTimer: null,
+    _aborter: null,
+    _isLoading: false,
+    fxKRW: 0,
+    usdtKRW: 0,
+    btcDom: 0,
+    _inlineCharts: [],
+    _binance: { map: new Map(), ts: 0, ttlMs: 3000 },
+    _binance24h: { map: new Map(), ts: 0, ttlMs: 3000 },
+    _binanceActive: { set: new Set(), ts: 0, ttlMs: 60_000 },
+  };
+
+  const prevPriceMap = new Map();
+  const visibleSymbols = new Set();
+  state._ioReady = false;
+
+  const rowObserver = ("IntersectionObserver" in window)
+    ? new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        const sym = e?.target?.dataset?.symbol;
+        if (!sym) continue;
+        if (e.isIntersecting) visibleSymbols.add(sym);
+        else visibleSymbols.delete(sym);
+      }
+      state._ioReady = true;
+    }, { root: null, threshold: 0.01 })
+    : null;
+
+  function observeRow(tr) {
+    if (!rowObserver || !tr) return;
+    rowObserver.observe(tr);
+  }
+
+  function resetRowObserver() {
+    if (!rowObserver) return;
+    rowObserver.disconnect();
+    visibleSymbols.clear();
+    state._ioReady = false;
+  }
+
+  const UPBIT_MARKETS_LS = "kimpview:upbitMarketsKRW";
+  const UPBIT_MARKETS_TTL_MS = 6 * 60 * 60 * 1000;
+  let upbitMarketsCache = null;
+
+  function loadUpbitMarketsFromLS() {
+    try {
+      const raw = localStorage.getItem(UPBIT_MARKETS_LS);
+      if (!raw) return null;
+      const obj = JSON.parse(raw);
+      if (!obj || !obj.ts || !obj.data) return null;
+      if ((Date.now() - Number(obj.ts)) > UPBIT_MARKETS_TTL_MS) return null;
+      return { ts: Number(obj.ts), marketsJson: obj.data };
+    } catch {
+      return null;
+    }
+  }
+
+  function saveUpbitMarketsToLS(marketsJson) {
+    try {
+      localStorage.setItem(UPBIT_MARKETS_LS, JSON.stringify({ ts: Date.now(), data: marketsJson }));
+    } catch { }
+  }
+
   const LS_TABLE_PREFIX = "kimpview:tableCache:v1:";
-  const LS_TOPMETRICS = "kimpview:topmetricsCache:v1";
+  const TABLE_TTL_MS = 10 * 1000;
 
   function tableCacheKey(exchange) {
     return LS_TABLE_PREFIX + String(exchange || "upbit_krw").toLowerCase();
   }
-
-  const TABLE_TTL_MS = 10 * 1000;
 
   function loadTableCache(exchange) {
     try {
@@ -218,7 +357,7 @@
         tableCacheKey(exchange),
         JSON.stringify({ ts: Date.now(), exchange: String(exchange || ""), coins })
       );
-    } catch {}
+    } catch { }
   }
 
   function restoreTableFromCache(exchange) {
@@ -228,6 +367,8 @@
     render();
     return true;
   }
+
+  const LS_TOPMETRICS = "kimpview:topmetricsCache:v1";
 
   function saveTopMetricsToLS() {
     try {
@@ -240,7 +381,7 @@
           btcDom: Number(state.btcDom || 0),
         })
       );
-    } catch {}
+    } catch { }
   }
 
   function restoreTopMetricsFromLS() {
@@ -263,7 +404,39 @@
       if (fxEl && fx > 0 && (!fxEl.textContent || fxEl.textContent === "-")) fxEl.textContent = `${fx.toLocaleString("ko-KR")}원`;
       if (usdtEl && usdt > 0 && (!usdtEl.textContent || usdtEl.textContent === "-")) usdtEl.textContent = `${Math.round(usdt).toLocaleString("ko-KR")}원`;
       if (domEl && dom > 0 && (!domEl.textContent || domEl.textContent === "-")) domEl.textContent = `${dom.toFixed(2)}%`;
-    } catch {}
+    } catch { }
+  }
+
+  function syncTopMetricsCacheFromDOM() {
+    const fxEl = document.getElementById("fxKRW");
+    const usdtEl = document.getElementById("usdtKRW");
+
+    const fx = fxEl ? parseNumberFromText(fxEl.textContent) : 0;
+    const usdt = usdtEl ? parseNumberFromText(usdtEl.textContent) : 0;
+
+    if (fx > 1000 && fx < 3000) state.fxKRW = fx;
+    if (usdt > 500 && usdt < 5000) state.usdtKRW = usdt;
+
+    if (state.usdtKRW > 0) window.__USDT_KRW = state.usdtKRW;
+    else if (state.fxKRW > 0) window.__USDT_KRW = state.fxKRW;
+  }
+
+  function startUnifiedTopMetrics() {
+    const loader = window.KIMPVIEW?.loadTopMetrics;
+
+    const runOnce = () => {
+      if (typeof loader === "function") {
+        Promise.resolve(loader())
+          .catch(() => { })
+          .finally(() => syncTopMetricsCacheFromDOM());
+      } else {
+        syncTopMetricsCacheFromDOM();
+      }
+      saveTopMetricsToLS();
+    };
+
+    runOnce();
+    setInterval(runOnce, 60_000);
   }
 
   async function fetchBinanceActiveUsdtBasesCached() {
@@ -291,15 +464,12 @@
       state._binanceActive.set = set;
       state._binanceActive.ts = now;
       return set;
-    } catch (e) {
-      console.warn("[KIMPVIEW] fetchBinanceActiveUsdtBasesCached failed:", e?.message || e);
+    } catch {
       return state._binanceActive.set;
     }
   }
 
-  const SYMBOL_ALIAS = new Map([
-    ["BTT", "BTTC"],
-  ]);
+  const SYMBOL_ALIAS = new Map([["BTT", "BTTC"]]);
 
   function toBinanceBase(sym) {
     return SYMBOL_ALIAS.get(sym) || sym;
@@ -316,289 +486,39 @@
 
   function pickTradingViewSymbol(coin) {
     const base = normalizeBaseSym(coin?.symbol);
-
     if (coin?.hasBinance) return `BINANCE:${base}USDT`;
-
     const ex = String(state.exchange || "").toLowerCase();
     if (ex.includes("bithumb")) return `BITHUMB:${base}KRW`;
-
     return `UPBIT:${base}KRW`;
   }
 
-  function applyDerivedFields(list, binanceMap, binanceVolMap) {
-    const rate = Number(state.fxKRW || state.usdtKRW || 0);
-
-    for (const c of list) {
-      const sym = String(c.symbol || "")
-        .toUpperCase()
-        .replace(/^KRW-/, "")
-        .replace(/^USDT-/, "")
-        .replace(/-USDT$/, "");
-
-      const base = toBinanceBase(sym);
-
-      const hasBinance = (base === "USDT") ? true : binanceMap.has(base);
-      c.hasBinance = hasBinance;
-
-      const usd = (base === "USDT") ? 1 : (hasBinance ? (Number(binanceMap.get(base)) || 0) : 0);
-      c.priceUSD = usd;
-
-      c.binanceKRW = (usd > 0 && rate > 0) ? (usd * rate) : 0;
-
-      const volUSDT = hasBinance ? (Number(binanceVolMap.get(base)) || 0) : 0;
-      c.binanceVolKRW = (volUSDT > 0 && rate > 0) ? (volUSDT * rate) : 0;
-
-      let usdCap = 0;
-      if (state._coinCaps instanceof Map) {
-        usdCap = Number(state._coinCaps.get(sym)) || Number(state._coinCaps.get(base)) || 0;
-      }
-      c.mcapKRW = (usdCap > 0 && rate > 0) ? (usdCap * rate) : 0;
-
-      if (c.binanceKRW > 0) {
-        const krw = Number(c.priceKRW || 0);
-        const kimp = ((krw / c.binanceKRW) - 1) * 100;
-
-        if (!Number.isFinite(kimp) || Math.abs(kimp) >= 50) {
-          c.kimp = null;
-          c.kimpDiffKRW = null;
-        } else {
-          c.kimp = kimp;
-          c.kimpDiffKRW = krw - c.binanceKRW;
-        }
-      } else {
-        c.kimp = null;
-        c.kimpDiffKRW = null;
-      }
-
-      if (KIMP_EXCLUDE.has(sym) && sym !== "USDT") {
-        c.kimp = null;
-        c.kimpDiffKRW = null;
-      }
-    }
-  }
-
-  async function loadCoinsAndRender(force = false) {
-    syncTopMetricsCacheFromDOM();
-    saveTopMetricsToLS();
-
-    if (!force && state._isLoading) return;
-    state._isLoading = true;
-
-    const shouldShowSpinner = force || (state.coins.length === 0);
-
-    if (shouldShowSpinner) {
-      showSpinner();
-      coinTableBody.innerHTML = "";
-    }
-
-    try {
-      if (!force) restoreTableFromCache(state.exchange);
-
-      const activeSet = await fetchBinanceActiveUsdtBasesCached();
-
-      const [binanceMap, binanceVolMap] = await Promise.all([
-        fetchBinancePricesCached(activeSet),
-        fetchBinanceVolumesCached(activeSet),
-      ]);
-
-      await fetchAllMarketCaps();
-
-      let list = [];
-      try {
-        const coins = await fetchCoinsFromAPI(state.exchange);
-        list = Array.isArray(coins) ? coins : [];
-      } catch (e) {
-        console.error("거래소 데이터 로드 실패", e);
-      }
-
-      if (!force && list.length === 0) {
-        const cached = loadTableCache(state.exchange);
-        if (cached && cached.length > 0) list = cached;
-      }
-
-      applyDerivedFields(list, binanceMap, binanceVolMap);
-
-      state.coins = list;
-      render();
-      if (list.length > 0) saveTableCache(state.exchange, list);
-    } catch (err) {
-      console.warn("[KIMPVIEW] loadCoinsAndRender failed:", err);
-      if (!restoreTableFromCache(state.exchange)) {
-        state.coins = [];
-        render();
-      }
-    } finally {
-      state._isLoading = false;
-      hideSpinner();
-    }
-  }
-
-  bindEvents();
-  bindTradeCollapse();
-  toggleClearBtn();
-
-  restoreTopMetricsFromLS();
-  startUnifiedTopMetrics();
-
-  loadCoinsAndRender(true);
-  startAutoRefresh(2000);
-
-  const $tradeAlertBody = document.getElementById("tradeAlertBody");
-
-  let sideState = {
-    tradeRows: [],
-  };
-
-  function makeEmptyRow() {
-    return { sym: "", type: "", label: null, amount: null, price: null, time: null };
-  }
-
-  function renderTrade() {
-    if (!$tradeAlertBody) return;
-
-    const rows = sideState.tradeRows;
-
-    $tradeAlertBody.innerHTML = rows.map(r => {
-      const isEmpty = !r.sym;
-      const emptyClass = isEmpty ? "is-empty" : "";
-
-      const labelText = (r.label == null || r.label === "") ? "&nbsp;" : escapeHtml(String(r.label));
-      const timeText = (r.time == null || r.time === "") ? "&nbsp;" : escapeHtml(String(r.time));
-      const amountText = (r.amount == null) ? "&nbsp;" : escapeHtml(formatKoreanMoneyKRW(r.amount) || "");
-      const priceText = (r.price != null && Number.isFinite(r.price))
-        ? escapeHtml("$" + Number(r.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
-        : "&nbsp;";
-
-      let trClass = "";
-      trClass = (r.type === "롱") ? "buy" : (r.type === "숏") ? "sell" : "";
-
-      const labelCell = (r.label == null || r.label === "")
-        ? "&nbsp;"
-        : `<span class="labelWithEx">
-            <img class="exIcon"
-                  src="images/binance.png"
-                  alt="Binance"
-                  width="14"
-                  height="14"
-                  onerror="this.onerror=null; this.style.display='none';">
-            ${labelText}
-          </span>`;
-
-      return `
-        <tr class="${trClass} ${emptyClass}">
-          <td>${labelCell}</td>
-          <td>${amountText}</td>
-          <td>${priceText}</td>
-          <td>${timeText}</td>
-        </tr>
-      `;
-    }).join("");
-  }
-
-  function pushTradeRow({ sym, type, amountKRW, priceUSD }) {
-    sideState.tradeRows.unshift({
-      sym,
-      type,
-      label: `${sym} ${type}`,
-      amount: amountKRW,
-      price: priceUSD,
-      time: nowTime(),
-    });
-    sideState.tradeRows = sideState.tradeRows.slice(0, 3);
-    renderTrade();
-  }
-
-  sideState.tradeRows = Array.from({ length: 3 }, makeEmptyRow);
-  renderTrade();
-
-  function bindTradeCollapse() {
-    const btns = document.querySelectorAll(".collapseBtn[data-target]");
-    if (btns.length > 0) {
-      btns.forEach((btn) => {
-        const key = String(btn.dataset.target || "");
-        if (key !== "trade") return;
-
-        const body = document.getElementById("tradeBody");
-        if (!body) return;
-
-        const storageKey = "kimpview:tradeCollapsed";
-        const saved = localStorage.getItem(storageKey) === "1";
-        setCollapse(btn, body, storageKey, saved);
-
-        btn.addEventListener("click", () => {
-          const next = !body.classList.contains("is-collapsed");
-          setCollapse(btn, body, storageKey, next);
-        });
-      });
-      return;
-    }
-
-    bindCollapseById("tradeToggle", "tradeBody", "kimpview:tradeCollapsed");
-  }
-
-  function bindCollapseById(toggleId, bodyId, storageKey) {
-    const btn = document.getElementById(toggleId);
-    const body = document.getElementById(bodyId);
-    if (!btn || !body) return;
-
-    const saved = localStorage.getItem(storageKey) === "1";
-    setCollapse(btn, body, storageKey, saved);
-
-    btn.addEventListener("click", () => {
-      const next = !body.classList.contains("is-collapsed");
-      setCollapse(btn, body, storageKey, next);
-    });
-  }
-
-  function setCollapse(btn, body, storageKey, collapsed) {
-    body.classList.toggle("is-collapsed", collapsed);
-    btn.classList.toggle("rot", collapsed);
-    btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
-    localStorage.setItem(storageKey, collapsed ? "1" : "0");
-  }
-
-  async function fetchCoinsFromAPI(exchange) {
-    exchange = (exchange || "upbit_krw").toLowerCase();
-
-    if (state._aborter) state._aborter.abort();
-    state._aborter = new AbortController();
-    const signal = state._aborter.signal;
-
-    if (exchange === "upbit_krw") return await fromUpbit(signal);
-    if (exchange === "bithumb_krw") return await fromBithumb(signal);
-
-    return await fromUpbit(signal);
-  }
-
-  const CAPS_LS_KEY = "kimpview:capsCache:v1";
-  const CAPS_TTL_MS = 30 * 60 * 1000;
-
-  function loadCapsFromLS() {
-    try {
-      const raw = localStorage.getItem(CAPS_LS_KEY);
-      if (!raw) return null;
-      const obj = JSON.parse(raw);
-      if (!obj || !obj.ts || !obj.data) return null;
-      if (Date.now() - Number(obj.ts) > CAPS_TTL_MS) return null;
-      return obj.data;
-    } catch {
-      return null;
-    }
-  }
-
-  function saveCapsToLS(data) {
-    try {
-      localStorage.setItem(CAPS_LS_KEY, JSON.stringify({ ts: Date.now(), data }));
-    } catch {}
-  }
-
   async function fetchAllMarketCaps() {
+    const CAPS_LS_KEY = "kimpview:capsCache:v1";
+    const CAPS_TTL_MS = 30 * 60 * 1000;
+
+    function loadCapsFromLS() {
+      try {
+        const raw = localStorage.getItem(CAPS_LS_KEY);
+        if (!raw) return null;
+        const obj = JSON.parse(raw);
+        if (!obj || !obj.ts || !obj.data) return null;
+        if (Date.now() - Number(obj.ts) > CAPS_TTL_MS) return null;
+        return obj.data;
+      } catch {
+        return null;
+      }
+    }
+
+    function saveCapsToLS(data) {
+      try {
+        localStorage.setItem(CAPS_LS_KEY, JSON.stringify({ ts: Date.now(), data }));
+      } catch { }
+    }
+
     const now = Date.now();
 
     if (state._coinCaps instanceof Map && state._coinCaps.size > 0 && state._coinCapsTs > 0) {
-      if ((now - state._coinCapsTs) < CAPS_TTL_MS) {
-        return state._coinCaps;
-      }
+      if ((now - state._coinCapsTs) < CAPS_TTL_MS) return state._coinCaps;
     }
 
     const ls = loadCapsFromLS();
@@ -609,18 +529,9 @@
     }
 
     const WORKER_URL = "https://kimpview-proxy.cjstn3391.workers.dev/coinpaprika-caps";
-    state.__capsUrlUsed = WORKER_URL;
-
     const data = await safeFetchJson(WORKER_URL, { label: "Caps" });
 
-    if (data?.ok === true && Array.isArray(data?.routes)) {
-      console.error("CAPS WRONG PAYLOAD:", data);
-      throw new Error("Caps endpoint wrong: hit / instead of /coinpaprika-caps");
-    }
-
-    if (!data || typeof data !== "object" || Array.isArray(data)) {
-      throw new Error("Caps payload invalid");
-    }
+    if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("Caps payload invalid");
 
     state._coinCaps = new Map(Object.entries(data));
     state._coinCapsTs = now;
@@ -633,44 +544,33 @@
       return upbitMarketsCache.marketsJson;
     }
 
-    let lsBackup = null;
-    try {
-      const raw = localStorage.getItem(UPBIT_MARKETS_LS);
-      if (raw) {
-        const obj = JSON.parse(raw);
-        if (obj && obj.data) lsBackup = obj.data;
-        if (obj && obj.ts && (Date.now() - Number(obj.ts)) <= UPBIT_MARKETS_TTL_MS) {
-          upbitMarketsCache = { ts: Number(obj.ts), marketsJson: obj.data };
-          return obj.data;
-        }
-      }
-    } catch {}
-
-    try {
-      const marketsJson = await safeFetchJson(`${UPBIT_PROXY}/v1/market/all?isDetails=false`, {
-        signal,
-        timeoutMs: 12000,
-        label: "UPBIT markets",
-        retries: 2,
-      });
-
-      upbitMarketsCache = { ts: Date.now(), marketsJson };
-      saveUpbitMarketsToLS(marketsJson);
-      return marketsJson;
-    } catch (e) {
-      if (lsBackup) {
-        console.warn("[UPBIT markets] network failed, using localStorage backup");
-        upbitMarketsCache = { ts: Date.now(), marketsJson: lsBackup };
-        return lsBackup;
-      }
-      throw e;
+    const lsCache = loadUpbitMarketsFromLS();
+    if (lsCache) {
+      upbitMarketsCache = { ts: lsCache.ts, marketsJson: lsCache.marketsJson };
+      return lsCache.marketsJson;
     }
+
+    const marketsJson = await safeFetchJson(`${UPBIT_PROXY}/v1/market/all?isDetails=false`, {
+      signal,
+      timeoutMs: 12000,
+      label: "UPBIT markets",
+      retries: 2,
+    });
+
+    upbitMarketsCache = { ts: Date.now(), marketsJson };
+    saveUpbitMarketsToLS(marketsJson);
+    return marketsJson;
+  }
+
+  function chunk(arr, size) {
+    const out = [];
+    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+    return out;
   }
 
   async function fromUpbit(signal) {
     try {
       const marketsJson = await getUpbitMarkets(signal);
-
       const markets = Array.isArray(marketsJson) ? marketsJson : [];
       const krw = markets.filter(m => String(m.market || "").startsWith("KRW-"));
 
@@ -727,8 +627,7 @@
           hasBinance: false,
         };
       });
-    } catch (e) {
-      console.warn("[KIMPVIEW] fromUpbit failed:", e?.message || e);
+    } catch {
       return [];
     }
   }
@@ -788,16 +687,21 @@
       }
 
       return out;
-    } catch (e) {
-      console.warn("[KIMPVIEW] fromBithumb failed:", e?.message || e);
+    } catch {
       return [];
     }
   }
 
-  function chunk(arr, size) {
-    const out = [];
-    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-    return out;
+  async function fetchCoinsFromAPI(exchange) {
+    exchange = (exchange || "upbit_krw").toLowerCase();
+
+    if (state._aborter) state._aborter.abort();
+    state._aborter = new AbortController();
+    const signal = state._aborter.signal;
+
+    if (exchange === "upbit_krw") return await fromUpbit(signal);
+    if (exchange === "bithumb_krw") return await fromBithumb(signal);
+    return await fromUpbit(signal);
   }
 
   async function fetchBinancePricesCached(activeSet) {
@@ -814,27 +718,21 @@
     for (const url of endpoints) {
       try {
         const data = await fetchJsonWithTimeout(url, 7000);
-
         const map = new Map();
         const arr = Array.isArray(data) ? data : [];
 
         for (const item of arr) {
           const sym = String(item?.symbol || "");
           if (!sym.endsWith("USDT")) continue;
-
           const base = sym.slice(0, -4).toUpperCase();
-
           if (activeSet && activeSet.size > 0 && !activeSet.has(base)) continue;
-
           map.set(base, Number(item?.price || 0));
         }
 
         state._binance.map = map;
         state._binance.ts = now;
         return map;
-      } catch (e) {
-        console.warn("[KIMPVIEW] Binance endpoint 실패:", url, e?.message || e);
-      }
+      } catch { }
     }
 
     return state._binance.map;
@@ -854,30 +752,122 @@
     for (const url of endpoints) {
       try {
         const data = await fetchJsonWithTimeout(url, 7000);
-
         const map = new Map();
         const arr = Array.isArray(data) ? data : [];
 
         for (const item of arr) {
           const sym = String(item?.symbol || "");
           if (!sym.endsWith("USDT")) continue;
-
           const base = sym.slice(0, -4).toUpperCase();
-
           if (activeSet && activeSet.size > 0 && !activeSet.has(base)) continue;
-
           map.set(base, Number(item?.quoteVolume || 0));
         }
 
         state._binance24h.map = map;
         state._binance24h.ts = now;
         return map;
-      } catch (e) {
-        console.warn("[KIMPVIEW] Binance 24h endpoint 실패:", url, e?.message || e);
-      }
+      } catch { }
     }
 
     return state._binance24h.map;
+  }
+
+  function applyDerivedFields(list, binanceMap, binanceVolMap) {
+    const rate = Number(state.fxKRW || state.usdtKRW || 0);
+
+    for (const c of list) {
+      const sym = String(c.symbol || "")
+        .toUpperCase()
+        .replace(/^KRW-/, "")
+        .replace(/^USDT-/, "")
+        .replace(/-USDT$/, "");
+
+      const base = toBinanceBase(sym);
+      const hasBinance = (base === "USDT") ? true : binanceMap.has(base);
+      c.hasBinance = hasBinance;
+
+      const usd = (base === "USDT") ? 1 : (hasBinance ? (Number(binanceMap.get(base)) || 0) : 0);
+      c.priceUSD = usd;
+
+      c.binanceKRW = (usd > 0 && rate > 0) ? (usd * rate) : 0;
+
+      const volUSDT = hasBinance ? (Number(binanceVolMap.get(base)) || 0) : 0;
+      c.binanceVolKRW = (volUSDT > 0 && rate > 0) ? (volUSDT * rate) : 0;
+
+      let usdCap = 0;
+      if (state._coinCaps instanceof Map) {
+        usdCap = Number(state._coinCaps.get(sym)) || Number(state._coinCaps.get(base)) || 0;
+      }
+      c.mcapKRW = (usdCap > 0 && rate > 0) ? (usdCap * rate) : 0;
+
+      if (c.binanceKRW > 0) {
+        const krw = Number(c.priceKRW || 0);
+        const kimp = ((krw / c.binanceKRW) - 1) * 100;
+
+        if (!Number.isFinite(kimp) || Math.abs(kimp) >= 50) {
+          c.kimp = null;
+          c.kimpDiffKRW = null;
+        } else {
+          c.kimp = kimp;
+          c.kimpDiffKRW = krw - c.binanceKRW;
+        }
+      } else {
+        c.kimp = null;
+        c.kimpDiffKRW = null;
+      }
+    }
+  }
+
+  async function loadCoinsAndRender(force = false) {
+    syncTopMetricsCacheFromDOM();
+    saveTopMetricsToLS();
+
+    if (!force && state._isLoading) return;
+    state._isLoading = true;
+
+    const shouldShowSpinner = force || (state.coins.length === 0);
+
+    if (shouldShowSpinner) {
+      showSpinner();
+      coinTableBody.innerHTML = "";
+    }
+
+    try {
+      if (!force) restoreTableFromCache(state.exchange);
+
+      const activeSet = await fetchBinanceActiveUsdtBasesCached();
+      const [binanceMap, binanceVolMap] = await Promise.all([
+        fetchBinancePricesCached(activeSet),
+        fetchBinanceVolumesCached(activeSet),
+      ]);
+
+      await fetchAllMarketCaps();
+
+      let list = [];
+      try {
+        const coins = await fetchCoinsFromAPI(state.exchange);
+        list = Array.isArray(coins) ? coins : [];
+      } catch { }
+
+      if (!force && list.length === 0) {
+        const cached = loadTableCache(state.exchange);
+        if (cached && cached.length > 0) list = cached;
+      }
+
+      applyDerivedFields(list, binanceMap, binanceVolMap);
+
+      state.coins = list;
+      render();
+      if (list.length > 0) saveTableCache(state.exchange, list);
+    } catch {
+      if (!restoreTableFromCache(state.exchange)) {
+        state.coins = [];
+        render();
+      }
+    } finally {
+      state._isLoading = false;
+      hideSpinner();
+    }
   }
 
   function startAutoRefresh(ms) {
@@ -890,97 +880,22 @@
     state._refreshTimer = null;
   }
 
-  const INLINE_CHART_HEIGHT = 320;
-
-  function closeInlineChart() {
-    if (Array.isArray(state._inlineCharts) && state._inlineCharts.length > 0) {
-      for (const it of state._inlineCharts) {
-        try { it?.rowEl?.remove(); } catch {}
-      }
-    }
-    state._inlineCharts = [];
+  function getPriceDirection(symbol, currentPrice) {
+    const key = String(symbol || "").toUpperCase();
+    const prev = prevPriceMap.get(key);
+    prevPriceMap.set(key, currentPrice);
+    if (prev == null) return "";
+    if (currentPrice > prev) return "price-flash-up";
+    if (currentPrice < prev) return "price-flash-down";
+    return "";
   }
 
-  function renderInlineChartFor(containerId, coin) {
-    const box = document.getElementById(containerId);
-    if (!box) return;
-
-    box.innerHTML = "";
-
-    if (typeof TradingView === "undefined") {
-      box.innerHTML = `<div style="padding:12px;color:#94a3b8;">TradingView not loaded</div>`;
-      return;
-    }
-
-    if (!coin) {
-      box.innerHTML = `<div style="padding:12px;color:#94a3b8;">No coin selected</div>`;
-      return;
-    }
-
-    const tvSymbol = pickTradingViewSymbol(coin);
-
-    new TradingView.widget({
-      width: "100%",
-      height: INLINE_CHART_HEIGHT,
-      symbol: tvSymbol,
-      interval: "15",
-      timezone: "Asia/Seoul",
-      theme: "light",
-      style: "1",
-      locale: "kr",
-      enable_publishing: false,
-      allow_symbol_change: true,
-      container_id: containerId,
-      hide_top_toolbar: false,
-      hide_side_toolbar: false,
-      save_image: false,
-    });
-  }
-
-  function toggleInlineChart(anchorTr, coin) {
-    const sym = normalizeBaseSym(coin?.symbol);
-    if (!sym) return;
-
-    if (!Array.isArray(state._inlineCharts)) state._inlineCharts = [];
-
-    const idx = state._inlineCharts.findIndex(it => it.sym === sym);
-    if (idx >= 0) {
-      const it = state._inlineCharts[idx];
-      try { it?.rowEl?.remove(); } catch {}
-      state._inlineCharts.splice(idx, 1);
-      return;
-    }
-
-    const inlineH = (window.matchMedia("(max-width: 640px)").matches ? 260 : 320);
-    const maxN = 2;
-
-    while (state._inlineCharts.length >= maxN) {
-      const old = state._inlineCharts.shift();
-      try { old?.rowEl?.remove(); } catch {}
-    }
-
-    const colspan = anchorTr?.children?.length || 6;
-
-    const chartRow = document.createElement("tr");
-    chartRow.className = "inlineChartRow";
-
-    const td = document.createElement("td");
-    td.colSpan = colspan;
-
-    const containerId = `tv_inline_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-
-    td.innerHTML = `
-      <div class="rowChartWrap">
-        <div id="${containerId}" style="width:100%; height:${inlineH}px;"></div>
-      </div>
-    `;
-
-    chartRow.appendChild(td);
-    anchorTr.after(chartRow);
-
-    state._inlineCharts.push({ sym, rowEl: chartRow, containerId, coin });
-
-    renderInlineChartFor(containerId, coin);
+  function flashPrice(el, cls) {
+    if (!el) return;
+    el.classList.remove("price-flash-up", "price-flash-down");
+    void el.offsetWidth;
+    el.classList.add(cls);
+    setTimeout(() => el.classList.remove(cls), 700);
   }
 
   function updateRowsInPlace(rows) {
@@ -1046,57 +961,142 @@
     }
   }
 
-  function render() {
-    const rows = getFilteredSortedCoins();
+  function compare(a, b, key, dir) {
+    const av = a?.[key];
+    const bv = b?.[key];
 
-    const hasOpenCharts = Array.isArray(state._inlineCharts) && state._inlineCharts.length > 0;
-    if (hasOpenCharts) {
-      updateRowsInPlace(rows);
-      syncSortUI();
+    let res = 0;
+    if (typeof av === "string" || typeof bv === "string") {
+      res = String(av ?? "").localeCompare(String(bv ?? ""));
+    } else {
+      res = Number(av ?? 0) - Number(bv ?? 0);
+    }
+
+    return dir === "asc" ? res : -res;
+  }
+
+  function getFilteredSortedCoins() {
+    let list = [...state.coins];
+
+    const q = state.query.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        c =>
+          String(c.symbol || "").toLowerCase().includes(q) ||
+          String(c.name || "").toLowerCase().includes(q)
+      );
+    }
+
+    if (state.favOnly) list = list.filter(c => state.favorites.has(c.symbol));
+
+    list.sort((a, b) => {
+      const af = state.favorites.has(a.symbol);
+      const bf = state.favorites.has(b.symbol);
+      if (af !== bf) return af ? -1 : 1;
+      return compare(a, b, state.sortKey, state.sortDir);
+    });
+
+    return list;
+  }
+
+  function syncSortUI() {
+    sortableThs.forEach(th => {
+      const key = th.dataset.sort;
+      th.dataset.dir = (key === state.sortKey && state._sortedOnce) ? state.sortDir : "";
+    });
+  }
+
+  const INLINE_CHART_HEIGHT = 320;
+
+  function closeInlineChart() {
+    if (Array.isArray(state._inlineCharts) && state._inlineCharts.length > 0) {
+      for (const it of state._inlineCharts) {
+        try { it?.rowEl?.remove(); } catch { }
+      }
+    }
+    state._inlineCharts = [];
+  }
+
+  function renderInlineChartFor(containerId, coin) {
+    const box = document.getElementById(containerId);
+    if (!box) return;
+
+    box.innerHTML = "";
+
+    if (typeof TradingView === "undefined") {
+      box.innerHTML = `<div style="padding:12px;color:#94a3b8;">TradingView not loaded</div>`;
       return;
     }
 
-    resetRowObserver();
-    coinTableBody.innerHTML = "";
-
-    if (rows.length === 0) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td colspan="6" style="padding:24px;text-align:center;color:#6b7280;">
-          ${state.favOnly
-            ? "즐겨찾기한 코인이 없습니다."
-            : state.query
-              ? "검색 결과가 없습니다."
-              : "표시할 데이터가 없습니다."}
-        </td>
-      `;
-      coinTableBody.appendChild(tr);
-      syncSortUI();
+    if (!coin) {
+      box.innerHTML = `<div style="padding:12px;color:#94a3b8;">No coin selected</div>`;
       return;
     }
 
-    const frag = document.createDocumentFragment();
-    rows.forEach(c => frag.appendChild(renderRow(c)));
-    coinTableBody.appendChild(frag);
-    syncSortUI();
+    const tvSymbol = pickTradingViewSymbol(coin);
+
+    new TradingView.widget({
+      width: "100%",
+      height: INLINE_CHART_HEIGHT,
+      symbol: tvSymbol,
+      interval: "15",
+      timezone: "Asia/Seoul",
+      theme: "light",
+      style: "1",
+      locale: "kr",
+      enable_publishing: false,
+      allow_symbol_change: true,
+      container_id: containerId,
+      hide_top_toolbar: false,
+      hide_side_toolbar: false,
+      save_image: false,
+    });
   }
 
-  function getPriceDirection(symbol, currentPrice) {
-    const key = String(symbol || "").toUpperCase();
-    const prev = prevPriceMap.get(key);
-    prevPriceMap.set(key, currentPrice);
-    if (prev == null) return "";
-    if (currentPrice > prev) return "price-flash-up";
-    if (currentPrice < prev) return "price-flash-down";
-    return "";
-  }
+  function toggleInlineChart(anchorTr, coin) {
+    const sym = normalizeBaseSym(coin?.symbol);
+    if (!sym) return;
 
-  function flashPrice(el, cls) {
-    if (!el) return;
-    el.classList.remove("price-flash-up", "price-flash-down");
-    void el.offsetWidth;
-    el.classList.add(cls);
-    setTimeout(() => el.classList.remove(cls), 700);
+    if (!Array.isArray(state._inlineCharts)) state._inlineCharts = [];
+
+    const idx = state._inlineCharts.findIndex(it => it.sym === sym);
+    if (idx >= 0) {
+      const it = state._inlineCharts[idx];
+      try { it?.rowEl?.remove(); } catch { }
+      state._inlineCharts.splice(idx, 1);
+      return;
+    }
+
+    const inlineH = (window.matchMedia("(max-width: 640px)").matches ? 260 : 320);
+    const maxN = 2;
+
+    while (state._inlineCharts.length >= maxN) {
+      const old = state._inlineCharts.shift();
+      try { old?.rowEl?.remove(); } catch { }
+    }
+
+    const colspan = anchorTr?.children?.length || 6;
+
+    const chartRow = document.createElement("tr");
+    chartRow.className = "inlineChartRow";
+
+    const td = document.createElement("td");
+    td.colSpan = colspan;
+
+    const containerId = `tv_inline_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+
+    td.innerHTML = `
+      <div class="rowChartWrap">
+        <div id="${containerId}" style="width:100%; height:${inlineH}px;"></div>
+      </div>
+    `;
+
+    chartRow.appendChild(td);
+    anchorTr.after(chartRow);
+
+    state._inlineCharts.push({ sym, rowEl: chartRow, containerId, coin });
+
+    renderInlineChartFor(containerId, coin);
   }
 
   function renderRow(c) {
@@ -1195,6 +1195,41 @@
     return tr;
   }
 
+  function render() {
+    const rows = getFilteredSortedCoins();
+
+    const hasOpenCharts = Array.isArray(state._inlineCharts) && state._inlineCharts.length > 0;
+    if (hasOpenCharts) {
+      updateRowsInPlace(rows);
+      syncSortUI();
+      return;
+    }
+
+    resetRowObserver();
+    coinTableBody.innerHTML = "";
+
+    if (rows.length === 0) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td colspan="6" style="padding:24px;text-align:center;color:#6b7280;">
+          ${state.favOnly
+          ? "즐겨찾기한 코인이 없습니다."
+          : state.query
+            ? "검색 결과가 없습니다."
+            : "표시할 데이터가 없습니다."}
+        </td>
+      `;
+      coinTableBody.appendChild(tr);
+      syncSortUI();
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    rows.forEach(c => frag.appendChild(renderRow(c)));
+    coinTableBody.appendChild(frag);
+    syncSortUI();
+  }
+
   window.handleImageError = function (img, sym) {
     const symUpper = sym.toUpperCase();
 
@@ -1209,49 +1244,50 @@
     img.onerror = null;
   };
 
-  function getFilteredSortedCoins() {
-    let list = [...state.coins];
-
-    const q = state.query.trim().toLowerCase();
-    if (q) {
-      list = list.filter(
-        c =>
-          String(c.symbol || "").toLowerCase().includes(q) ||
-          String(c.name || "").toLowerCase().includes(q)
-      );
+  function getStarSvg(filled) {
+    if (filled) {
+      return `
+        <svg class="iconStar" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <path fill="currentColor"
+            d="M12 17.3l-5.1 3 1.4-5.8-4.5-3.8 5.9-.5L12 4.8l2.3 5.4 5.9.5-4.5 3.8 1.4 5.8z"/>
+        </svg>`;
     }
-
-    if (state.favOnly) list = list.filter(c => state.favorites.has(c.symbol));
-
-    list.sort((a, b) => {
-      const af = state.favorites.has(a.symbol);
-      const bf = state.favorites.has(b.symbol);
-      if (af !== bf) return af ? -1 : 1;
-      return compare(a, b, state.sortKey, state.sortDir);
-    });
-
-    return list;
+    return `
+      <svg class="iconStar" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"
+          d="M12 17.3l-5.1 3 1.4-5.8-4.5-3.8 5.9-.5L12 4.8l2.3 5.4 5.9.5-4.5 3.8 1.4 5.8z"/>
+      </svg>`;
   }
 
-  function compare(a, b, key, dir) {
-    const av = a?.[key];
-    const bv = b?.[key];
-
-    let res = 0;
-    if (typeof av === "string" || typeof bv === "string") {
-      res = String(av ?? "").localeCompare(String(bv ?? ""));
-    } else {
-      res = Number(av ?? 0) - Number(bv ?? 0);
-    }
-
-    return dir === "asc" ? res : -res;
+  function toggleClearBtn() {
+    if (!clearSearchBtn) return;
+    clearSearchBtn.style.display = state.query.trim() !== "" ? "inline-block" : "none";
   }
 
-  function syncSortUI() {
-    sortableThs.forEach(th => {
-      const key = th.dataset.sort;
-      th.dataset.dir = (key === state.sortKey && state._sortedOnce) ? state.sortDir : "";
-    });
+  function loadFavorites() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return new Set();
+      const arr = JSON.parse(raw);
+      return new Set(Array.isArray(arr) ? arr : []);
+    } catch {
+      return new Set();
+    }
+  }
+
+  function saveFavorites() {
+    localStorage.setItem(LS_KEY, JSON.stringify([...state.favorites]));
+  }
+
+  function toggleFavorite(symbol) {
+    const sym = normalizeBaseSym(symbol);
+    if (!sym) return;
+
+    if (state.favorites.has(sym)) state.favorites.delete(sym);
+    else state.favorites.add(sym);
+
+    saveFavorites();
+    render();
   }
 
   function bindEvents() {
@@ -1310,256 +1346,58 @@
     });
   }
 
-  function loadFavorites() {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (!raw) return new Set();
-      const arr = JSON.parse(raw);
-      return new Set(Array.isArray(arr) ? arr : []);
-    } catch {
-      return new Set();
-    }
+  function setCollapse(btn, body, storageKey, collapsed) {
+    body.classList.toggle("is-collapsed", collapsed);
+    btn.classList.toggle("rot", collapsed);
+    btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    localStorage.setItem(storageKey, collapsed ? "1" : "0");
   }
 
-  function saveFavorites() {
-    localStorage.setItem(LS_KEY, JSON.stringify([...state.favorites]));
-  }
+  function bindCollapseById(toggleId, bodyId, storageKey) {
+    const btn = document.getElementById(toggleId);
+    const body = document.getElementById(bodyId);
+    if (!btn || !body) return;
 
-  function toggleFavorite(symbol) {
-    const sym = normalizeBaseSym(symbol);
-    if (!sym) return;
+    const saved = localStorage.getItem(storageKey) === "1";
+    setCollapse(btn, body, storageKey, saved);
 
-    if (state.favorites.has(sym)) state.favorites.delete(sym);
-    else state.favorites.add(sym);
-
-    saveFavorites();
-    render();
-  }
-
-  function renderKimpDiff(diff) {
-    if (diff == null || Number.isNaN(Number(diff))) return "";
-    const v = Number(diff);
-
-    if (!Number.isFinite(v) || v === 0) return "";
-
-    return `<span class="kimpSub smallkimpsub">${formatKRWDiff(v)}</span>`;
-  }
-
-  function formatKRWDiff(n) {
-    const v = Number(n);
-    if (!Number.isFinite(v) || v === 0) return "";
-
-    const sign = v > 0 ? "+" : "-";
-    const abs = Math.abs(v);
-
-    let s;
-    if (abs < 1) {
-      s = abs.toFixed(6);
-    } else if (abs < 100) {
-      s = abs.toFixed(2);
-    } else {
-      s = Math.floor(abs).toLocaleString("ko-KR");
-    }
-
-    s = s.replace(/(\.\d*?[1-9])0+$/, "$1").replace(/\.0+$/, "");
-
-    if (s.includes(".") && abs >= 1) {
-      const [i, d] = s.split(".");
-      s = Number(i).toLocaleString("ko-KR") + "." + d;
-    }
-
-    return sign + s;
-  }
-
-  function formatKRW(n) {
-    const v = Number(n || 0);
-    if (!v) return "";
-
-    let digits = 0;
-
-    if (v >= 100) {
-      digits = 0;
-    } else if (v < 0.001) {
-      digits = 10;
-    } else if (v < 1) {
-      digits = 6;
-    } else {
-      digits = 2;
-    }
-
-    return "₩" + v.toLocaleString("ko-KR", {
-      minimumFractionDigits: digits,
-      maximumFractionDigits: digits,
-      useGrouping: true
+    btn.addEventListener("click", () => {
+      const next = !body.classList.contains("is-collapsed");
+      setCollapse(btn, body, storageKey, next);
     });
   }
 
-  function formatPct(n) {
-    if (n == null || Number.isNaN(Number(n))) return "";
+  function bindTradeCollapse() {
+    const btns = document.querySelectorAll(".collapseBtn[data-target]");
+    if (btns.length > 0) {
+      btns.forEach((btn) => {
+        const key = String(btn.dataset.target || "");
+        if (key !== "trade") return;
 
-    const v = Number(n);
-    if (Math.abs(v) < 0.005) return "0.00%";
+        const body = document.getElementById("tradeBody");
+        if (!body) return;
 
-    const sign = v > 0 ? "+" : "";
-    return sign + v.toFixed(2) + "%";
-  }
+        const storageKey = "kimpview:tradeCollapsed";
+        const saved = localStorage.getItem(storageKey) === "1";
+        setCollapse(btn, body, storageKey, saved);
 
-  function formatDeltaKRW(n) {
-    const v = Number(n);
-    if (!Number.isFinite(v) || v === 0) return "";
-
-    const absV = Math.abs(v);
-    const sign = v > 0 ? "+" : "-";
-
-    let digits = 0;
-    if (absV < 0.0001) digits = 10;
-    else if (absV < 1) digits = 7;
-    else if (absV < 100) digits = 2;
-    else digits = 0;
-
-    const formatted = absV.toLocaleString("ko-KR", {
-      minimumFractionDigits: digits,
-      maximumFractionDigits: digits
-    });
-
-    return sign + formatted.replace(/(\.\d*?[1-9])0+$/, "$1").replace(/\.0+$/, "");
-  }
-
-  function formatKRWCompact(n) {
-    const v = Number(n || 0);
-    if (!v) return "";
-
-    const ONE_EOK = 100_000_000;
-    const TEN_M = 10_000_000;
-    const ONE_JO = 1_000_000_000_000;
-
-    if (v >= ONE_JO) {
-      const jo = Math.floor(v / ONE_JO);
-      const eok = Math.floor((v % ONE_JO) / ONE_EOK);
-      return eok > 0 ? `${jo.toLocaleString("ko-KR")}조 ${eok.toLocaleString("ko-KR")}억` : `${jo.toLocaleString("ko-KR")}조`;
+        btn.addEventListener("click", () => {
+          const next = !body.classList.contains("is-collapsed");
+          setCollapse(btn, body, storageKey, next);
+        });
+      });
+      return;
     }
 
-    if (v >= ONE_EOK) {
-      const eok = Math.floor(v / ONE_EOK);
-      return `${eok.toLocaleString("ko-KR")}억`;
-    }
-
-    const tenMillion = Math.floor(v / TEN_M) * TEN_M;
-    if (tenMillion <= 0) return "";
-    return `${Math.floor(tenMillion / TEN_M).toLocaleString("ko-KR")}천만`;
-  }
-
-  function formatMcapKRW(n) {
-    const v = Number(n || 0);
-    if (!Number.isFinite(v) || v === 0) return "";
-
-    const abs = Math.abs(v);
-
-    if (abs >= 1e12) return `${(v / 1e12).toFixed(2)}조`;
-    if (abs >= 1e8) return `${Math.floor(v / 1e8).toLocaleString("ko-KR")}억`;
-    if (abs >= 1e4) return `${Math.floor(v / 1e4).toLocaleString("ko-KR")}만`;
-    return `${Math.floor(v).toLocaleString("ko-KR")}원`;
-  }
-
-  function formatMcapUSD(n) {
-    const v = Number(n || 0);
-    if (!Number.isFinite(v) || v === 0) return "";
-
-    if (v >= 1e12) return `$${(v / 1e12).toFixed(2)}T`;
-    if (v >= 1e9) return `$${(v / 1e9).toFixed(2)}B`;
-    if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
-    return `$${Math.floor(v).toLocaleString("en-US")}`;
-  }
-
-  function escapeHtml(s) {
-    return String(s ?? "").replace(/[&<>"']/g, (m) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    }[m]));
-  }
-
-  function getStarSvg(filled) {
-    if (filled) {
-      return `
-        <svg class="iconStar" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-          <path fill="currentColor"
-            d="M12 17.3l-5.1 3 1.4-5.8-4.5-3.8 5.9-.5L12 4.8l2.3 5.4 5.9.5-4.5 3.8 1.4 5.8z"/>
-        </svg>`;
-    }
-    return `
-      <svg class="iconStar" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-        <path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"
-          d="M12 17.3l-5.1 3 1.4-5.8-4.5-3.8 5.9-.5L12 4.8l2.3 5.4 5.9.5-4.5 3.8 1.4 5.8z"/>
-      </svg>`;
-  }
-
-  function toggleClearBtn() {
-    if (!clearSearchBtn) return;
-    clearSearchBtn.style.display = state.query.trim() !== "" ? "inline-block" : "none";
-  }
-
-  function parseNumberFromText(text) {
-    const s = String(text ?? "").replace(/[^\d.]/g, "");
-    if (!s) return 0;
-    const n = Number(s);
-    return Number.isFinite(n) ? n : 0;
-  }
-
-  function syncTopMetricsCacheFromDOM() {
-    const fxEl = document.getElementById("fxKRW");
-    const usdtEl = document.getElementById("usdtKRW");
-
-    const fx = fxEl ? parseNumberFromText(fxEl.textContent) : 0;
-    const usdt = usdtEl ? parseNumberFromText(usdtEl.textContent) : 0;
-
-    if (fx > 1000 && fx < 3000) state.fxKRW = fx;
-    if (usdt > 500 && usdt < 5000) state.usdtKRW = usdt;
-
-    if (state.usdtKRW > 0) window.__USDT_KRW = state.usdtKRW;
-  }
-
-  function startUnifiedTopMetrics() {
-    const loader = window.KIMPVIEW?.loadTopMetrics;
-
-    const runOnce = () => {
-      if (typeof loader === "function") {
-        Promise.resolve(loader())
-          .catch(() => { })
-          .finally(() => syncTopMetricsCacheFromDOM());
-      } else {
-        syncTopMetricsCacheFromDOM();
-      }
-    };
-
-    runOnce();
-    setInterval(runOnce, 60_000);
-  }
-
-  function pad2(n) { return String(n).padStart(2, "0"); }
-  function nowTime() {
-    const d = new Date();
-    return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
-  }
-
-  function formatKoreanMoneyKRW(amount) {
-    if (!amount) return "";
-    if (amount >= 1e8) return (amount / 1e8).toFixed(2) + "억";
-    if (amount >= 1e4) return (amount / 1e4).toFixed(0) + "만";
-    return Math.round(amount).toLocaleString("ko-KR");
-  }
-
-  function toKrwByUsdt(usdLike) {
-    const rate = Number(window.__USDT_KRW || state.usdtKRW || state.fxKRW || 0);
-    if (!rate || !Number.isFinite(rate)) return 0;
-    return usdLike * rate;
+    bindCollapseById("tradeToggle", "tradeBody", "kimpview:tradeCollapsed");
   }
 
   const ALERT_SYMBOLS = ["BTC", "ETH", "XRP", "SOL", "DOGE", "BNB", "SUI", "ADA", "BCH", "TRX", "LTC"];
   const TRADE_MIN_KRW = 80_000_000;
   const COOLDOWN_MS = 1500;
+
+  const STORAGE = sessionStorage;
+  const LS_TRADE_KEY = "kimpview:side:tradeRows:v1";
 
   const lastHitTrade = new Map();
 
@@ -1571,12 +1409,116 @@
     return true;
   }
 
+  function toKrwByUsdt(usdLike) {
+    const rate = Number(window.__USDT_KRW || state.usdtKRW || state.fxKRW || 0);
+    if (!rate || !Number.isFinite(rate)) return 0;
+    return usdLike * rate;
+  }
+
+  function makeEmptyTradeRow() {
+    return { sym: "", type: "", label: null, amount: null, price: null, time: null };
+  }
+
+  function safeParseArray(raw) {
+    try {
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function normalizeTradeRows(arr, maxLen = 3) {
+    const safe = Array.isArray(arr) ? arr : [];
+    const out = safe
+      .filter(Boolean)
+      .map((r) => ({
+        sym: String(r?.sym || ""),
+        type: String(r?.type || ""),
+        label: (r?.label == null ? null : String(r.label)),
+        amount: (r?.amount == null ? null : Number(r.amount)),
+        price: (r?.price == null ? null : Number(r.price)),
+        time: (r?.time == null ? null : String(r.time)),
+      }))
+      .slice(0, maxLen);
+
+    while (out.length < maxLen) out.push(makeEmptyTradeRow());
+    return out;
+  }
+
+  let sideState = { tradeRows: [] };
+
+  function saveTradeRows() {
+    try { STORAGE.setItem(LS_TRADE_KEY, JSON.stringify(sideState.tradeRows)); } catch { }
+  }
+
+  function restoreTradeRows() {
+    const raw = STORAGE.getItem(LS_TRADE_KEY);
+    const arr = raw ? safeParseArray(raw) : null;
+    sideState.tradeRows = normalizeTradeRows(arr, 3);
+  }
+
+  function renderTrade() {
+    if (!$tradeAlertBody) return;
+
+    const rows = sideState.tradeRows;
+
+    $tradeAlertBody.innerHTML = rows.map(r => {
+      const isEmpty = !r.sym;
+      const emptyClass = isEmpty ? "is-empty" : "";
+
+      const labelText = (r.label == null || r.label === "") ? "&nbsp;" : escapeHtml(String(r.label));
+      const timeText = (r.time == null || r.time === "") ? "&nbsp;" : escapeHtml(String(r.time));
+      const amountText = (r.amount == null) ? "&nbsp;" : escapeHtml(formatKoreanMoneyKRW(r.amount) || "");
+      const priceText = (r.price != null && Number.isFinite(r.price))
+        ? escapeHtml("$" + Number(r.price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
+        : "&nbsp;";
+
+      const trClass = (r.type === "롱") ? "buy" : (r.type === "숏") ? "sell" : "";
+
+      const labelCell = (r.label == null || r.label === "")
+        ? "&nbsp;"
+        : `<span class="labelWithEx">
+            <img class="exIcon"
+                  src="/images/binance.png"
+                  alt="Binance"
+                  width="14"
+                  height="14"
+                  onerror="this.onerror=null; this.style.display='none';">
+            ${labelText}
+          </span>`;
+
+      return `
+        <tr class="${trClass} ${emptyClass}">
+          <td>${labelCell}</td>
+          <td>${amountText}</td>
+          <td>${priceText}</td>
+          <td>${timeText}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function pushTradeRow({ sym, type, amountKRW, priceUSD }) {
+    sideState.tradeRows.unshift({
+      sym,
+      type,
+      label: `${sym} ${type}`,
+      amount: amountKRW,
+      price: priceUSD,
+      time: nowTime(),
+    });
+    sideState.tradeRows = normalizeTradeRows(sideState.tradeRows, 3);
+    saveTradeRows();
+    renderTrade();
+  }
+
   let wsFutures = null;
   let wsRetry = 0;
 
   function connectFuturesWS() {
     if (wsFutures) {
-      try { wsFutures.close(); } catch {}
+      try { wsFutures.close(); } catch { }
       wsFutures = null;
     }
 
@@ -1590,9 +1532,8 @@
 
     wsFutures.onopen = () => {
       wsRetry = 0;
-      sideState.tradeRows = Array.from({ length: 3 }, makeEmptyRow);
+      restoreTradeRows();
       renderTrade();
-      console.log("[KIMPVIEW] Futures WS connected");
     };
 
     wsFutures.onmessage = (e) => {
@@ -1618,16 +1559,11 @@
       }
     };
 
-    wsFutures.onerror = () => console.warn("[KIMPVIEW] Futures WS error");
-
     wsFutures.onclose = () => {
       const wait = Math.min(10_000, 800 * Math.pow(1.6, wsRetry++));
-      console.warn(`[KIMPVIEW] Futures WS closed. retry in ${Math.round(wait)}ms`);
       setTimeout(connectFuturesWS, wait);
     };
   }
-
-  connectFuturesWS();
 
   function initMainChart() {
     if (typeof TradingView !== "undefined") {
@@ -1650,5 +1586,27 @@
     }
   }
 
-  window.addEventListener("DOMContentLoaded", initMainChart);
+  function init() {
+    bindEvents();
+    bindTradeCollapse();
+    toggleClearBtn();
+
+    restoreTopMetricsFromLS();
+    startUnifiedTopMetrics();
+
+    restoreTradeRows();
+    renderTrade();
+    connectFuturesWS();
+
+    loadCoinsAndRender(true);
+    startAutoRefresh(2000);
+
+    initMainChart();
+  }
+
+  if (document.readyState === "loading") {
+    window.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 })();
