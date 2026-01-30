@@ -1,4 +1,7 @@
 (() => {
+  const SCRIPT_BASE = new URL('.', document.currentScript.src);
+  const BINANCE_ICON_URL = new URL('../../images/binance.png', SCRIPT_BASE).href;  
+
   const $longRate = document.getElementById("longRate");
   const $shortRate = document.getElementById("shortRate");
   const $fearGreed = document.getElementById("fearGreed");
@@ -195,17 +198,17 @@
         trClass = `liq ${isLong ? "long" : isShort ? "short" : ""}`.trim();
       }
 
-      const labelCell = (r.label == null || r.label === "")
-        ? "&nbsp;"
-        : `<span class="labelWithEx">
-            <img class="exIcon"
-                  src="../images/binance.png"
-                  alt="Binance"
-                  width="14"
-                  height="14"
-                  onerror="this.onerror=null; this.style.display='none';">
-            ${labelText}
-          </span>`;
+    const labelCell = (r.label == null || r.label === "")
+      ? "&nbsp;"
+      : `<span class="labelWithEx">
+          <img class="exIcon"
+              src="${BINANCE_ICON_URL}"
+              alt="Binance"
+              width="14"
+              height="14"
+              onerror="this.onerror=null; this.style.display='none';">
+          ${labelText}
+        </span>`;
 
       return `
         <tr class="${trClass} ${emptyClass}">
