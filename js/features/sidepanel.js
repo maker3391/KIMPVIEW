@@ -199,7 +199,7 @@
         ? "&nbsp;"
         : `<span class="labelWithEx">
             <img class="exIcon"
-                  src="/images/binance.png"
+                  src="../images/binance.png"
                   alt="Binance"
                   width="14"
                   height="14"
