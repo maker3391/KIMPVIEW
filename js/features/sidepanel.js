@@ -1,6 +1,11 @@
 (() => {
-  const SCRIPT_BASE = new URL('.', document.currentScript.src);
-  const BINANCE_ICON_URL = new URL('../../images/binance.png', SCRIPT_BASE).href;  
+  const __SCRIPT_SRC__ =
+    (document.currentScript && document.currentScript.src)
+      ? document.currentScript.src
+      : location.href;
+
+  const __SCRIPT_BASE__ = new URL(".", __SCRIPT_SRC__);
+  const BINANCE_ICON_URL = new URL("../../images/binance.png", __SCRIPT_BASE__).href;
 
   const $longRate = document.getElementById("longRate");
   const $shortRate = document.getElementById("shortRate");
