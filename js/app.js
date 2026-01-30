@@ -421,7 +421,6 @@
       state.coins = list;
       render();
       if (list.length > 0) saveTableCache(state.exchange, list);
-
     } catch (err) {
       console.warn("[KIMPVIEW] loadCoinsAndRender failed:", err);
       if (!restoreTableFromCache(state.exchange)) {
@@ -435,7 +434,7 @@
   }
 
   bindEvents();
-  bindAlertCollapse();
+  bindTradeCollapse();
   toggleClearBtn();
 
   restoreTopMetricsFromLS();
@@ -444,29 +443,22 @@
   loadCoinsAndRender(true);
   startAutoRefresh(2000);
 
-  const $longRate = document.getElementById("longRate");
-  const $shortRate = document.getElementById("shortRate");
-  const $fearGreed = document.getElementById("fearGreed");
-
   const $tradeAlertBody = document.getElementById("tradeAlertBody");
-  const $liquidAlertBody = document.getElementById("liquidAlertBody");
 
   let sideState = {
     tradeRows: [],
-    liqRows: [],
   };
 
   function makeEmptyRow() {
     return { sym: "", type: "", label: null, amount: null, price: null, time: null };
   }
 
-  function renderAlert(kind) {
-    const tbody = (kind === "trade") ? $tradeAlertBody : $liquidAlertBody;
-    if (!tbody) return;
+  function renderTrade() {
+    if (!$tradeAlertBody) return;
 
-    const rows = (kind === "trade") ? sideState.tradeRows : sideState.liqRows;
+    const rows = sideState.tradeRows;
 
-    tbody.innerHTML = rows.map(r => {
+    $tradeAlertBody.innerHTML = rows.map(r => {
       const isEmpty = !r.sym;
       const emptyClass = isEmpty ? "is-empty" : "";
 
@@ -478,13 +470,7 @@
         : "&nbsp;";
 
       let trClass = "";
-      if (kind === "trade") {
-        trClass = (r.type === "롱") ? "buy" : (r.type === "숏") ? "sell" : "";
-      } else {
-        const isLong = String(r.type || r.label || "").includes("롱");
-        const isShort = String(r.type || r.label || "").includes("숏");
-        trClass = `liq ${isLong ? "long" : isShort ? "short" : ""}`.trim();
-      }
+      trClass = (r.type === "롱") ? "buy" : (r.type === "숏") ? "sell" : "";
 
       const labelCell = (r.label == null || r.label === "")
         ? "&nbsp;"
@@ -509,9 +495,6 @@
     }).join("");
   }
 
-  function renderTrade() { renderAlert("trade"); }
-  function renderLiq() { renderAlert("liq"); }
-
   function pushTradeRow({ sym, type, amountKRW, priceUSD }) {
     sideState.tradeRows.unshift({
       sym,
@@ -525,34 +508,20 @@
     renderTrade();
   }
 
-  function pushLiqRow({ sym, liqType, amountKRW, priceUSD }) {
-    sideState.liqRows.unshift({
-      sym,
-      type: liqType,
-      label: `${sym} ${liqType}`,
-      amount: amountKRW,
-      price: priceUSD,
-      time: nowTime(),
-    });
-    sideState.liqRows = sideState.liqRows.slice(0, 3);
-    renderLiq();
-  }
-
   sideState.tradeRows = Array.from({ length: 3 }, makeEmptyRow);
-  sideState.liqRows = Array.from({ length: 3 }, makeEmptyRow);
   renderTrade();
-  renderLiq();
 
-  function bindAlertCollapse() {
+  function bindTradeCollapse() {
     const btns = document.querySelectorAll(".collapseBtn[data-target]");
     if (btns.length > 0) {
       btns.forEach((btn) => {
         const key = String(btn.dataset.target || "");
-        const bodyId = (key === "trade") ? "tradeBody" : (key === "liq") ? "liqBody" : "";
-        const body = bodyId ? document.getElementById(bodyId) : null;
+        if (key !== "trade") return;
+
+        const body = document.getElementById("tradeBody");
         if (!body) return;
 
-        const storageKey = `kimpview:${key}Collapsed`;
+        const storageKey = "kimpview:tradeCollapsed";
         const saved = localStorage.getItem(storageKey) === "1";
         setCollapse(btn, body, storageKey, saved);
 
@@ -565,7 +534,6 @@
     }
 
     bindCollapseById("tradeToggle", "tradeBody", "kimpview:tradeCollapsed");
-    bindCollapseById("liqToggle", "liqBody", "kimpview:liqCollapsed");
   }
 
   function bindCollapseById(toggleId, bodyId, storageKey) {
@@ -1570,51 +1538,6 @@
     setInterval(runOnce, 60_000);
   }
 
-  async function loadMarketStatus() {
-    if (!$longRate || !$shortRate || !$fearGreed) return;
-
-    try {
-      const url = "https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=1d&limit=1";
-      const arr = await fetchJsonWithTimeout(url, 7000);
-
-      const d = Array.isArray(arr) ? arr[0] : null;
-      const longAcc = Number(d?.longAccount ?? NaN);
-      const shortAcc = Number(d?.shortAccount ?? NaN);
-
-      if (Number.isFinite(longAcc) && Number.isFinite(shortAcc) && (longAcc + shortAcc) > 0) {
-        $longRate.textContent = (longAcc * 100).toFixed(2) + "%";
-        $shortRate.textContent = (shortAcc * 100).toFixed(2) + "%";
-      } else {
-        $longRate.textContent = "-";
-        $shortRate.textContent = "-";
-      }
-    } catch {
-      $longRate.textContent = "-";
-      $shortRate.textContent = "-";
-    }
-
-    try {
-      const j = await fetchJsonWithTimeout("https://api.alternative.me/fng/?limit=1", 7000);
-      const v = Number(j?.data?.[0]?.value ?? NaN);
-      const clsName = String(j?.data?.[0]?.value_classification ?? "").trim();
-
-      if (Number.isFinite(v)) {
-        $fearGreed.textContent = `${Math.round(v)} (${clsName})`;
-        $fearGreed.classList.remove("fear-low", "fear-mid", "fear-high");
-        if (v < 40) $fearGreed.classList.add("fear-low");
-        else if (v < 60) $fearGreed.classList.add("fear-mid");
-        else $fearGreed.classList.add("fear-high");
-      } else {
-        $fearGreed.textContent = "-";
-      }
-    } catch {
-      $fearGreed.textContent = "-";
-    }
-  }
-
-  loadMarketStatus();
-  setInterval(loadMarketStatus, 60_000);
-
   function pad2(n) { return String(n).padStart(2, "0"); }
   function nowTime() {
     const d = new Date();
@@ -1635,13 +1558,10 @@
   }
 
   const ALERT_SYMBOLS = ["BTC", "ETH", "XRP", "SOL", "DOGE", "BNB", "SUI", "ADA", "BCH", "TRX", "LTC"];
-
   const TRADE_MIN_KRW = 80_000_000;
-  const LIQ_MIN_KRW = 100_000;
   const COOLDOWN_MS = 1500;
 
   const lastHitTrade = new Map();
-  const lastHitLiq = new Map();
 
   function passCooldown(map, sym) {
     const now = Date.now();
@@ -1656,7 +1576,7 @@
 
   function connectFuturesWS() {
     if (wsFutures) {
-      try { wsFutures.close(); } catch { }
+      try { wsFutures.close(); } catch {}
       wsFutures = null;
     }
 
@@ -1664,7 +1584,6 @@
     for (const s of ALERT_SYMBOLS) {
       const base = `${s.toLowerCase()}usdt`;
       streamList.push(`${base}@trade`);
-      streamList.push(`${base}@forceOrder`);
     }
 
     wsFutures = new WebSocket(`wss://fstream.binance.com/stream?streams=${streamList.join("/")}`);
@@ -1672,9 +1591,7 @@
     wsFutures.onopen = () => {
       wsRetry = 0;
       sideState.tradeRows = Array.from({ length: 3 }, makeEmptyRow);
-      sideState.liqRows = Array.from({ length: 3 }, makeEmptyRow);
       renderTrade();
-      renderLiq();
       console.log("[KIMPVIEW] Futures WS connected");
     };
 
@@ -1698,25 +1615,6 @@
         if (!passCooldown(lastHitTrade, sym)) return;
 
         pushTradeRow({ sym, type, amountKRW, priceUSD: priceUSDT });
-      }
-
-      if (data.e === "forceOrder") {
-        const o = data.o || {};
-        const sym = String(o.s || "").replace("USDT", "");
-        const side = String(o.S || "");
-
-        const qty = Number(o.z || o.l || o.q || 0);
-        const priceUSDT = Number(o.ap || o.p || 0);
-        if (!priceUSDT || !qty) return;
-
-        const liqType = (side === "SELL") ? "롱 청산" : "숏 청산";
-        const amountKRW = toKrwByUsdt(priceUSDT * qty);
-
-        if (!amountKRW) return;
-        if (amountKRW < LIQ_MIN_KRW) return;
-        if (!passCooldown(lastHitLiq, sym)) return;
-
-        pushLiqRow({ sym, liqType, amountKRW, priceUSD: priceUSDT });
       }
     };
 
