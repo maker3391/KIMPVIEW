@@ -1366,32 +1366,7 @@
     .bannerRowInner{ grid-template-columns:1fr; }
   }
 
-  /* 메뉴 사이드 배너 */
-  body.subPages .side .banner{
-    height:800px;
-    width:300px;
-    display:flex;
-    align-items:flex-start;
-    justify-content:flex-start;
-    padding-top:0;
-  }
-  body.subPages .side .banner img{
-    width:100%;
-    max-width:none;
-    height:100%;
-    display:block;
-    border-radius:18px;
-    object-fit: cover;
-    margin:0;
-  }
-  .subPages .side{
-    position:sticky;
-    top:88px;
-    align-self:flex-start;
-  }
-  body.subPages{
-    background: var(--bg);   
-  }  
+
   
   
   /* =========================================================

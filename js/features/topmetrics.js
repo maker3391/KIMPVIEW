@@ -191,6 +191,10 @@
 
     if (usdtEl && Number.isFinite(usdt) && usdt > 0) {
       setMetricText("usdtKRW", formatKRW(usdt));
+
+      window.__USDT_KRW = usdt;
+      window.KIMPVIEW = window.KIMPVIEW || {};
+      window.KIMPVIEW.usdtKRW = usdt;
     }
 
     if (domEl && Number.isFinite(global.dom) && global.dom > 0) {

@@ -455,9 +455,64 @@
       </main>
 
       <aside class="side">
-        <div class="banner bannerTall">
-          <img src="../images/indevelopmentright.png" alt="KIMPVIEW 배너">
+
+        <div class="banner">
+          <img src="../images/banner_kimpview.png" alt="KIMPVIEW 배너">
         </div>
+
+        <section class="marketStatus">
+          <h3>시장 현황</h3>
+          <table class="card">
+            <tr><td>롱 비율 (24H)</td><td id="longRate">-</td></tr>
+            <tr><td>숏 비율 (24H)</td><td id="shortRate">-</td></tr>
+            <tr><td>공포 · 탐욕</td><td id="fearGreed">-</td></tr>
+          </table>
+        </section>
+
+        <section>
+          <div class="alertHead">
+            <h3>선물 거래 알림</h3>
+            <button
+              type="button"
+              class="collapseBtn"
+              data-target="trade"
+              aria-label="거래 알림 접기/펼치기"
+              aria-expanded="true"
+            >▾</button>
+          </div>
+
+          <div class="alertBody" id="tradeBody">
+            <table class="card alertTable">
+              <thead>
+                <tr><th>구분</th><th>금액</th><th>체결가</th><th>시간</th></tr>
+              </thead>
+              <tbody id="tradeAlertBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section>
+          <div class="alertHead">
+            <h3>선물 청산 알림</h3>
+            <button
+              type="button"
+              class="collapseBtn"
+              data-target="liq"
+              aria-label="청산 알림 접기/펼치기"
+              aria-expanded="true"
+            >▾</button>
+          </div>
+
+          <div class="alertBody" id="liqBody">
+            <table class="card alertTable">
+              <thead>
+                <tr><th>구분</th><th>금액</th><th>체결가</th><th>시간</th></tr>
+              </thead>
+              <tbody id="liquidAlertBody"></tbody>
+            </table>
+          </div>
+        </section>
+
       </aside>
 
     </div>
@@ -515,7 +570,7 @@
   </footer>
   
   <script src="../js/features/topmetrics.js?v=1"></script>
-
+  <script src="../js/features/sidepanel.js?v=1" defer></script>
   <script src="../js/features/stats.js?v=999"></script>
 
 </body>
