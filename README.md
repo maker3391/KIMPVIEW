@@ -131,6 +131,6 @@ KIMPVIEW는 **김치프리미엄(김프)**과 주요 암호화폐 가격 정보�
 
 ## 🔗 링크
 
-- GitHub Repository: https://github.com/maker3391/KIMPVIEW
+https://kimpview.com
 
 ---
