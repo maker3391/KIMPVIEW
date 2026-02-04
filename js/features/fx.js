@@ -1,7 +1,6 @@
 (() => {
   "use strict";
 
-
   const $ = (sel) => document.querySelector(sel);
 
   const elAmount = $("#fxAmount");
@@ -30,7 +29,6 @@
 
   if (!elAmount || !elResult || !elFromBtn || !elToBtn) return;
 
-  // ---------- Currency list ----------
   const CURRENCIES = [
     { code: "KRW", name: "대한민국 원", symbol: "₩", flag: "🇰🇷" },
     { code: "USD", name: "미국 달러", symbol: "$", flag: "🇺🇸" },
@@ -66,28 +64,28 @@
     { code: "SAR", name: "사우디 리얄", symbol: "﷼", flag: "🇸🇦" }
   ];
 
-  const byCode = new Map(CURRENCIES.map(c => [c.code, c]));
+  const byCode = new Map(CURRENCIES.map((c) => [c.code, c]));
   const normalize = (s) => String(s || "").toLowerCase().trim();
 
-function emojiToTwemojiUrl(emoji) {
-  const cps = Array.from(emoji || "")
-    .map(ch => ch.codePointAt(0).toString(16))
-    .join("-");
-  return `https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/${cps}.svg`;
-}
+  function emojiToTwemojiUrl(emoji) {
+    const cps = Array.from(emoji || "")
+      .map((ch) => ch.codePointAt(0).toString(16))
+      .join("-");
+    return `https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/${cps}.svg`;
+  }
 
-function renderFlag(emoji, altText = "") {
-  const e = emoji || "🏳️";
-  const url = emojiToTwemojiUrl(e);
-  return `<img class="fxFlagImg" src="${url}" alt="${altText}" loading="lazy">`;
-}
+  function renderFlag(emoji, altText = "") {
+    const e = emoji || "🏳️";
+    const url = emojiToTwemojiUrl(e);
+    return `<img class="fxFlagImg" src="${url}" alt="${altText}" loading="lazy">`;
+  }
 
   const state = {
     from: "KRW",
     to: "USD",
-    rates: null,       
-    updatedAt: null,  
-    openDrop: null,   
+    rates: null,
+    updatedAt: null,
+    openDrop: null,
     inflight: null
   };
 
@@ -100,7 +98,7 @@ function renderFlag(emoji, altText = "") {
       if (!raw) return null;
       const obj = JSON.parse(raw);
       if (!obj || !obj.t || !obj.rates) return null;
-      if ((Date.now() - obj.t) > TTL) return null;
+      if (Date.now() - obj.t > TTL) return null;
       return obj;
     } catch {
       return null;
@@ -109,11 +107,14 @@ function renderFlag(emoji, altText = "") {
 
   function writeCache(rates, time_last_update_utc) {
     try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify({
-        t: Date.now(),
-        rates,
-        time_last_update_utc: time_last_update_utc || null
-      }));
+      localStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify({
+          t: Date.now(),
+          rates,
+          time_last_update_utc: time_last_update_utc || null
+        })
+      );
     } catch {}
   }
 
@@ -129,8 +130,8 @@ function renderFlag(emoji, altText = "") {
     }
 
     state.inflight = fetch("https://open.er-api.com/v6/latest/USD", { cache: "no-store" })
-      .then(r => r.json())
-      .then(data => {
+      .then((r) => r.json())
+      .then((data) => {
         if (!data || data.result !== "success" || !data.rates) {
           throw new Error("환율 API 응답 오류");
         }
@@ -178,8 +179,8 @@ function renderFlag(emoji, altText = "") {
     const b = rates[base];
     const q = rates[quote];
 
-    const baseRate = (base === "USD") ? 1 : b;
-    const quoteRate = (quote === "USD") ? 1 : q;
+    const baseRate = base === "USD" ? 1 : b;
+    const quoteRate = quote === "USD" ? 1 : q;
 
     if (!baseRate || !quoteRate) return null;
     return quoteRate / baseRate;
@@ -193,7 +194,7 @@ function renderFlag(emoji, altText = "") {
   }
 
   function updateTopLine() {
-    const ref = (state.from && state.from !== "KRW") ? state.from : state.to;
+    const ref = state.from && state.from !== "KRW" ? state.from : state.to;
 
     if (!ref || ref === "KRW") {
       elRateMain.textContent = "";
@@ -245,11 +246,11 @@ function renderFlag(emoji, altText = "") {
     const c = byCode.get(code);
 
     if (which === "from") {
-    elFromFlag.innerHTML = renderFlag(c.flag, c.code);
-    elFromCode.textContent = `${c.symbol} ${c.code}`;
+      elFromFlag.innerHTML = renderFlag(c.flag, c.code);
+      elFromCode.textContent = `${c.symbol} ${c.code}`;
     } else {
-    elToFlag.innerHTML = renderFlag(c.flag, c.code);
-    elToCode.textContent = `${c.symbol} ${c.code}`;
+      elToFlag.innerHTML = renderFlag(c.flag, c.code);
+      elToCode.textContent = `${c.symbol} ${c.code}`;
     }
 
     updateTopLine();
@@ -286,19 +287,20 @@ function renderFlag(emoji, altText = "") {
   }
 
   function renderList(which, keyword) {
-    const listEl = (which === "from") ? elFromList : elToList;
-    const selected = (which === "from") ? state.from : state.to;
+    const listEl = which === "from" ? elFromList : elToList;
+    const selected = which === "from" ? state.from : state.to;
 
     const k = normalize(keyword);
-    const filtered = CURRENCIES.filter(c => {
+    const filtered = CURRENCIES.filter((c) => {
       if (!k) return true;
       const hay = normalize(`${c.code} ${c.name}`);
       return hay.includes(k);
     });
 
-    listEl.innerHTML = filtered.map(c => {
-      const isSel = c.code === selected;
-      return `
+    listEl.innerHTML = filtered
+      .map((c) => {
+        const isSel = c.code === selected;
+        return `
         <div class="fxItem ${isSel ? "isSelected" : ""}" role="option" data-code="${c.code}" aria-selected="${isSel}">
           <div class="fxItemLeft">
             <span class="fxItemFlag">${renderFlag(c.flag, c.code)}</span>
@@ -310,7 +312,8 @@ function renderFlag(emoji, altText = "") {
           <div class="fxItemCheck">✔</div>
         </div>
       `;
-    }).join("");
+      })
+      .join("");
   }
 
   function onListClick(e, which) {
@@ -320,6 +323,34 @@ function renderFlag(emoji, altText = "") {
     if (!code) return;
     setCurrency(which, code);
     closeDrop();
+  }
+
+  function formatAmountInputKeepCursor(inputEl) {
+    const raw = inputEl.value;
+    const start = inputEl.selectionStart ?? raw.length;
+
+    const cleaned = raw.replace(/[^0-9.]/g, "");
+    const parts = cleaned.split(".");
+    const intPartRaw = parts[0] || "";
+    const decPartRaw = parts.length > 1 ? parts.slice(1).join("") : null;
+
+    const intDigits = intPartRaw.replace(/^0+(?=\d)/, "");
+    const intFormatted = intDigits ? Number(intDigits).toLocaleString("ko-KR") : "";
+
+    const decPart = decPartRaw !== null ? decPartRaw.slice(0, 8) : null;
+    const formatted = decPart !== null ? `${intFormatted}.${decPart}` : intFormatted;
+
+    const digitsBeforeCursor = raw.slice(0, start).replace(/[^0-9.]/g, "").length;
+
+    inputEl.value = formatted;
+
+    let pos = 0;
+    let seen = 0;
+    while (pos < formatted.length && seen < digitsBeforeCursor) {
+      if (/[0-9.]/.test(formatted[pos])) seen++;
+      pos++;
+    }
+    inputEl.setSelectionRange(pos, pos);
   }
 
   elFromBtn.addEventListener("click", () => openDrop("from"));
@@ -351,19 +382,12 @@ function renderFlag(emoji, altText = "") {
   });
 
   elAmount.addEventListener("input", () => {
-    const cleaned = elAmount.value.replace(/[^\d.,-]/g, "");
-    if (cleaned !== elAmount.value) elAmount.value = cleaned;
+    formatAmountInputKeepCursor(elAmount);
     updateResult();
   });
 
   elAmount.addEventListener("blur", () => {
-    const n = parseAmount(elAmount.value);
-    if (!Number.isFinite(n)) {
-      elAmount.value = "";
-      updateResult();
-      return;
-    }
-    elAmount.value = n.toLocaleString("ko-KR", { maximumFractionDigits: 8 });
+    formatAmountInputKeepCursor(elAmount);
     updateResult();
   });
 
