@@ -1673,6 +1673,7 @@
   #fxCalc .fxPanel > .fxField {
     max-width: 520px;
     margin: 0 auto;
+    background: #b0ffe3;
   }  
   
 
@@ -1985,7 +1986,7 @@
     max-width: 520px;
     margin: 0 auto;
     background: #fff;
-    border: 1px solid #e5e7eb;
+    border: 10px solid #dcffca;
     border-radius: 14px;
     padding: 10px 14px;
     text-align: center;
