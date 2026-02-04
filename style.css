@@ -209,7 +209,7 @@
   input[type="button"],
   button{
     height:44px;
-    font-size:13px;
+    font-size:15px;
     padding:0 14px;
 
     border:1px solid var(--line);
@@ -1669,6 +1669,12 @@
     border-radius: 16px;
     padding: 14px;
   }
+
+  #fxCalc .fxPanel > .fxField {
+    max-width: 520px;
+    margin: 0 auto;
+  }  
+  
 
   .fxField:last-of-type {
     background: linear-gradient(180deg, #ffffff, #f8fafc);
