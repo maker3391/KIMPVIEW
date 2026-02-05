@@ -11,6 +11,7 @@
   <link rel="canonical" href="https://kimpview.com/">
   <meta property="og:type" content="website">
   <meta property="og:title" content="실시간 김프 김치프리미엄 - 김프뷰 · KIMPVIEW">
+  <meta property="og:site_name" content="김프뷰">
   <meta property="og:description" content="김치프리미엄 김프·역프와 비트코인 등 암호화폐 시세를 실시간으로 확인하세요. 글로벌 지표, 종합 계산기까지 제공하는 김프뷰(KIMPVIEW).">
   <meta property="og:url" content="https://kimpview.com/">
   <meta property="og:image" content="https://kimpview.com/images/og.png">
@@ -33,14 +34,34 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "KIMPVIEW",
-    "url": "https://kimpview.com/",
-    "description": "실시간 암호화폐 김프 김치프리미엄 정보 제공 서비스",
-    "applicationCategory": "FinanceApplication",
-    "operatingSystem": "All"
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://kimpview.com/#org",
+        "name": "김프뷰",
+        "alternateName": "KIMPVIEW",
+        "url": "https://kimpview.com/",
+        "logo": "https://kimpview.com/images/og.png"
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://kimpview.com/#website",
+        "name": "김프뷰",
+        "alternateName": "KIMPVIEW",
+        "url": "https://kimpview.com/",
+        "inLanguage": "ko-KR",
+        "publisher": { "@id": "https://kimpview.com/#org" }
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://kimpview.com/#webpage",
+        "name": "실시간 김프 김치프리미엄 - 김프뷰 · KIMPVIEW",
+        "url": "https://kimpview.com/",
+        "isPartOf": { "@id": "https://kimpview.com/#website" }
+      }
+    ]
   }
-  </script>    
+  </script>
 </head>
 
 <body>
@@ -68,9 +89,9 @@
 
     <header class="topbar">
       <div class="headerLeft">
-          <div class="logo">
-            <a href="index.html">KIMPVIEW</a>
-          </div>
+        <div class="logo">
+          <a href="index.html">김프뷰 <span class="logoSub">KIMPVIEW</span></a>
+        </div>
 
         <nav class="topnav" aria-label="상단 메뉴">
           <a href="index.html" class="active">코인</a>
@@ -241,7 +262,9 @@
   <section class="visually-hidden">
     <h2>김치프리미엄 김프 - 김프뷰 코인 비교 안내</h2>
     <p>
-      김프뷰 · KIMPVIEW는 주요 거래소 및 글로벌 기준 가격을 바탕으로 
+      김치프리미엄 김프·역프와 비트코인 등 암호화폐 시세를 실시간으로 확인하세요. 
+      글로벌 지표, 종합 계산기까지 제공하는 김프뷰(KIMPVIEW)는
+      주요 거래소 및 글로벌 기준 가격을 바탕으로 
       암호화폐 시세 및 김프를 비교할 수 있도록 돕는 정보 페이지입니다.
       가격, 변동률, 거래대금 등 핵심 지표를 한 화면에서 확인할 수 있습니다.
       제공되는 정보는 참고용이며 투자 판단의 근거로 사용할 수 없습니다.
