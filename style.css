@@ -92,7 +92,7 @@ hr{ border:0; border-top:1px solid var(--line); margin:14px 0; }
   display:flex;
   flex-direction:column;
   gap:14px;
-  zoom: 0.95;
+  zoom: 0.93;
 }
 
 /* ===== HEADER ===== */
@@ -178,6 +178,7 @@ border-radius: 0;
   border:1px solid var(--line);
   height:200px;
   margin-bottom: 12px;
+  zoom:0.93
 }
 .mainBanner img{
   display:block;
