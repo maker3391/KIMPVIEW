@@ -4,7 +4,7 @@ KIMPVIEW는 **김치프리미엄(김프)** 과 주요 암호화폐 가격 정보
 여러 거래소 기준으로 한 화면에서 비교·분석할 수 있도록 만든  
 **개인 포트폴리오 프로젝트**입니다.
 
-![KIMPVIEW Main Screenshot](./images/main.png)
+![KIMPVIEW Main Screenshot](./images/main.png))
 
 ## 🔑 Key Achievement
 
