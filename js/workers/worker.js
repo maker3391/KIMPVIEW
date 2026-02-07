@@ -21,7 +21,6 @@ export default {
       return new Response(JSON.stringify(obj), { status, headers });
     };
 
-    // ===== helpers =====
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
     function withCors(response, cacheSec = 0, contentType = null) {
@@ -69,7 +68,6 @@ export default {
       throw lastErr || new Error("fetch failed");
     }
 
-    // ===== Existing: Yahoo chart (for /stock + symbol routes) =====
     const FINNHUB_KEY = "d580eu1r01qptoapg9g0d580eu1r01qptoapg9gg";
 
     const fetchYahooData = async (symbol, isStock = false) => {
@@ -156,7 +154,6 @@ export default {
       return payload;
     };
 
-    // ===== NEW: Yahoo quote batch (for /stocks) =====
     async function fetchYahooQuoteBatch(symbols) {
       const uniq = Array.from(
         new Set(
@@ -228,7 +225,6 @@ export default {
       };
     }
 
-    // ===== Symbol shortcut routes =====
     const PATH_TO_SYMBOL = {
       "/dxy": "DX-Y.NYB",
       "/us10y": "^TNX",
@@ -270,7 +266,6 @@ export default {
           return jsonRes({ error: "CoinPaprika unexpected payload" }, { status: 502, cacheSec: 30 });
         }
 
-        // symbol -> market_cap (USD)
         const caps = {};
         for (const it of arr) {
           const id = String(it?.id || "");
@@ -278,7 +273,6 @@ export default {
           const mc = Number(it?.quotes?.USD?.market_cap || 0);
           if (!mc) continue;
 
-          // ✅ USDT: tether id 우선, 없으면 max fallback
           if (sym === "USDT") {
             if (id === "tether-usdt") {
               caps.USDT = mc; // real tether
@@ -289,7 +283,6 @@ export default {
             continue;
           }
 
-          // others: max 유지
           const prev = Number(caps[sym] || 0);
           if (mc > prev) caps[sym] = mc;
         }
@@ -299,7 +292,6 @@ export default {
         return resp;
       }
 
-      // ===== FX Google =====
       if (path === "/fx/google") {
         const gRes = await fetchWithRetry("https://www.google.com/finance/quote/USD-KRW?hl=en", {
           timeoutMs: 9000,
@@ -312,7 +304,6 @@ export default {
         return jsonRes({ pair: "USDKRW", rate, ts: Date.now(), source: "Google Finance" }, { cacheSec: 60 });
       }
 
-      // ===== legacy upbit =====
       if (path === "/upbit") {
         const market = (url.searchParams.get("market") || "").trim();
         if (!market) return jsonRes({ error: "Missing market" }, { status: 400 });
@@ -342,7 +333,6 @@ export default {
         );
       }
 
-      // ===== UPBIT proxy =====
       if (path.startsWith("/upbit/")) {
         const targetPath = path.replace("/upbit", "");
         const target = "https://api.upbit.com" + targetPath + url.search;
@@ -365,7 +355,6 @@ export default {
         return new Response(upRes.body, { status: upRes.status, headers });
       }
 
-      // ===== BITHUMB proxy =====
       if (path.startsWith("/bithumb/")) {
         const targetPath = path.replace("/bithumb", "");
         const target = "https://api.bithumb.com" + targetPath + url.search;
@@ -384,13 +373,11 @@ export default {
         return withCors(biRes, cacheSec, "application/json; charset=utf-8");
       }
 
-      // ===== Yahoo symbol routes =====
       if (PATH_TO_SYMBOL[path]) {
         const data = await fetchYahooData(PATH_TO_SYMBOL[path]);
         return jsonRes(data, { cacheSec: 60 });
       }
 
-      // ===== NEW: Stock icon proxy (CORS + cache) =====
       if (path === "/stock-icon") {
         const symRaw = (url.searchParams.get("symbol") || "").trim();
         if (!symRaw) return jsonRes({ error: "Missing symbol" }, { status: 400 });
@@ -425,7 +412,6 @@ export default {
         return out;
       }
 
-      // ===== Stocks =====
       if (path === "/stocks" || path === "/stock") {
         const raw = url.searchParams.get("symbols") || url.searchParams.get("symbol") || "";
         const syms = raw.split(",").map((s) => String(s || "").trim()).filter(Boolean);
