@@ -1390,9 +1390,53 @@
     restoreTopMetricsFromLS();
     startUnifiedTopMetrics();
 
-    loadCoinsAndRender(true);
-    startAutoRefresh(2000);
+    const TITLE_SUFFIX = "실시간 김프 김치프리미엄 - 김프뷰";
+    const TITLE_REFRESH_MS = 3000;
 
+    function formatTitlePriceKRW(price) {
+      const v = Number(price || 0);
+      if (!Number.isFinite(v) || v <= 0) return "";
+      return Math.round(v).toLocaleString("ko-KR");
+    }
+
+    function formatTitleChangePct(pct) {
+      const v = Number(pct);
+      if (!Number.isFinite(v)) return "";
+      const sign = v > 0 ? "+" : "";
+      return `${sign}${v.toFixed(2)}%`;
+    }
+
+    function getBtcCoinFromState() {
+      return (Array.isArray(state.coins) ? state.coins : []).find(
+        (c) => String(c?.symbol || "").toUpperCase() === "BTC"
+      ) || null;
+    }
+
+    function updateTitleFromState() {
+      const btc = getBtcCoinFromState();
+      if (!btc) {
+        document.title = TITLE_SUFFIX;
+        return;
+      }
+
+      const changeText = formatTitleChangePct(btc.change24h);
+      const priceText = formatTitlePriceKRW(btc.priceKRW);
+
+      if (!priceText) {
+        document.title = TITLE_SUFFIX;
+        return;
+      }
+
+      const prefix = `${changeText || ""} | ${priceText} BTC/KRW`;
+      document.title = `${prefix} | ${TITLE_SUFFIX}`;
+    }
+
+    updateTitleFromState();
+    setInterval(updateTitleFromState, TITLE_REFRESH_MS);
+
+    loadCoinsAndRender(true).finally(updateTitleFromState);
+
+    startAutoRefresh(2000);
     initMainChart();
   }
 
