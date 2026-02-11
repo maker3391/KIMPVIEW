@@ -4,28 +4,28 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>뉴스 - KIMPVIEW</title>
+  <title>실시간 코인 뉴스 - 김프뷰 · KIMPVIEW</title>
   <meta name="description" content="비트코인·이더리움·알트코인 주요 헤드라인과 업데이트 시간을 확인하세요.">
   <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://kimpview.com/news.html">
+  <link rel="canonical" href="https://kimpview.com/html/news.html">
 
   <meta property="og:type" content="website">
-  <meta property="og:title" content="뉴스 | KIMPVIEW">
+  <meta property="og:title" content="실시간 코인 뉴스 - 김프뷰 · KIMPVIEW">
   <meta property="og:description" content="주요 헤드라인과 업데이트 시간을 확인하세요.">
-  <meta property="og:url" content="https://kimpview.com/news.html">
+  <meta property="og:url" content="https://kimpview.com/html/news.html">
   <meta property="og:image" content="https://kimpview.com/images/og.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
 
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="뉴스 | KIMPVIEW">
+  <meta name="twitter:title" content="실시간 코인 뉴스 - 김프뷰 · KIMPVIEW">
   <meta name="twitter:description" content="주요 헤드라인과 업데이트 시간을 확인하세요.">
   <meta name="twitter:image" content="https://kimpview.com/images/og.png">
 
   <link rel="icon" href="/favicon.ico?v=3" sizes="any">
   <link rel="icon" type="image/x-icon" href="/favicon-48.ico?v=3" sizes="48x48">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=3" sizes="180x180">
-  <link rel="stylesheet" href="../style.css?v=6">
+  <link rel="stylesheet" href="/style.css?v=6">
 
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4958885788848761" crossorigin="anonymous"></script>
 </head>
@@ -35,12 +35,12 @@
   <div class="topMetrics">
     <div class="topMetricsInner">
       <span class="metric">
-        <img src="../images/icons/google.png" class="metricIcon" alt="Google">
+        <img src="/images/icons/google.png" class="metricIcon" alt="Google">
         환율: <strong id="fxKRW"></strong>
       </span>
 
       <span class="metric">
-        <img src="../images/icons/upbit.png" class="metricIcon" alt="Upbit">
+        <img src="/images/icons/upbit.png" class="metricIcon" alt="Upbit">
         테더(USDT): <strong id="usdtKRW"></strong>
       </span>
 
@@ -54,14 +54,14 @@
   <div class="wrap">
     <header class="topbar">
       <div class="headerLeft">
-        <div class="logo"><a href="../index.html">KIMPVIEW</a></div>
+        <div class="logo"><a href="/">KIMPVIEW</a></div>
 
         <nav class="topnav" aria-label="상단 메뉴">
-          <a href="../index.html">코인</a>
-          <a href="stats.html">글로벌 지표</a>
-          <a href="stocks.html">주식</a>
-          <a href="news.html" class="active">뉴스</a>
-          <a href="fx.html">종합 계산기</a>
+          <a href="/">코인</a>
+          <a href="/html/stats.html">글로벌 지표</a>
+          <a href="/html/stocks.html">주식</a>
+          <a href="/html/news.html" class="active">뉴스</a>
+          <a href="/html/fx.html">종합 계산기</a>
         </nav>
       </div>
     </header>
@@ -72,44 +72,44 @@
         <h1 class="visually-hidden">뉴스</h1>
 
         <a href="#" class="mainBanner" aria-label="메인 배너">
-          <img src="../images/main_banner.png" alt="메인 프로모션 배너">
+          <img src="/images/main_banner.png" alt="메인 프로모션 배너">
         </a>
 
         <section class="card">
 
-        <div class="newsTopBar">
-          <div class="newsTabs" role="tablist" aria-label="뉴스 탭">
+          <div class="newsTopBar">
+            <div class="newsTabs" role="tablist" aria-label="뉴스 탭">
 
-            <button
-              id="tabBreaking"
-              class="newsTab active"
-              type="button"
-              role="tab"
-              aria-selected="true"
-              data-tab="breaking"
-            >
-              속보
-            </button>
+              <button
+                id="tabBreaking"
+                class="newsTab active"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                data-tab="breaking"
+              >
+                속보
+              </button>
 
-            <button
-              id="tabNews"
-              class="newsTab"
-              type="button"
-              role="tab"
-              aria-selected="false"
-              data-tab="news"
-            >
-              뉴스
-            </button>
+              <button
+                id="tabNews"
+                class="newsTab"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                data-tab="news"
+              >
+                뉴스
+              </button>
 
+            </div>
           </div>
-        </div>
 
           <div class="newsIntro">
             <div class="newsIntroBox">
               <p class="newsIntroText">
-                  오늘의 코인 소식을 빠르게 정리해 드립니다.<br>
-                  원문은 출처 링크를 통해 확인하실 수 있습니다.
+                오늘의 코인 소식을 빠르게 정리해 드립니다.<br>
+                원문은 출처 링크를 통해 확인하실 수 있습니다.
               </p>
             </div>
           </div>
@@ -133,7 +133,7 @@
       <aside class="side">
 
         <div class="banner">
-          <img src="../images/banner_kimpview.png" alt="KIMPVIEW 배너">
+          <img src="/images/banner_kimpview.png" alt="KIMPVIEW 배너">
         </div>
 
         <section class="marketStatus">
@@ -218,16 +218,16 @@
         <span>© 2025 KIMPVIEW</span>
         <span class="footer-divider">|</span>
 
-        <a href="privacy.html" class="footer-link">Privacy</a>
+        <a href="/html/privacy.html" class="footer-link">Privacy</a>
         <span class="footer-divider">|</span>
 
-        <a href="terms.html" class="footer-link">Terms</a>
+        <a href="/html/terms.html" class="footer-link">Terms</a>
         <span class="footer-divider">|</span>
 
-        <a href="about.html" class="footer-link">About</a>
+        <a href="/html/about.html" class="footer-link">About</a>
         <span class="footer-divider">|</span>
-        
-        <a href="guide.html" class="footer-link">Guide</a>
+
+        <a href="/html/guide.html" class="footer-link">Guide</a>
         <span class="footer-divider">|</span>
 
         <a href="https://t.me/KIMPVIEW" target="_blank" class="footer-link">Telegram</a>
@@ -240,15 +240,13 @@
         >
           Contact
         </a>
-
-        </a>
       </div>
     </div>
   </footer>
 
-  <script src="../js/features/topmetrics.js?v=1" defer></script>
-  <script src="../js/features/sidepanel.js?v=1" defer></script>
-  <script src="../js/features/news.js?v=7" defer></script>
+  <script src="/js/features/topmetrics.js?v=1" defer></script>
+  <script src="/js/features/sidepanel.js?v=1" defer></script>
+  <script src="/js/features/news.js?v=7" defer></script>
 
 </body>
 </html>
