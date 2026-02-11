@@ -49,12 +49,12 @@
 
   function showSpinner() {
     if (tableSpinner) tableSpinner.style.display = "flex";
-    if (tableWrapEl) tableWrapEl.style.display = "none";
+    if (tableWrapEl) tableWrapEl.style.visibility = "hidden";
   }
 
   function hideSpinner() {
     if (tableSpinner) tableSpinner.style.display = "none";
-    if (tableWrapEl) tableWrapEl.style.display = "";
+    if (tableWrapEl) tableWrapEl.style.visibility = "visible";
   }
 
   function escapeHtml(s) {
