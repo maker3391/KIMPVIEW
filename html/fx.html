@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="ko">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +11,7 @@
   <meta name="robots" content="index, follow">
 
   <meta property="og:type" content="website">
-  <meta property="og:title" content="KIMPVIEW 종합 계산기 | 환율, 물타기, 수익률, 손실 복구">
+  <meta property="og:title" content="종합 계산기 - 환율, 물타기, 수익률, 손실 복구 - 김프뷰 · KIMPVIEW">
   <meta property="og:description" content="KIMPVIEW 종합 계산기 모음 페이지. 환율 계산기, 물타기 계산기, 수익률 계산기, 손실 복구 계산기를 한 곳에서 이용 가능합니다.">
   <meta property="og:url" content="https://kimpview.com/html/fx.html">
   <meta property="og:image" content="https://kimpview.com/images/og.png">
@@ -18,7 +19,7 @@
   <meta property="og:image:height" content="630">
 
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="KIMPVIEW 종합 계산기 | 환율, 물타기, 수익률, 손실 복구">
+  <meta name="twitter:title" content="종합 계산기 - 환율, 물타기, 수익률, 손실 복구 - 김프뷰 · KIMPVIEW">
   <meta name="twitter:description" content="KIMPVIEW 종합 계산기 모음 페이지. 환율 계산기, 물타기 계산기, 수익률 계산기, 손실 복구 계산기를 한 곳에서 이용 가능합니다.">
   <meta name="twitter:image" content="https://kimpview.com/images/og.png">
 
@@ -55,7 +56,7 @@
 
     <header class="topbar">
       <div class="headerLeft">
-      <div class="logo"><a href="/">KIMPVIEW</a></div>
+        <div class="logo"><a href="/">KIMPVIEW</a></div>
 
         <nav class="topnav" aria-label="상단 메뉴">
           <a href="/">코인</a>
@@ -70,11 +71,11 @@
     <div class="layout">
 
       <main class="main">
-        <h1 class="visually-hidden">환율 계산기: 미드마켓 환율 기준 통화 변환</h1>  
+        <h1 class="visually-hidden">환율 계산기: 미드마켓 환율 기준 통화 변환</h1>
         <a href="#" class="mainBanner" aria-label="메인 배너">
           <img src="/images/main_banner.png" alt="메인 프로모션 배너">
         </a>
-        
+
         <section class="calculator-menu-wrap">
           <div class="calculator-menu">
             <button class="calc-btn applyBtn" data-target="fxCalc">환율 계산기</button>
@@ -82,7 +83,7 @@
             <button class="calc-btn applyBtn" data-target="profitCalc">수익률 계산기</button>
             <button class="calc-btn applyBtn" data-target="lossRecoveryCalc">손실 복구 계산기</button>
           </div>
-        </section>        
+        </section>
 
         <section class="card fxCard" id="fxCalc">
           <div class="fxHead">
@@ -108,16 +109,7 @@
             <div class="fxField fxInput">
 
               <div class="fxInputWrap">
-                <input
-                  type="text"
-                  class="fxAmount"
-                  id="fxAmount"
-                  inputmode="decimal"
-                  autocomplete="off"
-                  placeholder="0"
-                  value="1000"
-                  aria-label="변환할 금액"
-                >
+                <input type="text" class="fxAmount" id="fxAmount" inputmode="decimal" autocomplete="off" placeholder="0" value="1000" aria-label="변환할 금액">
 
                 <button type="button" class="fxCurrencyBtn" id="fxFromBtn" aria-haspopup="dialog" aria-controls="fxFromDrop">
                   <span class="fxFlag" id="fxFromFlag">🇺🇸</span>
@@ -136,17 +128,8 @@
             <div class="fxField">
 
               <div class="fxInputWrap">
-                <input
-                  type="text"
-                  class="fxAmount fxAmountResult"
-                  id="fxResult"
-                  inputmode="decimal"
-                  autocomplete="off"
-                  placeholder="0"
-                  value=""
-                  aria-label="환전 결과 금액"
-                  readonly
-                >
+                <input type="text" class="fxAmount fxAmountResult" id="fxResult" inputmode="decimal" autocomplete="off" placeholder="0" value="" aria-label="환전 결과 금액" readonly>
+
 
                 <button type="button" class="fxCurrencyBtn" id="fxToBtn" aria-haspopup="dialog" aria-controls="fxToDrop">
                   <span class="fxFlag" id="fxToFlag">🇰🇷</span>
@@ -156,15 +139,16 @@
               </div>
             </div>
 
-            <div class="fxHelper" id="fxHelperFx">
+            <div class="fxHelper">
               <div class="fxHelperTitle">안내</div>
               <div class="fxHelperText">
 
                 <div class="fx-info-box">
                   <h3>💡 미드마켓 환율(Mid-market Rate) 가이드</h3>
-                  <p>미드마켓 환율은 전 세계 금융 시장에서 통화가 거래되는 <span class="highlight">실제 시장 가격</span>을 의미합니다. 
-                  <br>금융 기관들이 외화를 사고팔 때 제시하는 매수 호가(Bid)와 매도 호가(Ask)의 정중앙 지점을 계산한 수치입니다.</p>
-                  
+                  <p>미드마켓 환율은 전 세계 금융 시장에서 통화가 거래되는 <span class="highlight">실제 시장 가격</span>을 의미합니다.
+                    <br>금융 기관들이 외화를 사고팔 때 제시하는 매수 호가(Bid)와 매도 호가(Ask)의 정중앙 지점을 계산한 수치입니다.
+                  </p>
+
                   <ul>
                     <li><strong>계산 방법:</strong> <span class="formula">(매수 호가 + 매도 호가) ÷ 2</span></li>
                     <li><strong>특징:</strong> 은행의 운영 수익이나 환전 수수료가 포함되지 않은 순수한 통화 가치입니다.</li>
@@ -184,13 +168,7 @@
 
           <div class="fxDrop fxHidden" id="fxFromDrop" role="dialog" aria-label="기준 통화 선택">
             <div class="fxDropHead">
-              <input
-                type="text"
-                class="fxSearch"
-                id="fxFromSearch"
-                placeholder="통화 검색 (예: USD, 달러, 일본)"
-                autocomplete="off"
-              >
+              <input type="text" class="fxSearch" id="fxFromSearch" placeholder="통화 검색 (예: USD, 달러, 일본)" autocomplete="off">
               <button type="button" class="fxClose" data-fx-close="fxFromDrop" aria-label="닫기">✕</button>
             </div>
             <div class="fxDropList" id="fxFromList" role="listbox" aria-label="기준 통화 목록">
@@ -199,13 +177,7 @@
 
           <div class="fxDrop fxHidden" id="fxToDrop" role="dialog" aria-label="대상 통화 선택">
             <div class="fxDropHead">
-              <input
-                type="text"
-                class="fxSearch"
-                id="fxToSearch"
-                placeholder="통화 검색 (예: KRW, 원, 베트남)"
-                autocomplete="off"
-              >
+              <input type="text" class="fxSearch" id="fxToSearch" placeholder="통화 검색 (예: KRW, 원, 베트남)" autocomplete="off">
               <button type="button" class="fxClose" data-fx-close="fxToDrop" aria-label="닫기">✕</button>
             </div>
             <div class="fxDropList" id="fxToList" role="listbox" aria-label="대상 통화 목록">
@@ -233,19 +205,180 @@
           </div>
 
           <div class="fxPanel">
-            <!-- (중간 내용 동일) -->
+
+            <div class="avgBox avgBox--current">
+              <div class="avgBoxHead">
+                <div class="avgBoxTitle">현재 보유 <small>(수수료 / 체결가에 따라 오차가 발생할 수 있습니다.)</small></div>
+                <div class="avgToggle">
+                  <label><input type="radio" name="avgDecimals" value="0" checked> 기본</label>
+                  <label><input type="radio" name="avgDecimals" value="2"> 소수점</label>
+                </div>
+              </div>
+
+              <div class="avgRow">
+                <div class="fxField">
+                  <div class="fxInputWrap">
+                    <input id="cur_price" class="fxAmount" type="text" inputmode="decimal" placeholder="보유평단">
+                    <button type="button" class="fxCurrencyBtn"><span class="fxCode">원</span></button>
+                  </div>
+                </div>
+
+                <div class="fxField">
+                  <div class="fxInputWrap">
+                    <input id="cur_qty" class="fxAmount" type="text" inputmode="decimal" placeholder="보유수량">
+                    <button type="button" class="fxCurrencyBtn"><span class="fxCode">수량</span></button>
+                  </div>
+                </div>
+
+                <div class="fxField">
+                  <div class="fxInputWrap">
+                    <input id="cur_cost" class="fxAmount fxAmountResult" type="text" inputmode="decimal" placeholder="매입금액" readonly>
+                    <button type="button" class="fxCurrencyBtn"><span class="fxCode">원</span></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="avgBox avgBox--add">
+              <div class="avgBoxHead">
+                <div class="avgBoxTitle">추가 매수 <small>(평단 + 금액 입력 시 수량 자동 계산)</small></div>
+              </div>
+
+              <div class="avgRow">
+                <div class="fxField">
+                  <div class="fxInputWrap">
+                    <input id="add_price" class="fxAmount" type="text" inputmode="decimal" placeholder="평단">
+                    <button type="button" class="fxCurrencyBtn"><span class="fxCode">원</span></button>
+                  </div>
+                </div>
+
+                <div class="fxField">
+                  <div class="fxInputWrap">
+                    <input id="add_qty" class="fxAmount" type="text" inputmode="decimal" placeholder="수량">
+                    <button type="button" class="fxCurrencyBtn"><span class="fxCode">수량</span></button>
+                  </div>
+                </div>
+
+                <div class="fxField">
+                  <div class="fxInputWrap">
+                    <input id="add_cost" class="fxAmount" type="text" inputmode="decimal" placeholder="금액">
+                    <button type="button" class="fxCurrencyBtn"><span class="fxCode">원</span></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="avgBox avgBox--final">
+              <div class="avgBoxHead avgBoxHead--final">
+                <div class="avgBoxTitle">최종 보유</div>
+                <button type="button" class="applyBtn" id="avg_copyCurrent">결과값 저장</button>
+              </div>
+
+              <div class="avgRow">
+                <div class="fxField">
+                  <div class="fxInputWrap">
+                    <input id="fin_price" class="fxAmount" type="text" inputmode="decimal" placeholder="최종 평단" readonly>
+                    <button type="button" class="fxCurrencyBtn"><span class="fxCode">원</span></button>
+                  </div>
+                </div>
+
+                <div class="fxField">
+                  <div class="fxInputWrap">
+                    <input id="fin_qty" class="fxAmount" type="text" inputmode="decimal" placeholder="최종 수량" readonly>
+                    <button type="button" class="fxCurrencyBtn"><span class="fxCode">수량</span></button>
+                  </div>
+                </div>
+
+                <div class="fxField">
+                  <div class="fxInputWrap">
+                    <input id="fin_cost" class="fxAmount fxAmountResult" type="text" inputmode="decimal" placeholder="최종 금액" readonly>
+                    <button type="button" class="fxCurrencyBtn"><span class="fxCode">원</span></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="avgHistory">
+              <div class="avgHistHead">
+                <div class="avgHistTitle"></div>
+                <button type="button" class="applyBtn" id="avg_resetHistory">기록 삭제</button>
+              </div>
+
+              <div class="avgTable">
+                <div class="avgTr avgTh">
+                  <div>회차</div>
+                  <div>평단</div>
+                  <div>수량</div>
+                  <div>금액</div>
+                </div>
+                <div id="avg_tbody"></div>
+              </div>
+            </div>
           </div>
-          
-          <div class="fxHelper" id="fxHelperAvg">
+
+          <div class="fxHelper">
             <div class="fxHelperTitle">안내</div>
             <div class="fxHelperText">
-              <!-- (내용 동일) -->
+
+              <div class="fx-info-box">
+                <h3>📉 물타기(평단) 계산기 가이드</h3>
+                <p>
+                  물타기 계산기는 현재 보유 상태와 추가 매수 조건을 합산해
+                  <span class="highlight"><br>최종 평단(평균 매입단가)</span>, 최종 수량, 총 투자금액을 계산합니다.
+                  <br>입력값 변경 시 자동으로 결과가 반영됩니다.
+                </p>
+
+                <ul>
+                  <li><strong>계산 대상:</strong> 현재 보유 (평단·수량) + 추가 매수( 평단·수량 또는 금액)</li>
+                  <li><strong>추가 매수 자동 계산:</strong> 추가 매수 <span class="formula">평단 + 금액</span> 입력 시 수량이 자동 계산됩니다.</li>
+                </ul>
+
+                <h3>✅ 계산 공식(핵심)</h3>
+                <ul>
+                  <li>
+                    <strong>최종 수량:</strong>
+                    <span class="formula">현재 수량 + 추가 수량</span>
+                  </li>
+                  <li>
+                    <strong>최종 총금액:</strong>
+                    <span class="formula">현재 매수 금액 + 추가 매수 금액</span>
+                  </li>
+                  <li>
+                    <strong>최종 평단:</strong>
+                    <span class="formula">최종 총금액 ÷ 최종 수량</span>
+                  </li>
+                </ul>
+
+                <h3>✅ 왜 물타기 계산기를 사용해야 하나요?</h3>
+                <ul>
+                  <li>
+                    <strong>객관적인 판단:</strong>
+                    감정이나 직관이 아닌 <span class="highlight">수치 기반</span>으로
+                    최종 평단과 노출 금액을 확인할 수 있습니다.
+                  </li>
+                  <li>
+                    <strong>리스크 가시화:</strong>
+                    평단이 얼마나 내려가는지뿐 아니라,
+                    <span class="highlight">총 투자 금액이 얼마나 증가하는지</span>를 함께 파악할 수 있습니다.
+                  </li>
+                </ul>
+
+                <p>
+                  <small>
+                    * 본 계산 결과는 참고용이며, 수수료·세금·체결 가격에 따라
+                    실제 거래 결과와 차이가 있을 수 있습니다.
+                  </small>
+                </p>
+              </div>
+
             </div>
           </div>
 
         </section>
 
+
         <section id="profitCalc" class="card fxCard fxHidden">
+
           <div class="fxHead">
             <div class="fxHeadBox">
               <div class="fxHeadTop">
@@ -263,19 +396,249 @@
           </div>
 
           <div class="fxPanel">
-            <!-- (중간 내용 동일) -->
-          </div>
 
-          <div class="fxHelper" id="fxHelperProfit">
-            <div class="fxHelperTitle">안내</div>
-            <div class="fxHelperText">
-              <!-- (내용 동일) -->
+            <div class="pfWrap">
+
+              <div class="pfTopRates">
+                <div class="pfRateItem">
+                  <span class="pfRateLabel">수수료</span>
+                  <input id="pf_fee" class="pfRateInput" type="text" inputmode="decimal" placeholder="0.015">
+                  <span class="pfRateUnit">%</span>
+                </div>
+
+                <div class="pfRateItem">
+                  <span class="pfRateLabel">거래세</span>
+                  <input id="pf_tax" class="pfRateInput" type="text" inputmode="decimal" placeholder="0.2">
+                  <span class="pfRateUnit">%</span>
+                </div>
+              </div>
+
+
+              <div class="pfCard">
+
+                <div class="pfInputRow pfBuy">
+                  <div class="pfLeft">
+                    <span class="pfIcon">🟢</span>
+                    <span class="pfLabel">매수단가</span>
+                  </div>
+                  <div class="pfMid">
+                    <input id="pf_buyPrice" class="pfInput" type="text" inputmode="decimal" placeholder="0">
+                  </div>
+                  <div class="pfRight">
+                    <span class="pfUnit">원</span>
+                  </div>
+                </div>
+
+                <div class="pfInputRow pfQty">
+                  <div class="pfLeft">
+                    <span class="pfIcon">📦</span>
+                    <span class="pfLabel">매도수량</span>
+                  </div>
+                  <div class="pfMid">
+                    <input id="pf_sellQty" class="pfInput" type="text" inputmode="decimal" placeholder="0">
+                  </div>
+                  <div class="pfRight">
+                    <span class="pfUnit">수량</span>
+                  </div>
+                </div>
+
+                <div class="pfInputRow pfSell">
+                  <div class="pfLeft">
+                    <span class="pfIcon">🔴</span>
+                    <span class="pfLabel">매도단가</span>
+                  </div>
+                  <div class="pfMid">
+                    <input id="pf_sellPrice" class="pfInput" type="text" inputmode="decimal" placeholder="0">
+                  </div>
+                  <div class="pfRight">
+                    <span class="pfUnit">원</span>
+                  </div>
+                </div>
+
+                <div class="pfResultBox">
+
+                  <div class="pfResRow pfResBig">
+                    <div class="pfResLabel">총손익</div>
+                    <div class="pfResValue pfResPnl" id="pf_pnlText">0원</div>
+                  </div>
+
+                  <div class="pfResRow">
+                    <div class="pfResLabel">수익률</div>
+                    <div class="pfResValue">
+                      <span class="pfBadge" id="pf_roiBadge">0.00%</span>
+                    </div>
+                  </div>
+
+                  <div class="pfResRow">
+                    <div class="pfResLabel">매수금액</div>
+                    <div class="pfResValue pfBuyTotal" id="pf_buyTotalText">0원</div>
+                  </div>
+
+                  <div class="pfResRow">
+                    <div class="pfResLabel">매도금액</div>
+                    <div class="pfResValue pfSellTotal" id="pf_sellTotalText">0원</div>
+                  </div>
+
+                  <div class="pfResRow">
+                    <div class="pfResLabel">거래세</div>
+                    <div class="pfResValue" id="pf_taxTotalText">0원 <span class="pfResMeta" id="pf_taxRateText">(0%)</span></div>
+                  </div>
+
+                  <div class="pfResRow">
+                    <div class="pfResLabel">수수료</div>
+                    <div class="pfResValue" id="pf_feeTotalText">0원 <span class="pfResMeta" id="pf_feeRateText">(0%)</span></div>
+                  </div>
+
+                </div>
+
+                <div class="pfActions">
+                  <button type="button" class="applyBtn" id="pf_save">결과값 저장</button>
+                  <button type="button" class="applyBtn" id="pf_reset">초기화</button>
+                  <button type="button" class="applyBtn" id="pf_clearHistory">기록 삭제</button>
+                </div>
+
+                <div class="pfHistory">
+                  <div class="avgTable">
+                    <div class="avgTr avgTh">
+                      <div>회차</div>
+                      <div>매수</div>
+                      <div>수량</div>
+                      <div>매도</div>
+                      <div>수익률</div>
+                    </div>
+                    <div id="pf_tbody"></div>
+                  </div>
+                </div>
+
+                <input id="pf_buyTotal" type="hidden" value="0">
+                <input id="pf_sellTotal" type="hidden" value="0">
+                <input id="pf_feeTotal" type="hidden" value="0">
+                <input id="pf_taxTotal" type="hidden" value="0">
+                <input id="pf_pnl" type="hidden" value="0">
+                <input id="pf_roi" type="hidden" value="0">
+              </div>
             </div>
-          </div>          
+
+            <div class="fxHelper">
+              <div class="fxHelperTitle">안내</div>
+              <div class="fxHelperText">
+
+                <div class="fx-info-box">
+                  <h3>📈 수익률 계산기 가이드</h3>
+                  <p>
+                    수익률 계산기는 매수·매도 가격과 수량을 기준으로<br>
+                    <span class="highlight">실제 손익 금액과 수익률(%)</span>을 계산하는 도구입니다.
+                    <br>수수료와 거래세를 함께 반영해 보다 현실적인 결과를 제공합니다.
+                  </p>
+
+                  <ul>
+                    <li>
+                      <strong>계산 대상:</strong>
+                      <span class="formula">매수단가 · 매도단가 · 매도수량</span>
+                    </li>
+                    <li>
+                      <strong>반영 항목:</strong>
+                      <span class="formula">거래 수수료, 거래세 (설정값 기준)</span>
+                    </li>
+                  </ul>
+
+                  <h3>✅ 왜 수익률 계산기를 사용해야 하나요?</h3>
+                  <ul>
+                    <li>
+                      <strong>실질 손익 확인:</strong> 단순 가격 상승률이 아닌,
+                      <span class="highlight">수수료·세금을 제외한 실제 손익</span>을 확인할 수 있습니다.
+                    </li>
+                    <li>
+                      <strong>객관적인 성과 평가:</strong> 감각적인 판단 대신
+                      <span class="highlight">금액과 수익률 수치</span>로
+                      매매 성과를 명확히 비교할 수 있습니다.
+                    </li>
+                  </ul>
+
+                  <p>
+                    <small>
+                      * 본 계산 결과는 참고용이며, 실제 체결 가격·수수료 정책에 따라
+                      실제 거래 결과와 차이가 있을 수 있습니다.
+                    </small>
+                  </p>
+                </div>
+
+              </div>
+            </div>
+          </div>
         </section>
 
         <section id="lossRecoveryCalc" class="calcCard fxHidden">
-          <!-- (내용 동일) -->
+          <div class="fxHead">
+            <div class="fxHeadBox">
+              <div class="fxHeadTop">
+                <h2 class="fxTitle">손실 복구 계산기</h2>
+                <span class="statsBoxMeta">
+                  <button class="infoBtn" type="button" aria-label="손실 복구 계산 안내">?</button>
+                  <div class="tooltipBox">손실률을 입력하면, 복구를 위해 필요한<br> 수익률을 자동으로 계산합니다.</div>
+                </span>
+              </div>
+              <div class="fxRateLine">
+                <span class="fxRateMain">현재 손실률</span>
+                <span class="fxRateSub">입력 시 자동 계산</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="fxPanel">
+            <div class="fxRow">
+              <div class="fxField">
+                <div class="fxInputWrap">
+                  <input id="lossPercent" class="fxAmount" type="text" inputmode="decimal" placeholder="손실률 (%)" value="">
+                </div>
+                <div id="errorMsg" style="color: #ff4d4d; font-size: 0.8rem; margin-top: 5px; display: none;">
+                  ※ 0보다 크고 100보다 작은 값을 입력해주세요.
+                </div>
+              </div>
+
+              <div class="fxField">
+                <div class="fxInputWrap">
+                  <input id="recoveryRate" class="fxAmount fxAmountResult" type="text" inputmode="decimal" placeholder="복구 목표 수익률 (%)" readonly>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="fxHelper">
+            <div class="fxHelperTitle">안내</div>
+            <div class="fxHelperText">
+              <div class="fx-info-box">
+                <h3>📉 손실 복구 계산기 가이드</h3>
+                <p>
+                  손실 복구 계산기는 <span class="highlight">손실률을 입력하면, <br>복구를 위해 필요한 수익률</span>을 자동으로 계산해주는 도구입니다.
+                </p>
+                <ul>
+                  <li><strong>계산 대상:</strong>
+                    <span class="formula">손실률</span>
+                  </li>
+                  <li><strong>결과:</strong>
+                    <span class="formula">손실 복구를 위한 목표 수익률</span>
+                  </li>
+                </ul>
+                <h3>✅ 계산 공식</h3>
+                <p>
+                  손실 복구를 위한 목표 수익률은 아래 공식으로 계산됩니다.
+                </p>
+                <p>
+                  <strong>복구 목표 수익률:</strong> <span class="formula">(손실률 / (100 - 손실률)) × 100</span>
+                </p>
+                <h3>✅ 왜 손실 복구 계산기를 사용해야 하나요?</h3>
+                <ul>
+                  <li><strong>복구 목표 설정:</strong> 손실률을 바탕으로 얼마나 높은 <span class="highlight">수익률</span>을 달성해야 하는지 알 수 있습니다.</li>
+                </ul>
+                <p>
+                  <small>
+                    * 본 계산 결과는 참고용이며, 실제 복구 시에는 다른 요소들을 고려해야 할 수 있습니다.
+                  </small>
+                </p>
+              </div>
+            </div>
+          </div>
         </section>
 
       </main>
@@ -289,28 +652,36 @@
         <section class="marketStatus">
           <h3>시장 현황</h3>
           <table class="card">
-            <tr><td>롱 비율 (24H)</td><td id="longRate"></td></tr>
-            <tr><td>숏 비율 (24H)</td><td id="shortRate"></td></tr>
-            <tr><td>공포 · 탐욕</td><td id="fearGreed"></td></tr>
+            <tr>
+              <td>롱 비율 (24H)</td>
+              <td id="longRate"></td>
+            </tr>
+            <tr>
+              <td>숏 비율 (24H)</td>
+              <td id="shortRate"></td>
+            </tr>
+            <tr>
+              <td>공포 · 탐욕</td>
+              <td id="fearGreed"></td>
+            </tr>
           </table>
         </section>
 
         <section>
           <div class="alertHead">
             <h3>선물 거래 알림</h3>
-            <button
-              type="button"
-              class="collapseBtn"
-              data-target="trade"
-              aria-label="거래 알림 접기/펼치기"
-              aria-expanded="true"
-            >▾</button>
+            <button type="button" class="collapseBtn" data-target="trade" aria-label="거래 알림 접기/펼치기" aria-expanded="true">▾</button>
           </div>
 
           <div class="alertBody" id="tradeBody">
             <table class="card alertTable">
               <thead>
-                <tr><th>구분</th><th>금액</th><th>체결가</th><th>시간</th></tr>
+                <tr>
+                  <th>구분</th>
+                  <th>금액</th>
+                  <th>체결가</th>
+                  <th>시간</th>
+                </tr>
               </thead>
               <tbody id="tradeAlertBody"></tbody>
             </table>
@@ -320,19 +691,18 @@
         <section>
           <div class="alertHead">
             <h3>선물 청산 알림</h3>
-            <button
-              type="button"
-              class="collapseBtn"
-              data-target="liq"
-              aria-label="청산 알림 접기/펼치기"
-              aria-expanded="true"
-            >▾</button>
+            <button type="button" class="collapseBtn" data-target="liq" aria-label="청산 알림 접기/펼치기" aria-expanded="true">▾</button>
           </div>
 
           <div class="alertBody" id="liqBody">
             <table class="card alertTable">
               <thead>
-                <tr><th>구분</th><th>금액</th><th>체결가</th><th>시간</th></tr>
+                <tr>
+                  <th>구분</th>
+                  <th>금액</th>
+                  <th>체결가</th>
+                  <th>시간</th>
+                </tr>
               </thead>
               <tbody id="liquidAlertBody"></tbody>
             </table>
@@ -351,7 +721,7 @@
       표기된 환율 및 계산 결과는 참고용이며, 실제 거래 적용 시에는 해당 기관의 고시 환율을 확인해야 합니다.
     </p>
   </section>
-  
+
   <footer class="footer">
     <div class="footer-inner">
       <div class="footer-left">
@@ -377,30 +747,27 @@
         <span class="footer-divider">|</span>
 
         <a href="/html/guide.html" class="footer-link">Guide</a>
-        <span class="footer-divider">|</span>        
+        <span class="footer-divider">|</span>
 
         <a href="https://t.me/KIMPVIEW" target="_blank" class="footer-link">Telegram</a>
         <span class="footer-divider">|</span>
-        <a
-          href="https://mail.google.com/mail/?view=cm&to=kimpviewcs@gmail.com"
-          target="_blank"
-          rel="noopener"
-          class="footer-link"
-        >
+        <a href="https://mail.google.com/mail/?view=cm&to=kimpviewcs@gmail.com" target="_blank" rel="noopener" class="footer-link">
           Contact
         </a>
 
       </div>
     </div>
-  </footer>
 
+
+  </footer>
   <script src="/js/features/topmetrics.js?v=1" defer></script>
   <script src="/js/features/fx.js" defer></script>
   <script src="/js/features/sidepanel.js?v=1" defer></script>
   <script src="/js/calculators/calculator-menu.js" defer></script>
   <script src="/js/calculators/avg-cost.js?v=1" defer></script>
   <script src="/js/calculators/profitCalc.js?v=1" defer></script>
-  <script src="/js/calculators/lossRecoveryCalc.js?v=1" defer></script>  
+  <script src="/js/calculators/lossRecoveryCalc.js?v=1" defer></script>
 
 </body>
+
 </html>
