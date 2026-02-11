@@ -13,11 +13,39 @@
   const clearSearchBtn = document.getElementById("clearSearchBtn");
   const imageLoadFailures = new Set();
 
-
   if (!coinTableBody) {
     console.warn("[KIMPVIEW] #coinTableBody 없음. HTML id 확인!");
     return;
   }
+
+  const APP_VERSION = "2026.02.11-coinpage-v1";
+  const VERSION_KEY = "kimpview:appVersion";
+
+  function clearStorageByPrefix(prefix) {
+    try {
+      const keys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(prefix)) keys.push(k);
+      }
+      for (const k of keys) {
+        try { localStorage.removeItem(k); } catch { }
+      }
+    } catch { }
+  }
+
+  function migrateStorageIfNeeded() {
+    try {
+      const prev = localStorage.getItem(VERSION_KEY);
+      if (prev !== APP_VERSION) {
+        clearStorageByPrefix("kimpview:");
+        localStorage.setItem(VERSION_KEY, APP_VERSION);
+        location.reload();
+      }
+    } catch { }
+  }
+
+  migrateStorageIfNeeded();
 
   function showSpinner() {
     if (tableSpinner) tableSpinner.style.display = "flex";
@@ -38,6 +66,7 @@
       "'": "&#39;",
     }[m]));
   }
+
   function sleep(ms) {
     return new Promise((r) => setTimeout(r, ms));
   }
@@ -109,6 +138,7 @@
       clearTimeout(id);
     }
   }
+
   function formatKRW(n) {
     const v = Number(n || 0);
     if (!v) return "";
@@ -971,11 +1001,11 @@
       );
     }
 
-    if (state.favOnly) list = list.filter(c => state.favorites.has(c.symbol));
+    if (state.favOnly) list = list.filter(c => state.favorites.has(normalizeBaseSym(c.symbol)));
 
     list.sort((a, b) => {
-      const af = state.favorites.has(a.symbol);
-      const bf = state.favorites.has(b.symbol);
+      const af = state.favorites.has(normalizeBaseSym(a.symbol));
+      const bf = state.favorites.has(normalizeBaseSym(b.symbol));
       if (af !== bf) return af ? -1 : 1;
       return compare(a, b, state.sortKey, state.sortDir);
     });
@@ -1088,7 +1118,7 @@
     tr.dataset.symbol = c.symbol;
     observeRow(tr);
 
-    const isFav = state.favorites.has(c.symbol);
+    const isFav = state.favorites.has(normalizeBaseSym(c.symbol));
     const starSvg = getStarSvg(isFav);
     const _chg = Number(c.change24h);
     const chgClass = (Number.isFinite(_chg) && Math.abs(_chg) < 0.005) ? "zero" : (_chg > 0 ? "plus" : "minus");
@@ -1260,7 +1290,9 @@
   }
 
   function saveFavorites() {
-    localStorage.setItem(LS_KEY, JSON.stringify([...state.favorites]));
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify([...state.favorites]));
+    } catch { }
   }
 
   function toggleFavorite(symbol) {
@@ -1357,7 +1389,6 @@
 
     restoreTopMetricsFromLS();
     startUnifiedTopMetrics();
-
 
     loadCoinsAndRender(true);
     startAutoRefresh(2000);
