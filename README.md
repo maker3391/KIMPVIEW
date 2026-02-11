@@ -1,10 +1,10 @@
 # KIMPVIEW
 
-KIMPVIEW는 **김치프리미엄(김프)** 과 주요 암호화폐 가격 정보를  
-여러 거래소 기준으로 한 화면에서 비교·분석할 수 있도록 만든  
-**개인 포트폴리오 프로젝트**입니다.
+> 🔗 **Live Service**: https://kimpview.com
+> 📊 Kimchi Premium Real-time Dashboard  
+> 🚀 Vanilla JS + Cloudflare Worker 기반 실서비스 운영
 
-![KIMPVIEW Main Screenshot](./images/main.png))
+![KIMPVIEW Main Screenshot](./images/main.png)
 
 ## 🔑 Key Achievement
 
@@ -336,9 +336,4 @@ KIMPVIEW는 **김치프리미엄(김프)** 과 주요 암호화폐 가격 정보
   서버 단에서 집계·계산하여 제공
 - 사용자 맞춤 알림 및 지표 히스토리 기능 확장
 
----
-
-## 🔗 링크
-
-- Production: https://kimpview.com
 
