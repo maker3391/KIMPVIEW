@@ -54,7 +54,7 @@
 > 백그라운드에서 최신 데이터를 갱신하는  
 > **SWR(Stale-While-Revalidate) 기반 데이터 흐름**
 
-![KIMPVIEW Data Flow & Caching Strategy](/images/data-flow-caching-strategy.png)
+![KIMPVIEW Data Flow & Caching Strategy](/images/)
 
 ## 🛠 기술 스택
 
@@ -89,7 +89,7 @@
 
 ## 🏗 시스템 아키텍처
 
-![KIMPVIEW System Architecture](/images/system-architecture.png)
+![KIMPVIEW System Architecture](/images/)
 
 
 ---
