@@ -287,6 +287,8 @@
     _binance: { map: new Map(), ts: 0, ttlMs: 3000 },
     _binance24h: { map: new Map(), ts: 0, ttlMs: 3000 },
     _binanceActive: { set: new Set(), ts: 0, ttlMs: 60_000 },
+    _kimpHistory: [],
+    _pendingReload: false,
   };
 
   const prevPriceMap = new Map();
@@ -785,6 +787,100 @@
 
     return state._binance24h.map;
   }
+  
+  function collectCurrentKimpStats(list) {
+    const valid = (Array.isArray(list) ? list : [])
+      .map(c => Number(c.kimp))
+      .filter(v => Number.isFinite(v));
+
+    if (valid.length === 0) return null;
+
+    const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
+    const min = Math.min(...valid);
+    const max = Math.max(...valid);
+
+    return { avg, min, max };
+  }
+
+  const KIMP_5M_MS = 5 * 60 * 1000;
+
+  function pushKimpSnapshot(list) {
+    const now = Date.now();
+
+    const validCoins = (Array.isArray(list) ? list : [])
+      .filter(c => typeof c.kimp === "number" && Number.isFinite(c.kimp))
+      .filter(c => Math.abs(c.kimp) < 10);
+
+    if (validCoins.length === 0) return;
+
+    const avg = validCoins.reduce((s, c) => s + Number(c.kimp), 0) / validCoins.length;
+
+    let minCoin = validCoins[0];
+    let maxCoin = validCoins[0];
+
+    for (const c of validCoins) {
+      if (Number(c.kimp) < Number(minCoin.kimp)) minCoin = c;
+      if (Number(c.kimp) > Number(maxCoin.kimp)) maxCoin = c;
+    }
+
+    state._kimpHistory.push({
+      ts: now,
+      avg,
+      min: Number(minCoin.kimp),
+      minSym: String(minCoin.symbol || "").toUpperCase(),
+      max: Number(maxCoin.kimp),
+      maxSym: String(maxCoin.symbol || "").toUpperCase(),
+    });
+
+    while (state._kimpHistory.length > 0 && (now - state._kimpHistory[0].ts) > KIMP_5M_MS) {
+      state._kimpHistory.shift();
+    }
+  }
+
+  function calcKimp5m() {
+    const h = state._kimpHistory;
+    if (!Array.isArray(h) || h.length === 0) return null;
+
+    const avg5m = h.reduce((s, x) => s + x.avg, 0) / h.length;
+
+    let min5m = h[0].min, minSym = h[0].minSym;
+    let max5m = h[0].max, maxSym = h[0].maxSym;
+
+    for (const x of h) {
+      if (x.min < min5m) { min5m = x.min; minSym = x.minSym; }
+      if (x.max > max5m) { max5m = x.max; maxSym = x.maxSym; }
+    }
+
+    return { avg5m, min5m, minSym, max5m, maxSym };
+  }
+  function applySignedClass(el, v){
+    if (!el) return;
+    const n = Number(v);
+    const cls = (!Number.isFinite(n) || Math.abs(n) < 0.005) ? "zero" : (n > 0 ? "plus" : "minus");
+    el.classList.add("kimp");                
+    el.classList.remove("plus","minus","zero");
+    el.classList.add(cls);
+  }
+  function renderKimp5mBoxes() {
+    const out = calcKimp5m();
+    if (!out) return;
+
+    const avgEl = document.getElementById("kimpAvg5m");
+    const minEl = document.getElementById("kimpMin5m");
+    const minCoinEl = document.getElementById("kimpMinCoin5m");
+    const maxEl = document.getElementById("kimpMax5m");
+    const maxCoinEl = document.getElementById("kimpMaxCoin5m");
+
+    if (avgEl) avgEl.textContent = formatPct(out.avg5m);
+    if (minEl) minEl.textContent = formatPct(out.min5m);
+    if (minCoinEl) minCoinEl.textContent = out.minSym ? `(${out.minSym})` : "";
+    if (maxEl) maxEl.textContent = formatPct(out.max5m);
+    if (maxCoinEl) maxCoinEl.textContent = out.maxSym ? `(${out.maxSym})` : "";
+
+    applySignedClass(avgEl, out.avg5m);
+    applySignedClass(minEl, out.min5m);
+    applySignedClass(maxEl, out.max5m);    
+  }
 
   function applyDerivedFields(list, binanceMap, binanceVolMap) {
     const rate = Number(state.fxKRW || state.usdtKRW || 0);
@@ -836,7 +932,10 @@
     syncTopMetricsCacheFromDOM();
     saveTopMetricsToLS();
 
-    if (!force && state._isLoading) return;
+    if (state._isLoading) {
+      state._pendingReload = state._pendingReload || force || true;
+      return;
+    }
     state._isLoading = true;
 
     const shouldShowSpinner = force || (state.coins.length === 0);
@@ -870,6 +969,9 @@
 
       applyDerivedFields(list, binanceMap, binanceVolMap);
 
+      pushKimpSnapshot(list);
+      renderKimp5mBoxes();
+
       state.coins = list;
       render();
       if (list.length > 0) saveTableCache(state.exchange, list);
@@ -881,6 +983,10 @@
     } finally {
       state._isLoading = false;
       hideSpinner();
+      if (state._pendingReload) {
+        state._pendingReload = false;
+        loadCoinsAndRender(true); 
+      }      
     }
   }
 
@@ -1310,7 +1416,7 @@
     exchangeSelect?.addEventListener("change", () => {
       closeInlineChart();
       state.exchange = exchangeSelect.value;
-      loadCoinsAndRender(false);
+      loadCoinsAndRender(true);
     });
 
     searchInput?.addEventListener("keydown", (e) => {
