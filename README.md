@@ -1,5 +1,5 @@
 # KIMPVIEW
-
+> 🟢 Stable Version: v1.0.0 <br>
 > 🔗 **Live Service**: https://kimpview.com<br>
 > ✍️ **Dev Blog**: https://velog.io/@cokid7979 <br>
 > 📊 Kimchi Premium Real-time Dashboard  
@@ -392,40 +392,36 @@ KIMPVIEW/
 - Edge(Cache TTL) + Client(localStorage SWR) 이중 캐싱 전략 적용
 - 데이터 성격(가격 / 환율 / 시총 / 뉴스)에 따른 TTL 분리 설계
 - Stale-While-Revalidate 패턴을 적용하여 초기 체감 속도 개선
-
-- 브라우저 저장소 버전 키 도입 (`kimpview:appVersion`)
+- 브라우저 저장소 버전 키 도입 (`kimpview:appVersion`) <br>
   → 구조 변경 시 자동 캐시 초기화 처리
-
-- 모든 `localStorage.setItem()` 호출에 try-catch 적용
+- 모든 `localStorage.setItem()` 호출에 try-catch 적용 <br>
   → 모바일 환경 저장소 예외 발생 시 JS 중단 방지
-
-- 거래소 전환 시 상태 충돌 제거
+- 거래소 전환 시 상태 충돌 제거 <br>
   → 5분 스냅샷 로직 제거 후 LIVE 재계산 구조로 단순화
 
-- API 실패 시 마지막 정상 데이터 fallback 렌더링
+- API 실패 시 마지막 정상 데이터 fallback 렌더링 <br>
   → 외부 API 장애 상황에서도 UI 유지
 
-- state 기반 단일 데이터 소스 구조 유지
+- state 기반 단일 데이터 소스 구조 유지 <br>
   → 필터 / 정렬 / 즐겨찾기 / 요약 지표 계산을 동일 데이터에서 파생
 
 ### 2. 배포 및 운영 환경 구성
 
-- Cloudflare Pages + Workers 기반 분리 배포 구조
+- Cloudflare Pages + Workers 기반 분리 배포 구조 <br>
   → 정적 프론트엔드와 API Proxy 계층을 분리하여 책임 영역 명확화
 
-- Worker 프록시를 통한 외부 API 중계 구조 설계
-  → CORS 문제 해결
-  → API Key 브라우저 노출 방지
+- Worker 프록시를 통한 외부 API 중계 구조 설계 <br>
+  → CORS 문제 해결   
+  → API Key 브라우저 노출 방지   
   → 클라이언트 직접 호출 차단으로 보안 강화
 
-- Edge 레벨 캐싱 전략 적용
-  → Worker 단에서 TTL 제어로 불필요한 외부 API 호출 최소화
+- Edge 레벨 캐싱 전략 적용 <br>
+  → Worker 단에서 TTL 제어로 불필요한 외부 API 호출 최소화   
   → 무료 API 크레딧 범위 내 안정적 운영
 
-- 실서비스 트래픽 기반 구조 검증
-  → 누적 방문 환경에서 요청 흐름 모니터링
+- 실서비스 트래픽 기반 구조 검증 <br>
+  → 누적 방문 환경에서 요청 흐름 모니터링   
   → API 실패 / 지연 / 점검 상황 대응 구조 확립
-
 - 클라이언트–Worker–외부 API 3단계 데이터 흐름 구조 설계
 
 ```text
