@@ -288,7 +288,6 @@
     _binance24h: { map: new Map(), ts: 0, ttlMs: 3000 },
     _binanceActive: { set: new Set(), ts: 0, ttlMs: 60_000 },
     _kimpHistory: [],
-    _pendingReload: false,
   };
 
   const prevPriceMap = new Map();
@@ -1416,7 +1415,7 @@
     exchangeSelect?.addEventListener("change", () => {
       closeInlineChart();
       state.exchange = exchangeSelect.value;
-      loadCoinsAndRender(true);
+      loadCoinsAndRender(false);
     });
 
     searchInput?.addEventListener("keydown", (e) => {
