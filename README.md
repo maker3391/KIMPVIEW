@@ -89,7 +89,7 @@
 
 ## 🏗 시스템 아키텍처
 
-![KIMPVIEW System Architecture](./images/system-architecture.png)
+![KIMPVIEW System Architecture](/images/system-architecture.png)
 
 
 ---
