@@ -1,14 +1,15 @@
 # KIMPVIEW
 
 > 🔗 **Live Service**: https://kimpview.com<br>
+> ✍️ **Dev Blog**: https://velog.io/@cokid7979 <br>
 > 📊 Kimchi Premium Real-time Dashboard  
-> 🚀 Vanilla JS + Cloudflare Worker 기반 실서비스 운영
+> 🚀 Vanilla JS + Cloudflare Worker 기반 실서비스 운영 중
 
-![KIMPVIEW Main Screenshot](./images/main.png)
+![KIMPVIEW Main Screenshot](/images/main.png)
 
 ## 🔑 Key Achievement
 
-- **실제 서비스 운영 기준 누적 방문자 20,000+ 기록**
+- **실제 서비스 운영 기준 누적 방문자 30,000+ 기록**
 - **Google / Naver 검색 결과 상위 노출 확인**
 
 ---
@@ -59,7 +60,7 @@
 
 ### Frontend
 
-- Vanilla JavaScript (ES6+)
+- Vanilla JavaScript (ES6+, State-based UI Rendering)
 - CSS3 (Flexbox / Grid)
 - Performance Optimization (`IntersectionObserver`)  
   → 대규모 실시간 테이블 DOM 업데이트 최적화를 위해 사용
@@ -67,7 +68,7 @@
 ### Infra
 
 - Cloudflare Workers (API Proxy / CORS / API Key 보호)
-- localStorage Cache (SWR 형태)
+- localStorage Cache (SWR Pattern implementation)
 
 ## 📡 Data Sources
 
@@ -91,6 +92,54 @@
 ![KIMPVIEW System Architecture](./images/system-architecture.png)
 
 
+---
+
+## 📁 Project Structure
+
+```text
+KIMPVIEW/
+├─ index.html
+├─ style.css
+├─ /html                         # 정적 서브 페이지
+│  ├─ stats.html
+│  ├─ stocks.html
+│  ├─ news.html
+│  ├─ fx.html
+│  └─ ...
+│
+├─ /js
+│  ├─ app.js                     # 메인 코인 테이블 + LIVE 김프 계산
+│  │
+│  ├─ /features                  # 기능 모듈
+│  │  ├─ fx.js                   # 환율 관련 로직
+│  │  ├─ news.js                 # 뉴스 페이지 로직
+│  │  ├─ sidepanel.js            # 거래/청산 알림
+│  │  ├─ stats.js                # 글로벌 지표
+│  │  ├─ stocks.js               # 주식 페이지
+│  │  ├─ topmetrics.js           # 상단 실시간 지표
+│  │  └─ tv-init.js              # TradingView 초기화
+│  │
+│  ├─ /calculators               # 종합 계산기 로직
+│  │  ├─ avg-cost.js
+│  │  ├─ calculator-menu.js
+│  │  ├─ lossRecoveryCalc.js
+│  │  └─ profitCalc.js
+│  │
+│  └─ /workers                   # Cloudflare Worker 프록시 코드
+│     ├─ worker.js
+│     └─ newsworker.js
+│
+├─ /images
+├─ ads.txt
+├─ robots.txt
+├─ sitemap.xml
+└─ README.md
+
+```
+> 기능 단위로 JS 모듈을 분리하여 유지보수성과 확장성을 고려한 구조로 설계했습니다.  
+> `/workers` 디렉터리는 Cloudflare Worker 배포용 코드로, 외부 API 프록시 및 CORS/보안 처리를 담당합니다.
+
+
 ## 🧪 트러블슈팅
 
 ### 🧠 트러블슈팅 요약 (문제 유형별 정리)
@@ -98,17 +147,18 @@
 > 아래 번호는 하단의 상세 트러블슈팅 항목과 대응됩니다.
 
 - **성능 및 UX 최적화**  
-  (1, 4, 6)  
-  SWR(Stale-While-Revalidate) 캐싱, `IntersectionObserver` 기반 부분 렌더링,  
-  불필요한 DOM 업데이트 제거를 통해  
-  초기 로딩 속도 및 실시간 테이블 스크롤 성능 개선
+  (1, 4, 6, 10)  
+  SWR(Stale-While-Revalidate) 캐싱, <br>       `IntersectionObserver` 기반 부분 렌더링,  
+  불필요한 DOM 업데이트 제거 및  
+  거래소 전환 시 LIVE 재계산 방식 적용을 통해  
+  초기 로딩 속도 및 실시간 UI 갱신 안정성 개선
 
 - **안정성 및 운영 이슈 대응**  
   (2, 5, 9)  
   데이터 성격별 TTL 캐싱 전략 적용 및  
   API 장애 시 이전 데이터 fallback 렌더링을 통해  
-  서비스 중단 없는 안정적인 화면 유지
-  브라우저 저장소 버전 관리 도입을 통해 
+  서비스 중단 없는 안정적인 화면 유지   
+  브라우저 저장소 버전 관리 도입을 통해  
   기존 사용자 환경 충돌 문제를 자동 복구 구조로 개선
 
 - **보안 및 아키텍처 설계**  
@@ -319,21 +369,80 @@
   운영 환경에서의 예측 불가능한 오류 가능성을 최소화함.
 ---
 
+### 10. 거래소 전환 시 김프 요약 박스가 갱신되지 않는 문제
+
+- **문제**  
+  Upbit ↔ Bithumb 전환 시 김프 요약(평균/최소/최대) 박스가 <br>이전 값으로 남거나 갱신이 지연되는 현상이 발생함.
+
+- **원인**  
+  “최근 5분 스냅샷” 기반 계산 로직이 거래소 전환 시 <br> 잔상(state/history)으로 남아 최신 데이터와 충돌했으며, <br> 비동기 갱신 타이밍에 따라 UI가 이전 값을 유지하는 경우가 있었음.
+
+- **해결**  
+  스냅샷(history) 로직을 제거하고,  현재 수신된 데이터(list) 기준으로 <br>즉시 평균/최소/최대를 계산하는 LIVE 방식으로 단순화함.
+
+- **결과**  
+  거래소 전환 시 즉시 갱신이 보장되었고, <br> 상태 관리 복잡도를 제거하여 <br>데이터 정합성 문제를 근본적으로 해결하고, <br>유지보수 효율을 극대화함.
+
+---
 
 ## ✅ 현재 적용된 사항
 
-- 서버 캐시 및 데이터 저장 구조 적용
-  - Edge(Cache TTL) + Client(localStorage SWR) 기반 캐싱 전략 구성
-  - 알림 및 히스토리 확장을 고려한 데이터 구조 설계
+### 1. 캐싱 및 데이터 구조 안정화
 
-- 배포 환경 구성 및 기본 모니터링 적용
-  - Cloudflare Pages / Workers 기반 서비스 운영
-  - 요청 흐름 및 트래픽 모니터링을 통한 안정성 검증
+- Edge(Cache TTL) + Client(localStorage SWR) 이중 캐싱 전략 적용
+- 데이터 성격(가격 / 환율 / 시총 / 뉴스)에 따른 TTL 분리 설계
+- Stale-While-Revalidate 패턴을 적용하여 초기 체감 속도 개선
+
+- 브라우저 저장소 버전 키 도입 (`kimpview:appVersion`)
+  → 구조 변경 시 자동 캐시 초기화 처리
+
+- 모든 `localStorage.setItem()` 호출에 try-catch 적용
+  → 모바일 환경 저장소 예외 발생 시 JS 중단 방지
+
+- 거래소 전환 시 상태 충돌 제거
+  → 5분 스냅샷 로직 제거 후 LIVE 재계산 구조로 단순화
+
+- API 실패 시 마지막 정상 데이터 fallback 렌더링
+  → 외부 API 장애 상황에서도 UI 유지
+
+- state 기반 단일 데이터 소스 구조 유지
+  → 필터 / 정렬 / 즐겨찾기 / 요약 지표 계산을 동일 데이터에서 파생
+
+### 2. 배포 및 운영 환경 구성
+
+- Cloudflare Pages + Workers 기반 분리 배포 구조
+  → 정적 프론트엔드와 API Proxy 계층을 분리하여 책임 영역 명확화
+
+- Worker 프록시를 통한 외부 API 중계 구조 설계
+  → CORS 문제 해결
+  → API Key 브라우저 노출 방지
+  → 클라이언트 직접 호출 차단으로 보안 강화
+
+- Edge 레벨 캐싱 전략 적용
+  → Worker 단에서 TTL 제어로 불필요한 외부 API 호출 최소화
+  → 무료 API 크레딧 범위 내 안정적 운영
+
+- 실서비스 트래픽 기반 구조 검증
+  → 누적 방문 환경에서 요청 흐름 모니터링
+  → API 실패 / 지연 / 점검 상황 대응 구조 확립
+
+- 클라이언트–Worker–외부 API 3단계 데이터 흐름 구조 설계
+
+```text
+Frontend(UI)
+   ↓
+Cloudflare Worker(Proxy + Cache + CORS)
+   ↓
+External APIs (거래소 / 뉴스 / 지표)
+```
 ---
-## 🚧 향후 계획
+## 🚧 향후 개선 방향
 
-- 김치프리미엄 과열 / 청산 급증 / 시장 상태 지표를
-  서버 단에서 집계·계산하여 제공
-- 사용자 맞춤 알림 및 지표 히스토리 기능 확장
+- 서버 단 집계 로직 확장 (김프 과열 지표 등)
+- Worker 단 캐싱 전략 고도화 및 API 장애 대응(backoff/fallback) 강화
+- 데이터 품질 개선 (이상치 탐지/정합성 검증 규칙 고도화)
+- 관측/모니터링 체계 추가 (에러 로깅, 실패율/지연 시간 추적)
+- 사용자 트래픽 증가 대비 구조 확장성 검토
+
 
 
