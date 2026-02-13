@@ -1374,7 +1374,7 @@
     exchangeSelect?.addEventListener("change", () => {
       closeInlineChart();
       state.exchange = exchangeSelect.value;
-      loadCoinsAndRender(false);
+      loadCoinsAndRender(true);
     });
 
     searchInput?.addEventListener("keydown", (e) => {
