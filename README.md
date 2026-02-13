@@ -54,7 +54,7 @@
 > 백그라운드에서 최신 데이터를 갱신하는  
 > **SWR(Stale-While-Revalidate) 기반 데이터 흐름**
 
-![KIMPVIEW Data Flow & Caching Strategy](./images/data-flow-caching-strategy.png)
+![KIMPVIEW Data Flow & Caching Strategy](/images/data-flow-caching-strategy.png)
 
 ## 🛠 기술 스택
 
@@ -64,7 +64,7 @@
 - CSS3 (Flexbox / Grid)
 - Performance Optimization (`IntersectionObserver`)  
   → 대규모 실시간 테이블 DOM 업데이트 최적화를 위해 사용
-
+- WebSocket API (Real-time Liquidation & Trade Alerts)
 ### Infra
 
 - Cloudflare Workers (API Proxy / CORS / API Key 보호)
@@ -76,8 +76,8 @@
 
 - **Upbit Open API** – 국내 거래소 암호화폐 시세 (KRW 기준)
 - **Bithumb Open API** – 국내 거래소 암호화폐 시세 (KRW 기준)
-- **Binance Public API** – 글로벌 거래소 암호화폐 시세 (USDT 기준)
-
+- **Binance Public API** – 글로벌 거래소 암호화폐 시세 (USDT 기준) 및 **WebSocket** 기반 실시간 선물 체결/청산 데이터
+- **CoinPaprika API** – 글로벌 암호화폐 메타데이터 및 시가총액 정보
 ### 🔹 Market & Financial Data APIs
 
 - **Yahoo Finance API** – 글로벌 주식 지수 및 시장 정보
