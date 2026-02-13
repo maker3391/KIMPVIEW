@@ -1284,12 +1284,12 @@ td.priceStack > .priceSub,
 }
 
 .kimpSummary .kimpValue{
-  font-size:13px;
+  font-size:16px;
   white-space:nowrap;
 }
 
 .kimpSummary .kimpCoin {
-  font-size:10px;
+  font-size:12px;
 }
 
 .kimpLabel small{
