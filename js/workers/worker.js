@@ -27,7 +27,6 @@ export default {
       const h = new Headers(response.headers);
       for (const [k, v] of Object.entries(corsHeaders)) h.set(k, v);
 
-      // If contentType is provided, override it. Otherwise keep origin content-type.
       if (contentType) h.set("Content-Type", contentType);
 
       h.set("Cache-Control", cacheSec > 0 ? `public, max-age=${cacheSec}` : "no-store");

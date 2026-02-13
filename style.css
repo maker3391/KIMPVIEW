@@ -190,18 +190,20 @@ border-radius: 0;
 .banner{
   border-radius:16px;
   overflow:hidden;
-  background:#ffffff;
+  background:#fff;
   border:1px solid var(--line);
   height:200px;
   display:flex;
   align-items:center;
   justify-content:center;
 }
+
 .banner img{
   display:block;
-  width:100%;
-  height:100%;
-  object-fit: cover;
+  width: 360px;     
+  height: auto;
+  max-height: 250px; 
+  object-fit: contain;
 }
 
 /* ===== INPUTS ===== */
