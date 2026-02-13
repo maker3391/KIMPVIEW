@@ -288,6 +288,7 @@
     _binance24h: { map: new Map(), ts: 0, ttlMs: 3000 },
     _binanceActive: { set: new Set(), ts: 0, ttlMs: 60_000 },
     _kimpHistory: [],
+    _pendingReload: false,
   };
 
   const prevPriceMap = new Map();
@@ -379,7 +380,6 @@
     const cached = loadTableCache(exchange);
     if (!cached || cached.length === 0) return false;
     state.coins = cached;
-    render();
     return true;
   }
 
@@ -945,8 +945,6 @@
     }
 
     try {
-      if (!force) restoreTableFromCache(state.exchange);
-
       const activeSet = await fetchBinanceActiveUsdtBasesCached();
       const [binanceMap, binanceVolMap] = await Promise.all([
         fetchBinancePricesCached(activeSet),
