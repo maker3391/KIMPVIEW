@@ -382,7 +382,7 @@ input[type="submit"],
 }
 
 .kimpSummary .kimpCoin{
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted);
   font-weight: 500;
 }
