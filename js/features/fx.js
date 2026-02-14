@@ -70,7 +70,7 @@
   function emojiToTwemojiUrl(emoji) {
     const cps = Array.from(emoji || "")
       .map((ch) => ch.codePointAt(0).toString(16))
-      .join("");
+      .join("-");
     return `https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/${cps}.svg`;
   }
 
