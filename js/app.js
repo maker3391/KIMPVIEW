@@ -508,7 +508,7 @@
 
   async function fetchAllMarketCaps() {
     const CAPS_LS_KEY = "kimpview:capsCache:v1";
-    const CAPS_TTL_MS = 30 * 60 * 1000;
+    const CAPS_TTL_MS = 12 * 60 * 60 * 1000;
 
     function loadCapsFromLS() {
       try {
@@ -913,7 +913,11 @@
         fetchBinanceVolumesCached(activeSet),
       ]);
 
-      await fetchAllMarketCaps();
+      try {
+        await fetchAllMarketCaps();
+      } catch (e) {
+        console.warn("[KIMPVIEW] Caps API failed, using previous cache");
+      }
 
       let list = [];
       try {

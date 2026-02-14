@@ -236,60 +236,94 @@ export default {
       const url = new URL(request.url);
       const path = url.pathname;
 
-      if (path === "/coinpaprika-caps") {
-        const cacheSec = 60 * 60; // 1 hour
-        const cacheKey = new Request(url.origin + "/__paprika_caps_v3");
-        const cache = caches.default;
+    if (path === "/coinpaprika-caps") {
+      const cacheSec = 60 * 60 * 12; 
+      const cacheKey = new Request(url.origin + "/__paprika_caps_v3");
+      const cache = caches.default;
 
-        const cached = await cache.match(cacheKey);
-        if (cached) return withCors(cached, cacheSec);
+      const cached = await cache.match(cacheKey);
+      if (cached) {
+        const out = withCors(cached, cacheSec, "application/json; charset=utf-8");
+        out.headers.set("X-Cache", "HIT");
+        return out;
+      }
 
-        const pUrl = "https://api.coinpaprika.com/v1/tickers?quotes=USD";
+      const pUrl = "https://api.coinpaprika.com/v1/tickers?quotes=USD";
 
-        const pRes = await fetchWithRetry(pUrl, {
-          timeoutMs: 12000,
-          retries: 2,
+      let pRes;
+      try {
+        pRes = await fetchWithRetry(pUrl, {
+          timeoutMs: 15000,
+          retries: 3,
+          retryBaseMs: 500, 
           cf: { cacheTtl: cacheSec, cacheEverything: true },
           headers: {
             "Accept": "application/json",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+            "User-Agent": "kimpview-proxy/1.0"
           },
         });
-
-        if (!pRes.ok) {
-          return jsonRes({ error: "CoinPaprika HTTP error", status: pRes.status }, { status: 502, cacheSec: 30 });
+      } catch (e) {
+        const stale = await cache.match(cacheKey);
+        if (stale) {
+          const out = withCors(stale, cacheSec, "application/json; charset=utf-8");
+          out.headers.set("X-Cache", "STALE_ON_THROW");
+          return out;
         }
-
-        const arr = await pRes.json();
-        if (!Array.isArray(arr)) {
-          return jsonRes({ error: "CoinPaprika unexpected payload" }, { status: 502, cacheSec: 30 });
-        }
-
-        const caps = {};
-        for (const it of arr) {
-          const id = String(it?.id || "");
-          const sym = String(it?.symbol || "").toUpperCase();
-          const mc = Number(it?.quotes?.USD?.market_cap || 0);
-          if (!mc) continue;
-
-          if (sym === "USDT") {
-            if (id === "tether-usdt") {
-              caps.USDT = mc; // real tether
-            } else {
-              const prev = Number(caps.USDT || 0);
-              if (mc > prev) caps.USDT = mc;
-            }
-            continue;
-          }
-
-          const prev = Number(caps[sym] || 0);
-          if (mc > prev) caps[sym] = mc;
-        }
-
-        const resp = jsonRes(caps, { cacheSec });
-        ctx.waitUntil(cache.put(cacheKey, resp.clone()));
-        return resp;
+        return jsonRes(
+          { error: "CoinPaprika fetch failed", detail: String(e) },
+          { status: 502, cacheSec: 30, extraHeaders: { "X-Cache": "ERROR_THROW" } }
+        );
       }
+
+      if (!pRes.ok) {
+        const stale = await cache.match(cacheKey);
+        if (stale) {
+          const out = withCors(stale, cacheSec, "application/json; charset=utf-8");
+          out.headers.set("X-Cache", "STALE_ON_HTTP_" + pRes.status);
+          return out;
+        }
+        return jsonRes(
+          { error: "CoinPaprika HTTP error", status: pRes.status },
+          { status: pRes.status, cacheSec: 30, extraHeaders: { "X-Cache": "ERROR_HTTP_" + pRes.status } }
+        );
+      }
+
+      const arr = await pRes.json().catch(() => null);
+      if (!Array.isArray(arr)) {
+        const stale = await cache.match(cacheKey);
+        if (stale) {
+          const out = withCors(stale, cacheSec, "application/json; charset=utf-8");
+          out.headers.set("X-Cache", "STALE_ON_PAYLOAD");
+          return out;
+        }
+        return jsonRes({ error: "CoinPaprika unexpected payload" }, { status: 502, cacheSec: 30 });
+      }
+
+      const caps = {};
+      for (const it of arr) {
+        const id = String(it?.id || "");
+        const sym = String(it?.symbol || "").toUpperCase();
+        const mc = Number(it?.quotes?.USD?.market_cap || 0);
+        if (!mc) continue;
+
+        if (sym === "USDT") {
+          if (id === "tether-usdt") caps.USDT = mc;
+          else {
+            const prev = Number(caps.USDT || 0);
+            if (mc > prev) caps.USDT = mc;
+          }
+          continue;
+        }
+
+        const prev = Number(caps[sym] || 0);
+        if (mc > prev) caps[sym] = mc;
+      }
+
+      const resp = jsonRes(caps, { cacheSec });
+      resp.headers.set("X-Cache", "MISS_STORE");
+      ctx.waitUntil(cache.put(cacheKey, resp.clone()));
+      return resp;
+    }
 
       if (path === "/fx/google") {
         const gRes = await fetchWithRetry("https://www.google.com/finance/quote/USD-KRW?hl=en", {
@@ -385,12 +419,12 @@ export default {
 
         const iconUrl = `https://financialmodelingprep.com/image-stock/${encodeURIComponent(symbol)}.png`;
 
-        const cacheSec = 60 * 60 * 24 * 7; // 7 days
+        const cacheSec = 60 * 60 * 24 * 7; 
         const cache = caches.default;
         const cacheKey = new Request(`${url.origin}/__stock_icon__/${encodeURIComponent(symbol)}`);
 
         const cached = await cache.match(cacheKey);
-        if (cached) return withCors(cached, cacheSec); // keep cached content-type
+        if (cached) return withCors(cached, cacheSec); 
 
         const res = await fetchWithRetry(iconUrl, {
           timeoutMs: 7000,
@@ -406,7 +440,7 @@ export default {
           return withCors(new Response("Not Found", { status: 404 }), 60, "text/plain; charset=utf-8");
         }
 
-        const out = withCors(res, cacheSec); // keep origin content-type
+        const out = withCors(res, cacheSec); 
         ctx.waitUntil(cache.put(cacheKey, out.clone()));
         return out;
       }
