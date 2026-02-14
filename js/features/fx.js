@@ -70,7 +70,7 @@
   function emojiToTwemojiUrl(emoji) {
     const cps = Array.from(emoji || "")
       .map((ch) => ch.codePointAt(0).toString(16))
-      .join("-");
+      .join("");
     return `https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/${cps}.svg`;
   }
 
@@ -148,7 +148,7 @@
   }
 
   function fmtNumber(n, code) {
-    if (!Number.isFinite(n)) return "-";
+    if (!Number.isFinite(n)) return "";
     const noDecimals = new Set(["VND", "IDR", "KRW", "JPY"]);
     const maxFrac = noDecimals.has(code) ? 0 : 2;
     return n.toLocaleString("ko-KR", { maximumFractionDigits: maxFrac });
@@ -208,7 +208,7 @@
 
     const rate = getRate(ref, "KRW");
     if (!Number.isFinite(rate)) {
-      elRateMain.textContent = "-";
+      elRateMain.textContent = "";
       elUpdatedAt.textContent = state.updatedAt ? formatUpdatedAt(state.updatedAt) : "";
       return;
     }
@@ -223,13 +223,13 @@
   function updateResult() {
     const amount = parseAmount(elAmount.value);
     if (!Number.isFinite(amount)) {
-      elResult.value = "-";
+      elResult.value = "";
       return;
     }
 
     const rate = getRate(state.from, state.to);
     if (!Number.isFinite(rate)) {
-      elResult.value = "-";
+      elResult.value = "";
       return;
     }
 
@@ -402,7 +402,7 @@
     } catch (err) {
       elRateMain.textContent = "환율 데이터를 불러오지 못했습니다.";
       elUpdatedAt.textContent = "";
-      elResult.value = "-";
+      elResult.value = "";
       console.error(err);
     }
   }
