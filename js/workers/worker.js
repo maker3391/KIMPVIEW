@@ -67,7 +67,7 @@ export default {
       throw lastErr || new Error("fetch failed");
     }
 
-    const FINNHUB_KEY = "d580eu1r01qptoapg9g0d580eu1r01qptoapg9gg";
+    const FINNHUB_KEY = env.FINNHUB_KEY;
 
     const fetchYahooData = async (symbol, isStock = false) => {
       let sym = String(symbol || "").trim();
