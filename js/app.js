@@ -38,9 +38,10 @@
     try {
       const prev = localStorage.getItem(VERSION_KEY);
       if (prev !== APP_VERSION) {
-        clearStorageByPrefix("kimpview:");
+        clearStorageByPrefix("kimpview:tableCache:");
+        localStorage.removeItem("kimpview:capsCache:v1");
+        localStorage.removeItem("kimpview:topmetricsCache:v1");
         localStorage.setItem(VERSION_KEY, APP_VERSION);
-        location.reload();
       }
     } catch { }
   }
