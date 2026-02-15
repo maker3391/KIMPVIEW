@@ -1,6 +1,6 @@
 # KIMPVIEW
 > 🔗 **Live Service**: https://kimpview.com<br>
-> 🟢 **Current Stable Version**: v1.0.1<br>
+> 🟢 **Current Stable Version**: v1.1.0<br>
 > ✍️ **Dev Blog**: https://velog.io/@cokid7979 <br>
 > 📊 Kimchi Premium Real-time Dashboard  
 > 🚀 Vanilla JS + Cloudflare Worker 기반 실서비스 운영 중
@@ -16,10 +16,19 @@
 
 ## 🛠 Stability Update (v1.0.1)
 
-- CoinPaprika market cap cache extended to 12h (Edge-level TTL)
-- HTTP 402 / rate-limit fallback handling
-- External API failure → stale cache rendering
-- Upstream API load reduction via Worker caching
+- CoinPaprika 시가총액 캐시 시간을 12시간으로 확장 (Edge 레벨 TTL 적용)
+- HTTP 402 및 API 호출 제한(Rate Limit) 발생 시 예외 처리 로직 추가
+- 외부 API 장애 시 기존 캐시 데이터를 활용한 Fallback 렌더링 적용
+- Cloudflare Worker 캐싱을 통해 불필요한 상위 API 호출 감소
+
+## 💬 Real-time Chat Update (v1.1.0)
+
+- Firebase Firestore 기반 실시간 채팅 기능 도입
+- Presence 컬렉션을 활용한 온라인 사용자 수 추적
+- serverTimestamp 기반 메시지 정렬
+- 닉네임 설정 기능 (LocalStorage 저장)
+- 메시지 전송 쿨다운 로직 적용 (10초 제한)
+- 페이지 이동 시 채팅 상태 유지 (sessionStorage 기반)
 
 ---
 
@@ -65,6 +74,8 @@
 - SWR 기반 데이터 흐름 및 캐싱 전략 구현
 - 대규모 실시간 테이블 DOM 성능 최적화
 - 실서비스 운영 및 트래픽 대응 경험
+- Firebase 기반 실시간 데이터 동기화 설계
+- Presence 기반 사용자 세션 관리 구현
 ---
 ## 🔄 Data Flow & Caching Strategy
 
@@ -82,6 +93,7 @@
 
 - Vanilla JavaScript (ES6+, State-based UI Rendering)
 - CSS3 (Flexbox / Grid)
+- Firebase Firestore (Real-time Chat & Presence)
 - Performance Optimization (`IntersectionObserver`)  
   → 대규모 실시간 테이블 DOM 업데이트 최적화를 위해 사용
 - WebSocket API (Real-time Liquidation & Trade Alerts)
@@ -133,6 +145,7 @@ KIMPVIEW/
 │  ├─ app.js                     # 메인 코인 테이블 + LIVE 김프 계산
 │  │
 │  ├─ /features                  # 기능 모듈
+│  │  ├─ chat-ui.js  
 │  │  ├─ fx.js                   # 환율 관련 로직
 │  │  ├─ news.js                 # 뉴스 페이지 로직
 │  │  ├─ sidepanel.js            # 거래/청산 알림
