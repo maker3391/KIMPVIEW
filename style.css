@@ -1891,10 +1891,6 @@ td.priceStack > .priceSub,
   transform: scale(0.92);
 }
 
-.fxSwapBtn svg{
-  transform: rotate(90deg);
-}
-
 .fxHelper {
   margin-top: 14px;
   border: 1px solid #e5e7eb;
