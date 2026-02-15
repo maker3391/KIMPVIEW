@@ -29,7 +29,7 @@
   const SEND_COOLDOWN_MS = 1_000;
 
   const firebaseConfig = {
-    apiKey: "AIzaSyCf74YfV8hNmMofeWmVeXtCpxB347Y52rs",
+    apiKey: "__FIREBASE_API_KEY__",
     authDomain: "kimpview-chat.firebaseapp.com",
     projectId: "kimpview-chat",
     storageBucket: "kimpview-chat.firebasestorage.app",
