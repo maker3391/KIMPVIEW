@@ -305,6 +305,7 @@
       getFirestore,
       collection,
       addDoc,
+      serverTimestamp,   
       query,
       orderBy,
       limit,
@@ -332,12 +333,12 @@
 
       const base = {
         nick: getNick() || "",
-        lastSeen: new Date(), 
+        lastSeen: serverTimestamp(), 
         expireAt,
       };
 
       if (!sessionStorage.getItem(JOINED_INIT_KEY)) {
-        await setDoc(presenceDoc, { ...base, joinedAt: new Date() }, { merge: true });
+        await setDoc(presenceDoc, { ...base, joinedAt: serverTimestamp() }, { merge: true });
         sessionStorage.setItem(JOINED_INIT_KEY, "1");
         return;
       }
@@ -381,27 +382,22 @@
       else if (panel.classList.contains("open")) presenceStart?.();
     });
 
-    onSnapshot(
-      presenceCol,
-      (snap) => {
-        const now = Date.now();
-        let online = 0;
+    onSnapshot(presenceCol, (snap) => {
+      const now = Date.now();
+      let online = 0;
 
-        snap.forEach((d) => {
-          const data = d.data() || {};
+      snap.forEach((d) => {
+        const data = d.data() || {};
+        const ts =
+          data.lastSeen && typeof data.lastSeen.toDate === "function"
+            ? data.lastSeen.toDate().getTime()
+            : (data.lastSeen instanceof Date ? data.lastSeen.getTime() : 0);
 
-          const ts =
-            data.lastSeen && typeof data.lastSeen.toDate === "function"
-              ? data.lastSeen.toDate().getTime()
-              : (data.lastSeen instanceof Date ? data.lastSeen.getTime() : 0);
+        if (ts && now - ts <= PRESENCE_TTL_MS) online += 1;
+      });
 
-          if (ts && now - ts <= PRESENCE_TTL_MS) online += 1;
-        });
-
-        setOnlineCountDelayed(BASE_USERS + online);
-      },
-      (e) => console.error("presence snapshot fail", e)
-    );
+      setOnlineCountDelayed(BASE_USERS + online);
+    });
 
     const messagesRef = collection(db, "messages");
     const q = query(messagesRef, orderBy("createdAt", "desc"), limit(MAX));
@@ -430,7 +426,7 @@
       await addDoc(messagesRef, {
         user,
         text,
-        createdAt: new Date(), 
+        createdAt: serverTimestamp(),
       });
     };
 

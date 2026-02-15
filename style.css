@@ -1878,11 +1878,21 @@ td.priceStack > .priceSub,
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  
 }
 
 .fxSwapBtn:hover {
   filter: brightness(0.98);
   transform: scale(1.05);
+}
+
+.fxSwapBtn:active{
+  transform: scale(0.92);
+}
+
+.fxSwapBtn svg{
+  transform: rotate(90deg);
 }
 
 .fxHelper {
