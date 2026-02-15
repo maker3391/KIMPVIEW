@@ -3649,3 +3649,403 @@ transition:
     font-size:10px;
   }
 }
+
+/* =========================
+   Chat UI 
+   ========================= */
+
+.chat-fab{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  width:76px;
+  height:76px;
+  border-radius:999px;
+  border:none;
+  background:#0b5cff;
+  color:#fff;
+  box-shadow:0 14px 32px rgba(2,6,23,.22);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  z-index:9999;
+}
+
+.chat-fab-icon{
+  font-size:35px;
+  line-height:1;
+}
+
+.chat-panel{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  width:400px;
+  height:500px;
+  background:#fff;
+  border:1px solid rgba(15,23,42,.14);
+  border-radius:18px;
+  box-shadow:0 18px 44px rgba(2,6,23,.20);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+
+  opacity:0;
+  transform:translateY(12px);
+  pointer-events:none;
+  transition:opacity .18s ease, transform .18s ease;
+  z-index:9999;
+}
+
+.chat-panel.open{
+  opacity:1;
+  transform:translateY(0);
+  pointer-events:auto;
+}
+
+.c-header{
+  height:56px;
+  padding:0 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-bottom:1px solid rgba(15,23,42,.10);
+  background:#fff;
+}
+
+.c-leftRow{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+
+.c-ico2{
+  width:35px;
+  height:35px;
+  padding:5px;
+  box-sizing:border-box;
+  border-radius:10px;
+  background:#ffffff;
+  color:#2563eb;
+  flex:0 0 auto;
+  display:block;
+}
+
+.c-title2{
+  font-size:14px;
+  font-weight:700;
+  color:#0f172a;
+  white-space:nowrap;
+}
+
+.c-rightRow{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  height:28px;
+}
+
+.c-dot2{
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  background:#22c55e;
+}
+
+.c-user2{
+  width:18px;
+  height:18px;
+  color:rgba(15,23,42,.70);
+
+  display:block;     
+}
+
+.c-count2{
+  font-size:12.5px;
+  font-weight:600;
+  color:#0f172a;
+  min-width:22px;
+  text-align:left;
+}
+
+.c-x2{
+  width:28px;
+  height:28px;
+  border:none;
+  background:transparent;
+  border-radius:10px;
+  cursor:pointer;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  margin-bottom: 2px;
+  font-size:23px;   
+  font-weight:600;
+  line-height:1;
+  color:rgba(15,23,42,.70);
+}
+
+.c-x2:hover{
+  background:rgba(15,23,42,.06);
+}
+
+.c-body{
+  flex:1;
+  overflow:auto;
+  padding:10px 10px 6px;
+  background:#fff;
+}
+
+.c-list{
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+.c-msg{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+}
+
+.c-av{
+  width:30px;
+  height:30px;
+  border-radius:999px;
+  background:#eef2ff;
+  border:1px solid rgba(15,23,42,.10);
+  color:#334155;
+  font-size:12px;
+  font-weight:900;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 auto;
+}
+
+.c-bubbleWrap{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  min-width:0;
+}
+
+.c-bubbleRow{
+  display:flex;
+  align-items:flex-end;
+  gap:8px;
+  max-width:320px;
+}
+
+.c-msg.me{
+  flex-direction:row;        
+  justify-content:flex-end;  
+}
+
+.c-msg.me .c-av{
+  order:3;
+}
+
+.c-msg.me .c-bubbleWrap{
+  order:2;
+  align-items:flex-end;
+  text-align:right;
+}
+
+.c-msg.me .c-name{
+  padding-right:2px;
+}
+
+.c-msg.me .c-bubble{
+  background:#2563eb;
+  color:#fff;
+}
+
+.c-msg.me .c-time{
+  order:-1;              
+  color:rgba(15,23,42,.45);
+  padding-bottom:4px;
+}
+
+.c-time{
+  font-size:11.5px;
+  color:rgba(15,23,42,.45);
+  white-space:nowrap;
+  line-height:1;
+  padding-bottom:3px;
+  flex:0 0 auto;
+}
+
+.c-name{
+  font-size:11.5px;
+  color:rgba(15,23,42,.60);
+  padding-left:2px;
+}
+
+.c-bubble{
+  max-width:260px;
+  background:#eef2f7;
+  border-radius:14px;
+  padding:10px 12px;
+  color:#0f172a;
+  font-size:12.5px;
+  line-height:1.35;
+  word-break:break-word;
+}
+
+.c-footer{
+  padding:10px;
+  border-top:1px solid rgba(15,23,42,.10);
+  display:flex;
+  gap:10px;
+  align-items:center;
+  background:#fff;
+}
+
+.c-input{
+  flex:1;
+  height:40px;
+  border-radius:999px;
+  border:1px solid rgba(15,23,42,.14);
+  padding:0 14px;
+  outline:none;
+  font-size:12.5px;
+}
+
+.c-input:focus{
+  border-color:rgba(37,99,235,.40);
+  box-shadow:0 0 0 3px rgba(37,99,235,.10);
+}
+
+.c-send{
+  width:40px;
+  height:40px;
+  border-radius:999px;
+  border:none;
+  background:#2563eb;
+  color:#fff;
+  font-weight:900;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.c-ico2, .c-user2, .c-x2svg,
+.c-ico2 *, .c-user2 *, .c-x2svg *{
+  fill:none !important;
+  stroke:currentColor !important;
+  stroke-width:2 !important;
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+}
+
+.nickline{
+  height:38px;
+  padding:0 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-bottom:1px solid rgba(15,23,42,.10);
+  background:#fff;
+}
+
+.nick-left{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+
+.nick-ico{
+  font-size:12px;
+  line-height:1;
+  color:rgba(15,23,42,.55);
+}
+
+.nick-label{
+  font-size:12px;
+  color:rgba(15,23,42,.65);
+  white-space:nowrap;
+}
+
+.nick-editlink{
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  font-size:12px;
+  font-weight:600;
+  padding:7px 6px;      
+  border-radius:6px;
+  color:#2563eb;
+  line-height:1;       
+  height:auto;         
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  transition:background .15s ease, color .15s ease;
+}
+
+.nick-editlink:hover{
+  background:rgba(37,99,235,.10);
+}
+
+.nick-editlink:active{
+  background:rgba(37,99,235,.18);
+  transform:translateY(1px);
+}
+
+.chat-panel.no-nick .c-body,
+.chat-panel.no-nick .c-footer{
+  opacity:.55;
+  pointer-events:none;
+  filter:blur(1.5px);
+}
+
+.nickbar-inline{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+.nick-input-inline{
+  width:150px;
+  height:28px !important;
+  border-radius:8px;
+  border:1px solid rgba(15,23,42,.14);
+  padding:0 8px;
+  font-size:12px;
+}
+
+.nick-save {
+  color: #f0f0f0;
+  background-color: #2563eb;
+}
+
+.nick-save,
+.nick-cancel{
+  height:28px;
+  padding:0 8px;
+  border-radius:8px;
+  font-size:12px;
+}
+
+@media (max-width: 420px){
+  .chat-panel{
+    right:10px;
+    left:10px;
+    width:auto;
+    height:62vh;
+  }
+  .chat-fab{
+    right:12px;
+    bottom:12px;
+  }
+}

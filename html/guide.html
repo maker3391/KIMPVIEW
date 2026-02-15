@@ -385,8 +385,65 @@
     </div>
   </footer>
 
+    <button type="button" class="chat-fab" id="chatFab" aria-label="Open chat">
+    <span class="chat-fab-icon" aria-hidden="true">💬</span>
+  </button>
+
+  <aside class="chat-panel" id="chatPanel" aria-hidden="true">
+
+    <div class="c-header">
+      <div class="c-leftRow">
+        <svg class="c-ico2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 8.5-8.5h.5A8.5 8.5 0 0 1 21 11.5z"/>
+        </svg>
+        <span class="c-title2">실시간 채팅</span>
+      </div>
+
+      <div class="c-rightRow">
+        <span class="c-dot2" aria-hidden="true"></span>
+
+        <svg class="c-user2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+
+        <span class="c-count2" id="chatOnline">236</span>
+        <button type="button" class="c-x2" id="chatClose" aria-label="Close">⌵</button>
+      </div>
+    </div>
+
+    <div class="nickline" id="nickLine">
+      <div class="nick-left">
+        <span class="nick-ico" aria-hidden="true">👤</span>
+        <span class="nick-label" id="nickLabel"></span>
+      </div>
+
+      <div class="nick-right" id="nickRightView">
+        <button type="button" class="nick-editlink" id="nickEdit">✏️ 변경</button>
+      </div>
+
+      <div class="nick-right nick-right-edit" id="nickRightEdit" hidden>
+        <input class="nick-input-inline" id="nickInput" type="text" maxlength="12" placeholder="새 닉네임 (2~12자)" />
+        <button class="nick-save" id="nickSave" type="button">저장</button>
+        <button class="nick-cancel" id="nickCancel" type="button">취소</button>
+      </div>
+    </div>
+
+    <div class="c-body" id="chatBody">
+      <ul class="c-list" id="chatList"></ul>
+    </div>
+
+    <div class="c-footer">
+      <input class="c-input" id="chatText" placeholder="메시지를 입력하세요..." maxlength="200" />
+      <button type="button" class="c-send" id="chatSend" aria-label="Send">➤</button>
+    </div>
+  </aside>
+
   <script src="/js/features/topmetrics.js?v=1" defer></script>
   <script src="/js/features/sidepanel.js?v=1" defer></script>
-  
+  <script src="/js/features/chat-ui.js?v=1" defer></script>  
+
 </body>
 </html>
