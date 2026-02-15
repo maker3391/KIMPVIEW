@@ -305,14 +305,12 @@
       getFirestore,
       collection,
       addDoc,
-      serverTimestamp,
       query,
       orderBy,
       limit,
       onSnapshot,
       doc,
       setDoc,
-      Timestamp,
     } = await import(
       `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-firestore.js`
     );
@@ -330,16 +328,16 @@
     const JOINED_INIT_KEY = `kimp_chat_joined_init_${sid}`;
 
     const upsertPresence = async () => {
-      const expireAt = Timestamp.fromMillis(Date.now() + EXPIRE_AFTER_MS);
+      const expireAt = new Date(Date.now() + EXPIRE_AFTER_MS);
 
       const base = {
         nick: getNick() || "",
-        lastSeen: serverTimestamp(),
+        lastSeen: new Date(), 
         expireAt,
       };
 
       if (!sessionStorage.getItem(JOINED_INIT_KEY)) {
-        await setDoc(presenceDoc, { ...base, joinedAt: serverTimestamp() }, { merge: true });
+        await setDoc(presenceDoc, { ...base, joinedAt: new Date() }, { merge: true });
         sessionStorage.setItem(JOINED_INIT_KEY, "1");
         return;
       }
@@ -366,8 +364,8 @@
       setDoc(
         presenceDoc,
         {
-          lastSeen: Timestamp.fromMillis(0),
-          expireAt: Timestamp.fromMillis(Date.now() + 5_000),
+          lastSeen: new Date(0),
+          expireAt: new Date(Date.now() + 60_000),
         },
         { merge: true }
       ).catch(() => {});
@@ -380,6 +378,7 @@
 
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) presenceStop?.();
+      else if (panel.classList.contains("open")) presenceStart?.();
     });
 
     onSnapshot(
@@ -390,10 +389,11 @@
 
         snap.forEach((d) => {
           const data = d.data() || {};
+
           const ts =
             data.lastSeen && typeof data.lastSeen.toDate === "function"
               ? data.lastSeen.toDate().getTime()
-              : 0;
+              : (data.lastSeen instanceof Date ? data.lastSeen.getTime() : 0);
 
           if (ts && now - ts <= PRESENCE_TTL_MS) online += 1;
         });
@@ -430,7 +430,7 @@
       await addDoc(messagesRef, {
         user,
         text,
-        createdAt: serverTimestamp(),
+        createdAt: new Date(), 
       });
     };
 
