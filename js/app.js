@@ -895,7 +895,7 @@
     saveTopMetricsToLS();
 
     if (state._isLoading) {
-      state._pendingReload = state._pendingReload || force || true;
+      state._pendingReload = state._pendingReload || force;
       return;
     }
     state._isLoading = true;
@@ -948,7 +948,7 @@
       hideSpinner();
       if (state._pendingReload) {
         state._pendingReload = false;
-        loadCoinsAndRender(true); 
+        loadCoinsAndRender(false); 
       }      
     }
   }
@@ -961,6 +961,32 @@
   function stopAutoRefresh() {
     if (state._refreshTimer) clearInterval(state._refreshTimer);
     state._refreshTimer = null;
+  }
+
+  function pauseTimers() {
+    stopAutoRefresh();
+  }
+
+  function resumeTimers() {
+    if (state._isLoading) return;      
+    stopAutoRefresh();                 
+    loadCoinsAndRender(false).catch(() => {});
+    startAutoRefresh(2000);
+  }
+
+  function bindLifecycleEvents() {
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) pauseTimers();
+      else resumeTimers();
+    });
+
+    window.addEventListener("pageshow", (e) => {
+      if (e.persisted) resumeTimers();
+    });
+
+    window.addEventListener("pagehide", () => {
+      pauseTimers();
+    });
   }
 
   function getPriceDirection(symbol, currentPrice) {
@@ -1243,6 +1269,7 @@
 
       <td class="td-right mcapStack col-hide-980">
         <div class="mcapMain">${formatMcapKRW(c.mcapKRW)}</div>
+        
         <div class="mcapSub">${formatMcapUSD(state._coinCaps.get(c.symbol))}</div>
       </td>
     `;
@@ -1458,6 +1485,7 @@
 
     restoreTopMetricsFromLS();
     startUnifiedTopMetrics();
+    bindLifecycleEvents();    
 
     const TITLE_SUFFIX = "실시간 김프 김치프리미엄 - 김프뷰";
     const TITLE_REFRESH_MS = 3000;
@@ -1514,4 +1542,6 @@
   } else {
     init();
   }
+
+  
 })();
