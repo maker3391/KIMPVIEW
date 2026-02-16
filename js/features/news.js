@@ -13,7 +13,7 @@
 
   const ENDPOINTS = {
     breaking: `${PROXY_BASE}/coinness/breaking`,
-    news: `${PROXY_BASE}/news?display=50&metaLimit=50`,
+    news: `${PROXY_BASE}/news?display=30&metaLimit=30`, 
   };
 
   const LS_KEYS = {
@@ -53,23 +53,39 @@
   function parseDateAny(v) {
     if (v == null) return null;
 
-    const s = String(v).trim();
-    if (!s) return null;
+    const s0 = String(v).trim();
+    if (!s0) return null;
 
-    if (/^\d+$/.test(s)) {
-      const n = Number(s);
+    if (/^\d+$/.test(s0)) {
+      const n = Number(s0);
       if (!Number.isFinite(n)) return null;
-
-      const ms = s.length <= 10 ? n * 1000 : n;
+      const ms = s0.length <= 10 ? n * 1000 : n;
       const d = new Date(ms);
       return Number.isFinite(d.getTime()) ? d : null;
     }
 
-    const fixed = (s.includes(" ") && !s.includes("T")) ? s.replace(" ", "T") : s;
+    let s = s0;
 
-    const d = new Date(fixed);
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(s) && !s.includes("T")) {
+      s = s.replace(" ", "T");
+    }
+
+    const dot = s.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})\.?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if (dot) {
+      const [_, yy, mo, dd, hh, mm, ss] = dot;
+      const iso = `${yy}-${String(mo).padStart(2, "0")}-${String(dd).padStart(2, "0")}T${String(hh).padStart(2, "0")}:${mm}:${String(ss || "00").padStart(2, "0")}`;
+      const d = new Date(iso);
+      return Number.isFinite(d.getTime()) ? d : null;
+    }
+
+    if (/^[A-Za-z]{3},\s/.test(s)) {
+      s = s.replace(/([+-]\d{2})(\d{2})$/, "$1:$2");
+    }
+
+    const d = new Date(s);
     return Number.isFinite(d.getTime()) ? d : null;
   }
+
 
   function toTimeText(publishedAt) {
     const d = parseDateAny(publishedAt);
@@ -196,7 +212,13 @@
     const thumbHtml = isBreaking
       ? ""
       : `<div class="newsThumb">
-          <img src="${esc(item.image)}" alt="news" onerror="this.onerror=null; this.src='../images/default.jpg';">
+          <img
+            src="${esc(item.image)}"
+            alt="news"
+            loading="lazy"
+            decoding="async"
+            referrerpolicy="no-referrer"
+            onerror="this.onerror=null; this.src='../images/default.jpg';">
         </div>`;
 
     return `
@@ -237,11 +259,24 @@
 
   function appendNext(count) {
     const next = state.all.slice(state.rendered, state.rendered + count);
-    if (next.length) {
-      newsList?.insertAdjacentHTML("beforeend", next.map(renderItem).join(""));
-      state.rendered += next.length;
-    }
-    updateMoreBtn();
+    if (!next.length) { updateMoreBtn(); return; }
+
+    const chunkSize = 3; 
+    let i = 0;
+
+    const pump = () => {
+      const part = next.slice(i, i + chunkSize);
+      if (part.length) {
+        newsList?.insertAdjacentHTML("beforeend", part.map(renderItem).join(""));
+        state.rendered += part.length;
+        i += chunkSize;
+        requestAnimationFrame(pump);
+      } else {
+        updateMoreBtn();
+      }
+    };
+
+    requestAnimationFrame(pump);
   }
 
   function updateMoreBtn() {
