@@ -13,7 +13,7 @@
 
   const ENDPOINTS = {
     breaking: `${PROXY_BASE}/coinness/breaking`,
-    news: `${PROXY_BASE}/news?display=30&metaLimit=30`, 
+    news: `${PROXY_BASE}/news?display=20&metaLimit=20`, 
   };
 
   const LS_KEYS = {
