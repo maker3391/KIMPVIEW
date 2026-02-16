@@ -3383,6 +3383,9 @@ body.stocksPage .stocksUpdatedAt{
   outline:none;
 }
 
+.newsMoreBtn {
+  display: none;
+}
 .newsListWrap{
   position:relative;
 }

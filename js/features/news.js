@@ -13,13 +13,16 @@
 
   const ENDPOINTS = {
     breaking: `${PROXY_BASE}/coinness/breaking`,
+<<<<<<< HEAD
     news: `${PROXY_BASE}/news?display=20&metaLimit=20`, 
+=======
+    news: `${PROXY_BASE}/news?display=30&metaLimit=30`,
+>>>>>>> fd7e05c (feat: news background prefetch + cache-first rendering)
   };
 
   const LS_KEYS = {
     breaking: "KIMPVIEW_BREAKING_CACHE_V1",
     news: "KIMPVIEW_NEWS_CACHE_V1",
-    breakingCursor: "KIMPVIEW_BREAKING_CURSOR_V1",
   };
 
   const TTL_MS = {
@@ -29,9 +32,12 @@
 
   const POLL_MS = 60_000;
   const NEWS_POLL_MS = 60_000;
+  const PREFETCH_NEWS_EVERY_MS = 30_000;
 
   let pollTimer = null;
   let newsPollTimer = null;
+  let prefetchTimer = null;
+  let prefetchedOnce = false;
 
   const state = {
     tab: "breaking",
@@ -40,6 +46,7 @@
     first: 10,
     step: 5,
     loading: false,
+    fetching: false,
   };
 
   function show(el) { if (el) el.style.display = ""; }
@@ -52,7 +59,6 @@
 
   function parseDateAny(v) {
     if (v == null) return null;
-
     const s0 = String(v).trim();
     if (!s0) return null;
 
@@ -85,7 +91,6 @@
     const d = new Date(s);
     return Number.isFinite(d.getTime()) ? d : null;
   }
-
 
   function toTimeText(publishedAt) {
     const d = parseDateAny(publishedAt);
@@ -143,7 +148,6 @@
       if (isCoinnessShape(x)) {
         const publishedAt = x.publishAt || x.pubDate || "";
         const updatedAt = x.updatedAt || x.publishAt || x.pubDate || "";
-
         return {
           title: cleanText(x.title),
           url: x.source || x.link || x.originallink || "",
@@ -151,7 +155,7 @@
           image: x.thumbnailImage || x.contentImage || x.extractedImage || defaultImg,
           publishedAt,
           updatedAt,
-          displayAt: updatedAt || publishedAt, 
+          displayAt: updatedAt || publishedAt,
           badge: x.isImportant ? "중요" : (x.categoryName || ""),
         };
       }
@@ -165,7 +169,7 @@
           image: x.extractedImage || defaultImg,
           publishedAt,
           updatedAt: x.pubDate || "",
-          displayAt: x.pubDate || "", 
+          displayAt: x.pubDate || "",
           badge: "속보",
         };
       }
@@ -261,7 +265,7 @@
     const next = state.all.slice(state.rendered, state.rendered + count);
     if (!next.length) { updateMoreBtn(); return; }
 
-    const chunkSize = 3; 
+    const chunkSize = 3;
     let i = 0;
 
     const pump = () => {
@@ -308,20 +312,6 @@
     return out;
   }
 
-  function getLatestCursorFromState() {
-    const first = state.all?.[0]; // newest
-    const d = parseDateAny(first?.displayAt || first?.updatedAt || first?.publishedAt);
-    return d ? d.toISOString() : "";
-  }
-
-  function loadBreakingCursor() {
-    try { return (localStorage.getItem(LS_KEYS.breakingCursor) || "").trim(); } catch { return ""; }
-  }
-
-  function saveBreakingCursor(iso) {
-    try { if (iso) localStorage.setItem(LS_KEYS.breakingCursor, iso); } catch {}
-  }
-
   function loadCache(tab) {
     try {
       const raw = localStorage.getItem(LS_KEYS[tab]);
@@ -335,7 +325,7 @@
     try { localStorage.setItem(LS_KEYS[tab], JSON.stringify({ ts: Date.now(), items })); } catch {}
   }
 
-  async function fetchLatest(tab, opts = {}) {
+  async function fetchLatest(tab) {
     if (tab === "breaking") {
       const limit = 50;
       const hours = 24;
@@ -347,7 +337,7 @@
 
       return raw
         .map((x) => normalizeItem(x, "breaking"))
-        .sort((a, b) => getSortTime(b) - getSortTime(a)); 
+        .sort((a, b) => getSortTime(b) - getSortTime(a));
     }
 
     const res = await fetch(ENDPOINTS.news, { cache: "no-store" });
@@ -362,6 +352,7 @@
 
   function stopBreakingPoll() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
   function stopNewsPoll() { if (newsPollTimer) { clearInterval(newsPollTimer); newsPollTimer = null; } }
+  function stopPrefetch() { if (prefetchTimer) { clearInterval(prefetchTimer); prefetchTimer = null; } }
 
   function isNearBottom() {
     const el = document.scrollingElement || document.documentElement;
@@ -376,11 +367,8 @@
 
     const html = items.map(renderItem).join("");
 
-    if (state.tab === "breaking") {
-      newsList.insertAdjacentHTML("afterbegin", html);
-    } else {
-      newsList.insertAdjacentHTML("beforeend", html);
-    }
+    if (state.tab === "breaking") newsList.insertAdjacentHTML("afterbegin", html);
+    else newsList.insertAdjacentHTML("beforeend", html);
 
     state.rendered += items.length;
     updateMoreBtn();
@@ -404,22 +392,19 @@
         state.all = dedupeKeepOrder(incoming).sort((a, b) => getSortTime(b) - getSortTime(a));
         saveCache("breaking", state.all);
 
-      if (onlyNew.length) {
-        if (isNearBottom()) {
-          const keepCount = Math.max(state.rendered, state.first);
-
-          newsList.innerHTML = "";
-          state.rendered = 0;
-
-          appendNext(keepCount);
-        } else {
-          updateMoreBtn();
+        if (onlyNew.length) {
+          if (isNearBottom()) {
+            const keepCount = Math.max(state.rendered, state.first);
+            newsList.innerHTML = "";
+            state.rendered = 0;
+            appendNext(keepCount);
+          } else {
+            updateMoreBtn();
+          }
         }
-      }
       } catch {}
     }, POLL_MS);
   }
-
 
   function startNewsPoll() {
     stopNewsPoll();
@@ -446,6 +431,32 @@
     }, NEWS_POLL_MS);
   }
 
+  async function prefetchNews(force = false) {
+    if (state.fetching) return;
+    state.fetching = true;
+
+    try {
+      const cached = loadCache("news");
+      const freshEnough = cached && (Date.now() - (cached.ts || 0) < TTL_MS.news);
+      if (!force && freshEnough) return;
+
+      const items = await fetchLatest("news");
+      const normalized = dedupeKeepOrder(items).sort((a, b) => getSortTime(b) - getSortTime(a));
+      saveCache("news", normalized);
+    } catch {
+    } finally {
+      state.fetching = false;
+    }
+  }
+
+  function startPrefetchLoop() {
+    stopPrefetch();
+    prefetchTimer = setInterval(() => {
+      if (document.hidden) return;
+      prefetchNews(false);
+    }, PREFETCH_NEWS_EVERY_MS);
+  }
+
   async function loadAll(tab, opts = {}) {
     if (state.loading) return;
     state.loading = true;
@@ -456,6 +467,7 @@
       newsLoading.textContent = "최신 소식을 불러오고 있습니다.";
       show(newsLoading);
     }
+
     if (moreBtn) moreBtn.style.display = "none";
     if (newsSource) newsSource.style.display = "none";
     hide(newsEmpty);
@@ -479,10 +491,7 @@
       const cached = loadCache(tab);
       const freshEnough = cached && (Date.now() - (cached.ts || 0) < TTL_MS[tab]);
       if (cached?.items?.length) {
-        state.all = cached.items
-          .slice()
-          .sort((a, b) => getSortTime(b) - getSortTime(a));
-
+        state.all = cached.items.slice().sort((a, b) => getSortTime(b) - getSortTime(a));
         renderFromState();
         if (freshEnough) hide(newsLoading);
       } else {
@@ -496,11 +505,9 @@
 
     try {
       const items = await fetchLatest(tab);
-
       state.all = dedupeKeepOrder(items).sort((a, b) => getSortTime(b) - getSortTime(a));
       renderFromState();
       saveCache(tab, state.all);
-
     } catch {
       const cached = ignoreCache ? null : loadCache(tab);
       if (!cached?.items?.length) {
@@ -512,6 +519,12 @@
       state.loading = false;
       if (newsSource) newsSource.style.display = "";
       updateMoreBtn();
+
+      if (tab === "breaking" && !prefetchedOnce) {
+        prefetchedOnce = true;
+        setTimeout(() => prefetchNews(true), 0);
+        startPrefetchLoop();
+      }
     }
   }
 
@@ -541,8 +554,9 @@
   });
 
   moreBtn?.addEventListener("click", () => appendNext(state.step));
+
   tabBreaking?.addEventListener("click", () => loadAll("breaking", { ignoreCache: true }));
-  tabNews?.addEventListener("click", () => loadAll("news", { ignoreCache: true }));
+  tabNews?.addEventListener("click", () => loadAll("news", { ignoreCache: false }));
 
   loadAll("breaking", { ignoreCache: true });
 
@@ -550,9 +564,12 @@
     if (document.hidden) {
       stopBreakingPoll();
       stopNewsPoll();
+      stopPrefetch();
     } else {
       if (state.tab === "breaking") startBreakingPoll();
       if (state.tab === "news") startNewsPoll();
+      startPrefetchLoop();
+      prefetchNews(false);
     }
   });
 })();
