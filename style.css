@@ -316,7 +316,7 @@ input[type="submit"],
 
 /* ===== CHART BOX ===== */
 .chartBox{
-  height: 460px;
+  height: 320px;
   display:block;
   border:1px solid var(--line);
   border-radius:16px;

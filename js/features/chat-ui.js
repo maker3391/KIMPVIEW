@@ -1,16 +1,5 @@
 (() => {
   "use strict";
-
-console.log("[NAV] load", new Date().toISOString());
-
-window.addEventListener("pageshow", (e) => {
-  console.log("[NAV] pageshow persisted=", e.persisted);
-});
-
-window.addEventListener("beforeunload", () => {
-  console.log("[NAV] beforeunload");
-});
-
   const $ = (s) => document.querySelector(s);
 
   const fab = $("#chatFab");
