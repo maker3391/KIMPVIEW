@@ -1,6 +1,6 @@
 # KIMPVIEW
 > 🔗 **Live Service**: https://kimpview.com<br>
-> 🟢 **Current Stable Version**: v1.1.0<br>
+> 🟢 **Current Stable Version**: v1.1.1<br>
 > ✍️ **Dev Blog**: https://velog.io/@cokid7979 <br>
 > 📊 Kimchi Premium Real-time Dashboard  
 > 🚀 Vanilla JS + Cloudflare Worker 기반 실서비스 운영 중
@@ -30,6 +30,12 @@
 - 메시지 전송 쿨다운 로직 적용 (10초 제한)
 - 페이지 이동 시 채팅 상태 유지 (sessionStorage 기반)
 
+## ⚡ News Performance Update (v1.1.1)
+
+- 뉴스 탭 백그라운드 프리패치(prefetch) 적용으로 첫 클릭 로딩 지연 최소화
+- cache-first 렌더링 전략 적용 (캐시 즉시 표시 → 백그라운드 최신 갱신)
+- 뉴스 프리패치 주기 업데이트로 탭 전환 체감 속도 개선
+- "더보기" 버튼 초기 깜빡임 방지(초기 UI 상태 숨김 처리)
 ---
 
 ## 📌 프로젝트 목적
