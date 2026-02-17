@@ -378,10 +378,31 @@
     } catch {}
   }
 
+  function normalizeCoinsForSort(list) {
+    const arr = Array.isArray(list) ? list : [];
+    for (const c of arr) {
+      c.priceKRW = Number(c.priceKRW || 0);
+      c.priceUSD = Number(c.priceUSD || 0);
+      c.binanceKRW = Number(c.binanceKRW || 0);
+      c.change24h = Number(c.change24h || 0);
+      c.change24hKRW = Number(c.change24hKRW || 0);
+      c.mcapKRW = Number(c.mcapKRW || 0);
+      c.volKRW = Number(c.volKRW || 0);
+      c.binanceVolKRW = Number(c.binanceVolKRW || 0);
+      c.kimp = (c.kimp == null ? null : Number(c.kimp));
+      c.kimpDiffKRW = (c.kimpDiffKRW == null ? null : Number(c.kimpDiffKRW));
+      c.hasBinance = !!c.hasBinance;
+      c.symbol = String(c.symbol || "").toUpperCase();
+      c.name = String(c.name || c.symbol || "");
+      c.exchange = String(c.exchange || "");
+    }
+    return arr;
+  }
+
   function restoreTableFromCache(exchange) {
     const cached = loadTableCache(exchange);
     if (!cached || cached.length === 0) return false;
-    state.coins = cached;
+    state.coins = normalizeCoinsForSort(cached);
     return true;
   }
 
@@ -585,45 +606,51 @@
     return out;
   }
 
-  async function fromUpbit(signal) {
-    try {
-      const marketsJson = await getUpbitMarkets(signal);
-      const markets = Array.isArray(marketsJson) ? marketsJson : [];
-      const krw = markets.filter(m => String(m.market || "").startsWith("KRW-"));
+  async function fetchUpbitTickersAllKRW(signal) {
+    const marketsJson = await getUpbitMarkets(signal);
+    const markets = Array.isArray(marketsJson) ? marketsJson : [];
+    const krw = markets.filter(m => String(m.market || "").startsWith("KRW-"));
 
-      const cached = loadTableCache(state.exchange);
-      const hasCache = !!(cached && cached.length > 0);
-      const MAX = hasCache ? 400 : 120;
+    const allMarkets = krw.map(m => String(m.market || "")).filter(Boolean);
+    const nameMap = new Map(krw.map(m => [m.market, m.korean_name]));
 
-      const MUST = [
-        "KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-SOL", "KRW-DOGE",
-        "KRW-ADA", "KRW-BCH", "KRW-LTC", "KRW-TRX", "KRW-USDT"
-      ];
+    const CHUNK_SIZE = 60;
+    const chunks = chunk(allMarkets, CHUNK_SIZE);
 
-      const marketSet = new Set(krw.map(m => m.market));
-      const sorted = [...krw].sort((a, b) => String(a.market).localeCompare(String(b.market)));
+    const tickers = [];
+    const failedChunks = [];
 
-      const list = [];
-      for (const m of MUST) if (marketSet.has(m)) list.push(m);
-      for (const m of sorted) {
-        if (list.length >= MAX) break;
-        if (list.includes(m.market)) continue;
-        list.push(m.market);
-      }
-
-      const chunks = chunk(list, 60);
-      const tickers = [];
-
-      for (const c of chunks) {
-        const url = `${UPBIT_PROXY}/v1/ticker?markets=${encodeURIComponent(c.join(","))}`;
-        const tJson = await safeFetchJson(url, { signal, timeoutMs: 8000, label: "UPBIT ticker", retries: 2 });
+    for (const c of chunks) {
+      const url = `${UPBIT_PROXY}/v1/ticker?markets=${encodeURIComponent(c.join(","))}`;
+      try {
+        const tJson = await safeFetchJson(url, { signal, timeoutMs: 9000, label: "UPBIT ticker", retries: 2 });
         const t = Array.isArray(tJson) ? tJson : [];
         tickers.push(...t);
+      } catch {
+        failedChunks.push(c);
       }
+    }
 
-      const nameMap = new Map(krw.map(m => [m.market, m.korean_name]));
+    if (failedChunks.length > 0) {
+      await sleep(200);
+      for (const c of failedChunks) {
+        const url = `${UPBIT_PROXY}/v1/ticker?markets=${encodeURIComponent(c.join(","))}`;
+        try {
+          const tJson = await safeFetchJson(url, { signal, timeoutMs: 11000, label: "UPBIT ticker retry", retries: 1 });
+          const t = Array.isArray(tJson) ? tJson : [];
+          tickers.push(...t);
+        } catch {}
+      }
+    }
 
-      return tickers.map(t => {
+    return { tickers, nameMap };
+  }
+
+  async function fromUpbit(signal) {
+    try {
+      const { tickers, nameMap } = await fetchUpbitTickersAllKRW(signal);
+
+      const out = tickers.map(t => {
         const symbol = String(t.market).replace("KRW-", "");
         const priceKRW = Number(t.trade_price || 0);
         const change24h = Number(t.signed_change_rate || 0) * 100;
@@ -647,6 +674,8 @@
           hasBinance: false,
         };
       });
+
+      return out;
     } catch {
       return [];
     }
@@ -927,6 +956,7 @@
       }
 
       applyDerivedFields(list, binanceMap, binanceVolMap);
+      normalizeCoinsForSort(list);
       renderLiveKimpBoxes(list);
 
       state.coins = list;
@@ -1064,15 +1094,27 @@
     }
   }
 
+  const NUMERIC_SORT_KEYS = new Set([
+    "priceKRW", "priceUSD", "binanceKRW",
+    "change24h", "change24hKRW",
+    "volKRW", "binanceVolKRW",
+    "mcapKRW", "kimp", "kimpDiffKRW"
+  ]);
+
   function compare(a, b, key, dir) {
     const av = a?.[key];
     const bv = b?.[key];
 
     let res = 0;
-    if (typeof av === "string" || typeof bv === "string") {
-      res = String(av ?? "").localeCompare(String(bv ?? ""));
+
+    if (NUMERIC_SORT_KEYS.has(key)) {
+      const an = Number(av);
+      const bn = Number(bv);
+      const aSafe = Number.isFinite(an) ? an : -Infinity;
+      const bSafe = Number.isFinite(bn) ? bn : -Infinity;
+      res = aSafe - bSafe;
     } else {
-      res = Number(av ?? 0) - Number(bv ?? 0);
+      res = String(av ?? "").localeCompare(String(bv ?? ""));
     }
 
     return dir === "asc" ? res : -res;
