@@ -29,9 +29,11 @@
         if (k && k.startsWith(prefix)) keys.push(k);
       }
       for (const k of keys) {
-        try { localStorage.removeItem(k); } catch { }
+        try {
+          localStorage.removeItem(k);
+        } catch {}
       }
-    } catch { }
+    } catch {}
   }
 
   function migrateStorageIfNeeded() {
@@ -43,7 +45,7 @@
         localStorage.removeItem("kimpview:topmetricsCache:v1");
         localStorage.setItem(VERSION_KEY, APP_VERSION);
       }
-    } catch { }
+    } catch {}
   }
 
   migrateStorageIfNeeded();
@@ -297,14 +299,14 @@
 
   const rowObserver = ("IntersectionObserver" in window)
     ? new IntersectionObserver((entries) => {
-      for (const e of entries) {
-        const sym = e?.target?.dataset?.symbol;
-        if (!sym) continue;
-        if (e.isIntersecting) visibleSymbols.add(sym);
-        else visibleSymbols.delete(sym);
-      }
-      state._ioReady = true;
-    }, { root: null, threshold: 0.01 })
+        for (const e of entries) {
+          const sym = e?.target?.dataset?.symbol;
+          if (!sym) continue;
+          if (e.isIntersecting) visibleSymbols.add(sym);
+          else visibleSymbols.delete(sym);
+        }
+        state._ioReady = true;
+      }, { root: null, threshold: 0.01 })
     : null;
 
   function observeRow(tr) {
@@ -339,7 +341,7 @@
   function saveUpbitMarketsToLS(marketsJson) {
     try {
       localStorage.setItem(UPBIT_MARKETS_LS, JSON.stringify({ ts: Date.now(), data: marketsJson }));
-    } catch { }
+    } catch {}
   }
 
   const LS_TABLE_PREFIX = "kimpview:tableCache:v1:";
@@ -373,7 +375,7 @@
         tableCacheKey(exchange),
         JSON.stringify({ ts: Date.now(), exchange: String(exchange || ""), coins })
       );
-    } catch { }
+    } catch {}
   }
 
   function restoreTableFromCache(exchange) {
@@ -396,7 +398,7 @@
           btcDom: Number(state.btcDom || 0),
         })
       );
-    } catch { }
+    } catch {}
   }
 
   function restoreTopMetricsFromLS() {
@@ -419,7 +421,7 @@
       if (fxEl && fx > 0 && (!fxEl.textContent || fxEl.textContent === "-")) fxEl.textContent = `${fx.toLocaleString("ko-KR")}원`;
       if (usdtEl && usdt > 0 && (!usdtEl.textContent || usdtEl.textContent === "-")) usdtEl.textContent = `${Math.round(usdt).toLocaleString("ko-KR")}원`;
       if (domEl && dom > 0 && (!domEl.textContent || domEl.textContent === "-")) domEl.textContent = `${dom.toFixed(2)}%`;
-    } catch { }
+    } catch {}
   }
 
   function syncTopMetricsCacheFromDOM() {
@@ -442,7 +444,7 @@
     const runOnce = () => {
       if (typeof loader === "function") {
         Promise.resolve(loader())
-          .catch(() => { })
+          .catch(() => {})
           .finally(() => syncTopMetricsCacheFromDOM());
       } else {
         syncTopMetricsCacheFromDOM();
@@ -527,7 +529,7 @@
     function saveCapsToLS(data) {
       try {
         localStorage.setItem(CAPS_LS_KEY, JSON.stringify({ ts: Date.now(), data }));
-      } catch { }
+      } catch {}
     }
 
     const now = Date.now();
@@ -589,7 +591,10 @@
       const markets = Array.isArray(marketsJson) ? marketsJson : [];
       const krw = markets.filter(m => String(m.market || "").startsWith("KRW-"));
 
-      const MAX = 400;
+      const cached = loadTableCache(state.exchange);
+      const hasCache = !!(cached && cached.length > 0);
+      const MAX = hasCache ? 400 : 120;
+
       const MUST = [
         "KRW-BTC", "KRW-ETH", "KRW-XRP", "KRW-SOL", "KRW-DOGE",
         "KRW-ADA", "KRW-BCH", "KRW-LTC", "KRW-TRX", "KRW-USDT"
@@ -606,7 +611,7 @@
         list.push(m.market);
       }
 
-      const chunks = chunk(list, 80);
+      const chunks = chunk(list, 60);
       const tickers = [];
 
       for (const c of chunks) {
@@ -747,7 +752,7 @@
         state._binance.map = map;
         state._binance.ts = now;
         return map;
-      } catch { }
+      } catch {}
     }
 
     return state._binance.map;
@@ -781,7 +786,7 @@
         state._binance24h.map = map;
         state._binance24h.ts = now;
         return map;
-      } catch { }
+      } catch {}
     }
 
     return state._binance24h.map;
@@ -905,15 +910,13 @@
 
       try {
         await fetchAllMarketCaps();
-      } catch {
-        console.warn("[KIMPVIEW] Caps API failed, using previous cache");
-      }
+      } catch {}
 
       let list = [];
       try {
         const coins = await fetchCoinsFromAPI(state.exchange);
         list = Array.isArray(coins) ? coins : [];
-      } catch { }
+      } catch {}
 
       if (!force && list.length === 0) {
         if (hasCache) list = cachedList;
@@ -961,7 +964,7 @@
   function resumeTimers() {
     if (state._isLoading) return;
     stopAutoRefresh();
-    loadCoinsAndRender(false).catch(() => { });
+    loadCoinsAndRender(false).catch(() => {});
     startAutoRefresh(2000);
   }
 
@@ -1111,7 +1114,7 @@
   function closeInlineChart() {
     if (Array.isArray(state._inlineCharts) && state._inlineCharts.length > 0) {
       for (const it of state._inlineCharts) {
-        try { it?.rowEl?.remove(); } catch { }
+        try { it?.rowEl?.remove(); } catch {}
       }
     }
     state._inlineCharts = [];
@@ -1162,7 +1165,7 @@
     const idx = state._inlineCharts.findIndex(it => it.sym === sym);
     if (idx >= 0) {
       const it = state._inlineCharts[idx];
-      try { it?.rowEl?.remove(); } catch { }
+      try { it?.rowEl?.remove(); } catch {}
       state._inlineCharts.splice(idx, 1);
       return;
     }
@@ -1172,7 +1175,7 @@
 
     while (state._inlineCharts.length >= maxN) {
       const old = state._inlineCharts.shift();
-      try { old?.rowEl?.remove(); } catch { }
+      try { old?.rowEl?.remove(); } catch {}
     }
 
     const colspan = anchorTr?.children?.length || 6;
@@ -1215,9 +1218,7 @@
     const sym = String(c.symbol || "").toUpperCase();
     const isFailed = imageLoadFailures.has(sym);
 
-    const logoUrl = isFailed
-      ? "images/coins/default.png"
-      : `https://static.upbit.com/logos/${sym}.png`;
+    const logoUrl = isFailed ? "images/coins/default.png" : `https://static.upbit.com/logos/${sym}.png`;
 
     tr.innerHTML = `
       <td class="td-left">
@@ -1313,10 +1314,10 @@
       tr.innerHTML = `
         <td colspan="6" style="padding:24px;text-align:center;color:#6b7280;">
           ${state.favOnly
-          ? "즐겨찾기한 코인이 없습니다."
-          : state.query
-            ? "검색 결과가 없습니다."
-            : "표시할 데이터가 없습니다."}
+            ? "즐겨찾기한 코인이 없습니다."
+            : state.query
+              ? "검색 결과가 없습니다."
+              : "표시할 데이터가 없습니다."}
         </td>
       `;
       coinTableBody.appendChild(tr);
@@ -1378,7 +1379,7 @@
   function saveFavorites() {
     try {
       localStorage.setItem(LS_KEY, JSON.stringify([...state.favorites]));
-    } catch { }
+    } catch {}
   }
 
   function toggleFavorite(symbol) {
@@ -1529,7 +1530,17 @@
     loadCoinsAndRender(false).finally(updateTitleFromState);
 
     startAutoRefresh(2000);
-    initMainChart();
+
+    let tvInited = false;
+    const initMainChartDeferred = () => {
+      if (tvInited) return;
+      tvInited = true;
+      initMainChart();
+    };
+
+    window.addEventListener("pointerdown", initMainChartDeferred, { once: true });
+    window.addEventListener("scroll", initMainChartDeferred, { once: true, passive: true });
+    setTimeout(initMainChartDeferred, 1500);
   }
 
   if (document.readyState === "loading") {
