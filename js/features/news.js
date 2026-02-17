@@ -7,7 +7,7 @@
 
   const newsList = $("newsList");
   const newsEmpty = $("newsEmpty");
-  const newsLoading = $("newsLoading");
+  const newsSpinner = $("newsSpinner");
   const moreBtn = $("newsMoreBtn");
   const newsSource = $("newsSource");
 
@@ -28,7 +28,7 @@
 
   const POLL_MS = 60_000;
   const NEWS_POLL_MS = 60_000;
-  const PREFETCH_NEWS_EVERY_MS = 30_000;
+  const PREFETCH_EVERY_MS = 30_000;
 
   let pollTimer = null;
   let newsPollTimer = null;
@@ -43,6 +43,8 @@
     step: 5,
     loading: false,
     fetching: false,
+    didInitBreaking: false,
+    didInitNews: false,
   };
 
   function show(el) { if (el) el.style.display = ""; }
@@ -445,24 +447,52 @@
     }
   }
 
+  async function prefetchBreaking(force = false) {
+    if (state.fetching) return;
+    state.fetching = true;
+
+    try {
+      const cached = loadCache("breaking");
+      const freshEnough = cached && (Date.now() - (cached.ts || 0) < TTL_MS.breaking);
+      if (!force && freshEnough) return;
+
+      const items = await fetchLatest("breaking");
+      const normalized = dedupeKeepOrder(items).sort((a, b) => getSortTime(b) - getSortTime(a));
+      saveCache("breaking", normalized);
+    } catch {
+    } finally {
+      state.fetching = false;
+    }
+  }
+
   function startPrefetchLoop() {
     stopPrefetch();
     prefetchTimer = setInterval(() => {
       if (document.hidden) return;
       prefetchNews(false);
-    }, PREFETCH_NEWS_EVERY_MS);
+      prefetchBreaking(false);
+    }, PREFETCH_EVERY_MS);
+  }
+
+  function shouldShowSpinnerFor(tab, ignoreCache) {
+    const isFirstVisitTab = (tab === "breaking") ? !state.didInitBreaking : !state.didInitNews;
+    if (!isFirstVisitTab) return false;
+    if (ignoreCache) return true;
+    const cached = loadCache(tab);
+    return !(cached?.items?.length);
   }
 
   async function loadAll(tab, opts = {}) {
     if (state.loading) return;
+
     state.loading = true;
     state.tab = tab;
     setSourceLabel(tab);
 
-    if (newsLoading) {
-      newsLoading.textContent = "최신 소식을 불러오고 있습니다.";
-      show(newsLoading);
-    }
+    const ignoreCache = !!opts.ignoreCache;
+
+    if (shouldShowSpinnerFor(tab, ignoreCache)) show(newsSpinner);
+    else hide(newsSpinner);
 
     if (moreBtn) moreBtn.style.display = "none";
     if (newsSource) newsSource.style.display = "none";
@@ -479,46 +509,85 @@
       tabNews.setAttribute("aria-selected", !isBreaking ? "true" : "false");
     }
 
-    if (newsList) newsList.innerHTML = "";
+    const cached = ignoreCache ? null : loadCache(tab);
+    const hasCachedItems = !!(cached?.items?.length);
 
-    const ignoreCache = !!opts.ignoreCache;
+    if (!hasCachedItems || ignoreCache) {
+      if (newsList) newsList.innerHTML = "";
+    }
 
-    if (!ignoreCache) {
-      const cached = loadCache(tab);
+    let renderedFromCache = false;
+    if (!ignoreCache && hasCachedItems) {
       const freshEnough = cached && (Date.now() - (cached.ts || 0) < TTL_MS[tab]);
-      if (cached?.items?.length) {
-        state.all = cached.items.slice().sort((a, b) => getSortTime(b) - getSortTime(a));
-        renderFromState();
-        if (freshEnough) hide(newsLoading);
-      } else {
-        show(newsLoading);
-      }
+      state.all = cached.items.slice().sort((a, b) => getSortTime(b) - getSortTime(a));
+      renderFromState();
+      renderedFromCache = true;
+      if (freshEnough) hide(newsSpinner);
     } else {
-      show(newsLoading);
+      show(newsSpinner);
     }
 
     await new Promise((r) => requestAnimationFrame(r));
 
     try {
-      const items = await fetchLatest(tab);
-      state.all = dedupeKeepOrder(items).sort((a, b) => getSortTime(b) - getSortTime(a));
-      renderFromState();
-      saveCache(tab, state.all);
+      const incoming = await fetchLatest(tab);
+      const nextAll = dedupeKeepOrder(incoming).sort((a, b) => getSortTime(b) - getSortTime(a));
+
+      if (renderedFromCache && newsList) {
+        const existed = new Set(state.all.map(itemKey));
+        const onlyNew = nextAll.filter((it) => {
+          const k = itemKey(it);
+          return k && !existed.has(k);
+        });
+
+        state.all = nextAll;
+        saveCache(tab, state.all);
+
+        if (onlyNew.length) {
+          if (tab === "breaking") {
+            newsList.insertAdjacentHTML("afterbegin", onlyNew.map(renderItem).join(""));
+            state.rendered += onlyNew.length;
+
+            const MAX_DOM = 80;
+            if (newsList.children.length > MAX_DOM) {
+              const keepCount = Math.max(state.rendered, state.first);
+              newsList.innerHTML = "";
+              state.rendered = 0;
+              appendNext(Math.min(keepCount, MAX_DOM));
+            }
+            updateMoreBtn();
+          } else {
+            if (isNearBottom()) appendIncomingToDom(onlyNew);
+            else updateMoreBtn();
+          }
+        }
+      } else {
+        state.all = nextAll;
+        renderFromState();
+        saveCache(tab, state.all);
+      }
     } catch {
-      const cached = ignoreCache ? null : loadCache(tab);
-      if (!cached?.items?.length) {
+      const cached2 = ignoreCache ? null : loadCache(tab);
+      if (!cached2?.items?.length) {
         show(newsEmpty);
         newsEmpty.textContent = "데이터 로드 실패";
       }
     } finally {
-      hide(newsLoading);
+      hide(newsSpinner);
       state.loading = false;
+
+      if (tab === "breaking") state.didInitBreaking = true;
+      else state.didInitNews = true;
+
       if (newsSource) newsSource.style.display = "";
       updateMoreBtn();
 
       if (tab === "breaking" && !prefetchedOnce) {
         prefetchedOnce = true;
-        setTimeout(() => prefetchNews(true), 0);
+        setTimeout(() => {
+          prefetchNews(true);
+          prefetchBreaking(true);
+        }, 0);
         startPrefetchLoop();
       }
     }
@@ -551,10 +620,10 @@
 
   moreBtn?.addEventListener("click", () => appendNext(state.step));
 
-  tabBreaking?.addEventListener("click", () => loadAll("breaking", { ignoreCache: true }));
+  tabBreaking?.addEventListener("click", () => loadAll("breaking", { ignoreCache: false }));
   tabNews?.addEventListener("click", () => loadAll("news", { ignoreCache: false }));
 
-  loadAll("breaking", { ignoreCache: true });
+  loadAll("breaking", { ignoreCache: false });
 
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
@@ -566,6 +635,7 @@
       if (state.tab === "news") startNewsPoll();
       startPrefetchLoop();
       prefetchNews(false);
+      prefetchBreaking(false);
     }
   });
 })();
