@@ -786,27 +786,13 @@
 
     return state._binance24h.map;
   }
-  
-  function collectCurrentKimpStats(list) {
-    const valid = (Array.isArray(list) ? list : [])
-      .map(c => Number(c.kimp))
-      .filter(v => Number.isFinite(v));
 
-    if (valid.length === 0) return null;
-
-    const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
-    const min = Math.min(...valid);
-    const max = Math.max(...valid);
-
-    return { avg, min, max };
-  }
-
-  function applySignedClass(el, v){
+  function applySignedClass(el, v) {
     if (!el) return;
     const n = Number(v);
     const cls = (!Number.isFinite(n) || Math.abs(n) < 0.005) ? "zero" : (n > 0 ? "plus" : "minus");
-    el.classList.add("kimp");                
-    el.classList.remove("plus","minus","zero");
+    el.classList.add("kimp");
+    el.classList.remove("plus", "minus", "zero");
     el.classList.add(cls);
   }
 
@@ -900,7 +886,10 @@
     }
     state._isLoading = true;
 
-    const shouldShowSpinner = force || (state.coins.length === 0);
+    const cachedList = loadTableCache(state.exchange);
+    const hasCache = !!(cachedList && cachedList.length > 0);
+
+    const shouldShowSpinner = (state.coins.length === 0) && (force ? !hasCache : true);
 
     if (shouldShowSpinner) {
       showSpinner();
@@ -916,7 +905,7 @@
 
       try {
         await fetchAllMarketCaps();
-      } catch (e) {
+      } catch {
         console.warn("[KIMPVIEW] Caps API failed, using previous cache");
       }
 
@@ -927,12 +916,14 @@
       } catch { }
 
       if (!force && list.length === 0) {
-        const cached = loadTableCache(state.exchange);
-        if (cached && cached.length > 0) list = cached;
+        if (hasCache) list = cachedList;
+      }
+
+      if (force && list.length === 0) {
+        if (hasCache) list = cachedList;
       }
 
       applyDerivedFields(list, binanceMap, binanceVolMap);
-      
       renderLiveKimpBoxes(list);
 
       state.coins = list;
@@ -948,8 +939,8 @@
       hideSpinner();
       if (state._pendingReload) {
         state._pendingReload = false;
-        loadCoinsAndRender(false); 
-      }      
+        loadCoinsAndRender(false);
+      }
     }
   }
 
@@ -968,9 +959,9 @@
   }
 
   function resumeTimers() {
-    if (state._isLoading) return;      
-    stopAutoRefresh();                 
-    loadCoinsAndRender(false).catch(() => {});
+    if (state._isLoading) return;
+    stopAutoRefresh();
+    loadCoinsAndRender(false).catch(() => { });
     startAutoRefresh(2000);
   }
 
@@ -1269,7 +1260,6 @@
 
       <td class="td-right mcapStack col-hide-980">
         <div class="mcapMain">${formatMcapKRW(c.mcapKRW)}</div>
-        
         <div class="mcapSub">${formatMcapUSD(state._coinCaps.get(c.symbol))}</div>
       </td>
     `;
@@ -1485,7 +1475,7 @@
 
     restoreTopMetricsFromLS();
     startUnifiedTopMetrics();
-    bindLifecycleEvents();    
+    bindLifecycleEvents();
 
     const TITLE_SUFFIX = "실시간 김프 김치프리미엄 - 김프뷰";
     const TITLE_REFRESH_MS = 3000;
@@ -1528,10 +1518,15 @@
       document.title = `${prefix} | ${TITLE_SUFFIX}`;
     }
 
+    if (restoreTableFromCache(state.exchange)) {
+      renderLiveKimpBoxes(state.coins);
+      render();
+    }
+
     updateTitleFromState();
     setInterval(updateTitleFromState, TITLE_REFRESH_MS);
 
-    loadCoinsAndRender(true).finally(updateTitleFromState);
+    loadCoinsAndRender(false).finally(updateTitleFromState);
 
     startAutoRefresh(2000);
     initMainChart();
@@ -1542,6 +1537,4 @@
   } else {
     init();
   }
-
-  
 })();
