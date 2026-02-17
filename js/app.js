@@ -1084,19 +1084,25 @@
     const q = state.query.trim().toLowerCase();
     if (q) {
       list = list.filter(
-        c =>
+        (c) =>
           String(c.symbol || "").toLowerCase().includes(q) ||
           String(c.name || "").toLowerCase().includes(q)
       );
     }
 
-    if (state.favOnly) list = list.filter(c => state.favorites.has(normalizeBaseSym(c.symbol)));
+    if (state.favOnly) {
+      list = list.filter((c) => state.favorites.has(normalizeBaseSym(c.symbol)));
+    }
 
     list.sort((a, b) => {
       const af = state.favorites.has(normalizeBaseSym(a.symbol));
       const bf = state.favorites.has(normalizeBaseSym(b.symbol));
       if (af !== bf) return af ? -1 : 1;
-      return compare(a, b, state.sortKey, state.sortDir);
+
+      const r = compare(a, b, state.sortKey, state.sortDir);
+      if (r !== 0) return r;
+
+      return String(a.symbol || "").localeCompare(String(b.symbol || ""));
     });
 
     return list;
