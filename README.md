@@ -1,6 +1,6 @@
 # KIMPVIEW
 > 🔗 **Live Service**: https://kimpview.com<br>
-> 🟢 **Current Stable Version**: v1.1.2<br>
+> 🟢 **Current Stable Version**: v1.1.3<br>
 > ✍️ **Dev Blog**: https://velog.io/@cokid7979 <br>
 > 📊 Kimchi Premium Real-time Dashboard  
 > 🚀 Vanilla JS + Cloudflare Worker 기반 실서비스 운영 중
@@ -185,7 +185,7 @@ KIMPVIEW/
 
 - **결과**: 업데이트 후 발생하는 사용자 이탈 리스크 제거 및<br> 다양한 브라우저 환경에서의 런타임 안정성 극대화.
 
-### 🔍 추가 트러블슈팅 및 운영 개선 기록 (총 7건)
+### 🔍 추가 트러블슈팅 및 운영 개선 기록 (총 8건)
 <details>
 <summary>세부 이슈 및 개선 내역 펼치기</summary>
 
@@ -237,6 +237,14 @@ KIMPVIEW/
 - **해결**: 과거 스냅샷 기반 로직을 제거하고 현재 리스트 기준 <br>즉시 재계산(LIVE) 방식으로 구조 단순화.
 
 - **결과**: 거래소 전환 시 즉시 갱신을 보장하고 <br>상태 복잡도를 제거하여 데이터 정합성과 유지보수 효율을 개선함.
+
+#### 11. 초기 진입 로딩 지연 문제 (6초 → 2초 단축)
+
+- **문제**: 첫 페이지 진입 시 다수의 외부 API를 <br>동시 호출하면서 초기 렌더가 3~6초 지연되는 병목 발생.
+
+- **해결**: 초기 마켓 범위 제한, 시장 목록 캐싱(6h TTL)<br> 도입 및 무거운 API 호출을 렌더 이후로 지연 처리.
+
+- **결과**: 초기 체감 속도 약 6초 → 약 2초로 개선 및 첫 화면 안정성 확보.
 
 </details>
 
