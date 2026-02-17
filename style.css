@@ -440,6 +440,23 @@ input[type="submit"],
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+.newsListWrap{
+  position: relative;
+}
+
+#newsSpinner.tableSpinner{
+  position: absolute;
+  left: 50%;
+  top: 110px;
+  transform: translateX(-50%);
+  z-index: 20;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
 /* ===== MAIN TABLE ===== */
 .table{
   width:100%;
