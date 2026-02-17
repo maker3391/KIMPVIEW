@@ -1,6 +1,6 @@
 # KIMPVIEW
 > 🔗 **Live Service**: https://kimpview.com<br>
-> 🟢 **Current Stable Version**: v1.1.1<br>
+> 🟢 **Current Stable Version**: v1.1.2<br>
 > ✍️ **Dev Blog**: https://velog.io/@cokid7979 <br>
 > 📊 Kimchi Premium Real-time Dashboard  
 > 🚀 Vanilla JS + Cloudflare Worker 기반 실서비스 운영 중
@@ -12,30 +12,6 @@
 - **실제 서비스 운영 기준 누적 방문자 30,000+ 기록**
 - **Google / Naver 검색 결과 상위 노출 확인**
 
----
-
-## 🛠 Stability Update (v1.0.1)
-
-- CoinPaprika 시가총액 캐시 시간을 12시간으로 확장 (Edge 레벨 TTL 적용)
-- HTTP 402 및 API 호출 제한(Rate Limit) 발생 시 예외 처리 로직 추가
-- 외부 API 장애 시 기존 캐시 데이터를 활용한 Fallback 렌더링 적용
-- Cloudflare Worker 캐싱을 통해 불필요한 상위 API 호출 감소
-
-## 💬 Real-time Chat Update (v1.1.0)
-
-- Firebase Firestore 기반 실시간 채팅 기능 도입
-- Presence 컬렉션을 활용한 온라인 사용자 수 추적
-- serverTimestamp 기반 메시지 정렬
-- 닉네임 설정 기능 (LocalStorage 저장)
-- 메시지 전송 쿨다운 로직 적용 (10초 제한)
-- 페이지 이동 시 채팅 상태 유지 (sessionStorage 기반)
-
-## ⚡ News Performance Update (v1.1.1)
-
-- 뉴스 탭 백그라운드 프리패치(prefetch) 적용으로 첫 클릭 로딩 지연 최소화
-- cache-first 렌더링 전략 적용 (캐시 즉시 표시 → 백그라운드 최신 갱신)
-- 뉴스 프리패치 주기 업데이트로 탭 전환 체감 속도 개선
-- "더보기" 버튼 초기 깜빡임 방지(초기 UI 상태 숨김 처리)
 ---
 
 ## 📌 프로젝트 목적
