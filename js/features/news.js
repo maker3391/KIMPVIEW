@@ -50,6 +50,8 @@
   function show(el) { if (el) el.style.display = ""; }
   function hide(el) { if (el) el.style.display = "none"; }
 
+  if (newsSource) newsSource.style.display = "none";
+
   function setSourceLabel(tab) {
     if (!newsSource) return;
     newsSource.textContent = (tab === "breaking") ? "출처: CoinNess" : "출처: Naver";
@@ -487,7 +489,6 @@
 
     state.loading = true;
     state.tab = tab;
-    setSourceLabel(tab);
 
     const ignoreCache = !!opts.ignoreCache;
 
@@ -579,7 +580,9 @@
       if (tab === "breaking") state.didInitBreaking = true;
       else state.didInitNews = true;
 
+      setSourceLabel(tab);
       if (newsSource) newsSource.style.display = "";
+
       updateMoreBtn();
 
       if (tab === "breaking" && !prefetchedOnce) {
