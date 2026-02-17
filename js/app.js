@@ -615,32 +615,54 @@
     const nameMap = new Map(krw.map(m => [m.market, m.korean_name]));
 
     const CHUNK_SIZE = 60;
-    const chunks = chunk(allMarkets, CHUNK_SIZE);
+    const CONCURRENCY = 4;
 
+    const chunks = chunk(allMarkets, CHUNK_SIZE);
     const tickers = [];
     const failedChunks = [];
 
-    for (const c of chunks) {
+    const fetchChunk = async (c, isRetry) => {
       const url = `${UPBIT_PROXY}/v1/ticker?markets=${encodeURIComponent(c.join(","))}`;
-      try {
-        const tJson = await safeFetchJson(url, { signal, timeoutMs: 9000, label: "UPBIT ticker", retries: 2 });
-        const t = Array.isArray(tJson) ? tJson : [];
-        tickers.push(...t);
-      } catch {
-        failedChunks.push(c);
+      const tJson = await safeFetchJson(url, {
+        signal,
+        timeoutMs: isRetry ? 11000 : 9000,
+        label: isRetry ? "UPBIT ticker retry" : "UPBIT ticker",
+        retries: isRetry ? 1 : 2,
+      });
+      const t = Array.isArray(tJson) ? tJson : [];
+      return t;
+    };
+
+    let idx = 0;
+    const workers = Array.from({ length: Math.min(CONCURRENCY, chunks.length) }, async () => {
+      while (idx < chunks.length) {
+        const my = chunks[idx++];
+        try {
+          const t = await fetchChunk(my, false);
+          if (t && t.length) tickers.push(...t);
+        } catch {
+          failedChunks.push(my);
+        }
       }
-    }
+    });
+
+    await Promise.all(workers);
 
     if (failedChunks.length > 0) {
       await sleep(200);
-      for (const c of failedChunks) {
-        const url = `${UPBIT_PROXY}/v1/ticker?markets=${encodeURIComponent(c.join(","))}`;
-        try {
-          const tJson = await safeFetchJson(url, { signal, timeoutMs: 11000, label: "UPBIT ticker retry", retries: 1 });
-          const t = Array.isArray(tJson) ? tJson : [];
-          tickers.push(...t);
-        } catch {}
-      }
+
+      let ridx = 0;
+      const retryWorkers = Array.from({ length: Math.min(CONCURRENCY, failedChunks.length) }, async () => {
+        while (ridx < failedChunks.length) {
+          const my = failedChunks[ridx++];
+          try {
+            const t = await fetchChunk(my, true);
+            if (t && t.length) tickers.push(...t);
+          } catch {}
+        }
+      });
+
+      await Promise.all(retryWorkers);
     }
 
     return { tickers, nameMap };
